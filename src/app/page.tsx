@@ -9,6 +9,23 @@ export default function Home() {
           <Dashboard />
         </div>
       </div>
+      
+      {/* Footer avec mentions légales */}
+      <footer className="w-full py-4 px-6 border-t border-gray-800 bg-gray-950/80 backdrop-blur-sm mt-auto">
+        <div className="container mx-auto flex flex-col items-center text-xs text-gray-400 space-y-2">
+          <div className="flex items-center space-x-2">
+            <span>© 2024 ProtoVerreTMS™</span>
+            <span>•</span>
+            <span>Tous droits réservés</span>
+            <span>•</span>
+            <span>Développé par Thomas REL</span>
+          </div>
+          <div className="text-center">
+            <p>Logiciel protégé - Reproduction interdite</p>
+            <p className="text-[10px] mt-1">Marque et design déposés - INPI - Tous droits de propriété intellectuelle réservés</p>
+          </div>
+        </div>
+      </footer>
     </main>
   )
 } 
