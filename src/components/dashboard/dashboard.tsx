@@ -406,9 +406,10 @@ export default function Dashboard() {
 
       {/* Dashboard principal */}
       <div className="w-full max-w-[100%] mx-auto">
-        <div className="bg-black backdrop-blur-md border border-gray-800/50 rounded-xl p-8 -mx-24">
-          {/* Contrôles de simulation repositionnés */}
-          <div className="inline-flex items-center gap-4 mb-4 ml-4">
+        {/* Conteneur principal avec padding adaptatif */}
+        <div className="bg-black backdrop-blur-md border border-gray-800/50 rounded-xl p-4 md:p-8 mx-0 md:-mx-24">
+          {/* Contrôles de simulation avec flex wrap */}
+          <div className="flex flex-wrap items-center gap-4 mb-4 ml-0 md:ml-4">
             <button
               onClick={handleReset}
               className="px-3 py-2 rounded-lg bg-gray-900/50 border border-gray-800/30 backdrop-blur-sm text-gray-400 hover:text-gray-300 transition-colors"
@@ -444,9 +445,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Section supérieure - Risques unifiés */}
-          <div className="flex justify-end mb-8 mr-[100px]">
-            <div className="w-[650px] relative">
+          {/* Section supérieure - Risques unifiés avec adaptation mobile */}
+          <div className="flex justify-center md:justify-end mb-8 mr-0 md:mr-[100px]">
+            <div className="w-full md:w-[650px] relative">
               <div className="p-6 rounded-xl bg-gradient-to-br from-gray-900/70 via-gray-900/50 to-gray-900/70 border border-gray-800/50 backdrop-blur-md">
                 <div className="grid grid-cols-2 gap-6">
                   {/* Risque d'accident */}
@@ -599,10 +600,10 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Grille principale avec ajustement de l'espacement */}
-          <div className="grid grid-cols-[minmax(550px,_600px)_1fr] gap-8 -mt-32">
-          {/* Panneau de gauche - Informations et contrôles */}
-            <div className="space-y-8 p-6 rounded-xl bg-gradient-to-br from-gray-900/70 via-gray-900/50 to-gray-900/70 border border-gray-800/50 backdrop-blur-sm shadow-lg">
+          {/* Grille principale responsive */}
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(550px,_600px)_1fr] gap-8 mt-8 md:-mt-32">
+            {/* Panneau de gauche - Informations et contrôles */}
+            <div className="space-y-8 p-4 md:p-6 rounded-xl bg-gradient-to-br from-gray-900/70 via-gray-900/50 to-gray-900/70 border border-gray-800/50 backdrop-blur-sm shadow-lg">
               <div className="flex items-center justify-between pb-4 border-b border-gray-800/50">
                 <div className="flex items-center gap-3">
                   <Settings className="w-6 h-6 text-gray-400" />
@@ -888,11 +889,11 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {/* Panneau central - Visualisation */}
-            <div className="relative flex items-center justify-end h-full">
-              <div className="relative w-[700px] transform scale-110">
+            {/* Panneau central - Visualisation avec adaptation mobile */}
+            <div className="relative flex items-center justify-center lg:justify-end h-full">
+              <div className="relative w-full md:w-[700px] transform scale-90 md:scale-110">
                 {/* Ensemble unifié bulle + composants */}
-                <div className="relative flex items-center justify-center translate-x-16 mt-[200px]">
+                <div className="relative flex items-center justify-center md:translate-x-16 mt-[100px] md:mt-[200px]">
                   {/* Bulle environnementale */}
                   <div className="absolute inset-[-80px] z-0">
                     <div 
@@ -1030,8 +1031,8 @@ export default function Dashboard() {
         }
       `}</style>
 
-      {/* Panneau des coûts - Repositionné plus bas et à droite */}
-      <div className="absolute right-[-600px] top-[600px] w-[400px]">
+      {/* Panneau des coûts repositionné de manière responsive */}
+      <div className="relative lg:absolute lg:right-[-600px] lg:top-[600px] w-full lg:w-[400px] mt-8 lg:mt-0">
         <div className="p-6 rounded-xl bg-gradient-to-br from-slate-800/90 via-slate-800/80 to-slate-900/90 border border-slate-700/50 backdrop-blur-sm shadow-xl">
           <CostPanel
             bodyParts={[
