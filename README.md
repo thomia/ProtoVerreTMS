@@ -2,7 +2,7 @@
 
 ## Avis de Copyright et Propriété Intellectuelle
 
-© 2024 Thomas REL. Tous droits réservés.
+© 2024 Thomas RELOT. Tous droits réservés.
 
 Ce projet est protégé par les lois sur la propriété intellectuelle et le droit d'auteur. Toute utilisation non autorisée est strictement interdite.
 
