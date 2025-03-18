@@ -1,6 +1,10 @@
 # ProtoVerre TMS
 
-Un tableau de bord interactif avec un verre qui se remplit, une paille et un robinet.
+## Avis de Copyright et Propriété Intellectuelle
+
+© 2024 Thomas REL. Tous droits réservés.
+
+Ce projet est protégé par les lois sur la propriété intellectuelle et le droit d'auteur. Toute utilisation non autorisée est strictement interdite.
 
 ## Description
 
@@ -72,3 +76,25 @@ src/
 ## Licence
 
 MIT 
+
+## Protection Légale
+
+Ce logiciel est protégé par :
+- Une licence MIT restrictive
+- Des droits d'auteur
+- Des restrictions d'utilisation commerciale
+
+Voir les fichiers suivants pour plus de détails :
+- `LICENSE` : Conditions d'utilisation restrictives
+- `COPYRIGHT` : Avis de droit d'auteur détaillé
+- `CONTRIBUTING.md` : Règles de contribution
+
+## Contact
+
+Pour toute demande concernant l'utilisation, la licence ou la collaboration :
+- Auteur : Thomas REL
+- Email : [Votre email de contact]
+
+## Avertissement
+
+Toute utilisation, reproduction ou modification non autorisée de ce logiciel est strictement interdite et peut faire l'objet de poursuites légales. 
