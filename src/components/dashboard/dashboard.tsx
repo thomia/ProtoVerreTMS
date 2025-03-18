@@ -611,7 +611,7 @@ export default function Dashboard() {
               </div>
 
               {/* Verre */}
-              <div className="space-y-3 p-6 rounded-lg bg-gray-900/30 hover:bg-gray-900/40 transition-colors border border-gray-800/30">
+              <div className="space-y-3 p-6 rounded-lg bg-gray-900/30 hover:bg-gray-900/40 transition-colors border-2 border-gray-800/40">
                 <div className="flex h-[200px]">
                   {/* Contenu principal avec largeur fixe */}
                   <div className="w-[300px] flex flex-col">
@@ -674,7 +674,7 @@ export default function Dashboard() {
               </div>
 
               {/* Robinet */}
-              <div className="space-y-3 p-6 rounded-lg bg-blue-950/20 hover:bg-blue-950/30 transition-colors border border-blue-900/20">
+              <div className="space-y-3 p-6 rounded-lg bg-blue-950/20 hover:bg-blue-950/30 transition-colors border-2 border-blue-900/30">
                 <div className="flex h-[200px]">
                   {/* Contenu principal avec largeur fixe */}
                   <div className="w-[300px] flex flex-col">
@@ -737,7 +737,7 @@ export default function Dashboard() {
               </div>
 
               {/* Paille */}
-              <div className="space-y-3 p-6 rounded-lg bg-green-950/20 hover:bg-green-950/30 transition-colors border border-green-900/20">
+              <div className="space-y-3 p-6 rounded-lg bg-green-950/20 hover:bg-green-950/30 transition-colors border-2 border-green-900/30">
                 <div className="flex h-[200px]">
                   {/* Contenu principal avec largeur fixe */}
                   <div className="w-[300px] flex flex-col">
@@ -825,7 +825,7 @@ export default function Dashboard() {
             </div>
             
               {/* Bulle */}
-              <div className="space-y-3 p-6 rounded-lg bg-purple-950/20 hover:bg-purple-950/30 transition-colors border border-purple-900/20">
+              <div className="space-y-3 p-6 rounded-lg bg-purple-950/20 hover:bg-purple-950/30 transition-colors border-2 border-purple-900/30">
                 <div className="flex h-[200px]">
                   {/* Contenu principal avec largeur fixe */}
                   <div className="w-[300px] flex flex-col">
