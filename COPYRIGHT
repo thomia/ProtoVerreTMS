@@ -1,7 +1,7 @@
 COPYRIGHT NOTICE
 
-ProtoVerreTMS - Simulateur de Manipulation de Verre TMS
-Copyright © 2024 Thomas REL. Tous droits réservés.
+ProtoVerreTMS - Simulateur du risque TMS
+Copyright © 2024 Thomas RELOT. Tous droits réservés.
 
 Ce logiciel et sa documentation associée sont protégés par les lois sur la propriété intellectuelle
 et les traités internationaux sur le droit d'auteur. L'accès au code source ne confère aucun droit
@@ -10,7 +10,7 @@ de propriété ou de licence sur le logiciel.
 PROPRIÉTÉ INTELLECTUELLE :
 
 1. Code source : Tout le code source, y compris mais non limité aux fichiers TypeScript, JavaScript,
-   CSS et configurations, est la propriété exclusive de Thomas REL.
+   CSS et configurations, est la propriété exclusive de Thomas RELOT.
 
 2. Interface utilisateur : La conception de l'interface utilisateur, les animations, et tous les
    éléments visuels sont protégés par le droit d'auteur.
