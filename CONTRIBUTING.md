@@ -14,7 +14,7 @@ code is strictly prohibited.
 ## Reporting Issues
 
 If you discover a security vulnerability or bug, please report it by contacting the project owner
-directly at [Votre email de contact]. Do not create public issues for security vulnerabilities.
+directly at thomas.relot@gmail.com. Do not create public issues for security vulnerabilities.
 
 ## Code of Conduct
 
@@ -27,7 +27,7 @@ While this is a private project, we expect any authorized contributors to:
 ## Contact
 
 For any questions regarding contribution or licensing:
-- Email: [Votre email de contact]
+- Email: thomas.relot@gmail.com
 - Author: Thomas REL
 
 ## License

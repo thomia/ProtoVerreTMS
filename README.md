@@ -73,10 +73,6 @@ src/
     └── globals.css         # Styles globaux
 ```
 
-## Licence
-
-MIT 
-
 ## Protection Légale
 
 Ce logiciel est protégé par :
@@ -93,7 +89,56 @@ Voir les fichiers suivants pour plus de détails :
 
 Pour toute demande concernant l'utilisation, la licence ou la collaboration :
 - Auteur : Thomas REL
-- Email : [Votre email de contact]
+- Email : thomas.relot@gmail.com
+
+## Protection du Logiciel
+
+### Mesures de Protection
+
+1. **Protection Juridique**
+   - Dépôt APP (Agence de Protection des Programmes)
+   - Copyright international
+   - Licence restrictive personnalisée
+
+2. **Protection Technique**
+   - Code source minifié et obfusqué en production
+   - Authentification et autorisation strictes
+   - Monitoring des accès et des utilisations
+
+3. **Droits Réservés**
+   - Droits moraux : paternité du code et intégrité
+   - Droits patrimoniaux : exploitation commerciale
+   - Droits de modification et d'adaptation
+
+4. **Restrictions d'Utilisation**
+   - Interdiction de décompilation
+   - Interdiction de modification
+   - Interdiction de distribution
+
+### Mentions Légales
+
+1. **Propriété Intellectuelle**
+   - Logiciel déposé à l'INPI
+   - Marque "ProtoVerreTMS" protégée
+   - Algorithmes propriétaires
+
+2. **Confidentialité**
+   - Code source confidentiel
+   - Méthodes de calcul protégées
+   - Documentation interne privée
+
+3. **Sanctions**
+   - Poursuites civiles et pénales
+   - Dommages et intérêts
+   - Cessation immédiate d'utilisation
+
+### Protection des Droits
+
+En cas de violation des droits de propriété intellectuelle :
+1. Mise en demeure immédiate
+2. Actions en contrefaçon
+3. Demande de dommages et intérêts
+4. Retrait des copies non autorisées
 
 ## Avertissement
 
