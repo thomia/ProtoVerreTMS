@@ -1,0 +1,36 @@
+Contexte et Projet
+
+Le pilier de mon projet repose sur un outil visuel dynamique articulé en deux dimensions complémentaires : la première, destinée à un large public, cherche à sensibiliser et à évaluer de manière intuitive les risques de troubles musculo-squelettiques (TMS) ; la seconde, spécifiquement conçue pour les ergonomes et les préventeurs, offre une analyse approfondie pour aboutir une transformation ciblée des situations de travail.
+	
+Sensibiliser et évaluer le risque TMS
+
+Cet outil est visuellement simple et composé de 4 éléments 
+-	Le robinet, qui n’est rien d’autre que le travail réel d’un travailleur
+o	La charge manipulée
+o	La fréquence à laquelle il le fait en 1 équipe ou 1h peu importe
+o	La posture dans laquelle il est lorsqu’il fait toutes ces actions
+o	L’état mental dans lequel il est lorsqu’il travaille (aspect cognitifs et psychosociaux)
+-	Le verre, qui n’est rien d’autre que les facteurs individuels du travailleur qui détermine s’il est plus enclin à absorber les contraintes que le robinet lui impose
+o	Age
+o	Antécédents médicaux
+o	Condition physique
+o	Hygiène de vie
+-	La bulle, qui n’est rien d’autre que l’environnement dans lequel le travailleur évolue :
+o	Température
+o	Travail de jour ou de nuit
+o	Lumière
+o	Bruit
+o	Hygiène
+o	Exigüe
+o	Equipements contraignants
+-	La paille, qui est le moyen d’évacuer la contrainte qui est déjà présente dans le verre.
+Tout ça imager par de l’eau qui rempli un verre et lorsque ce verre est trop rempli, les chances de se faire mal sont plus importantes.
+La force de cet outil est qu’on peut ajuster les paramètres de chaque élément de manière à avoir les déterminants d’une vraie situation de travail.
+
+
+Analyser pour transformer le travail
+
+
+De plus pour certains paramètres, je peux aller plus loin dans l’analyse. Cette étape permet d’aller en profondeur dans la compréhension de la situation pour identifier les tâches clé qui compose mon robinet. Cette étape consiste à étoffer par des commentaires et des photos chaque paramètre concerné (ex : la charge manipulée -> c’est quoi, la prise n’est pas adapté...). Enfin la dernière partie de cette analyse consiste à notifier les ajustements des travailleurs lorsqu’ils ont rencontré une difficulté (garder une trace des bonnes pratiques)
+
+Il suffit juste d’ajouter une page contact avec mes coordonnées et une page info qui reprend et explique l’outil dans ces grandes lignes comme je l’ai fait ici
