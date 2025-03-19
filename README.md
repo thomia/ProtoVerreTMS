@@ -13,15 +13,15 @@ ProtoVerre TMS est une application SaaS qui présente un tableau de bord interac
 1. **Un verre** - Qui peut se remplir et se vider
 2. **Une paille** - Qui permet d'aspirer le contenu du verre
 3. **Un robinet** - Qui permet de remplir le verre
+4. **Une bulle** - Qui permet d'imager l'environnement de travail et influer sur le débit de remplissage du verre
 
-Chaque élément est cliquable et mène à une page de paramètres dédiée où l'utilisateur peut configurer son comportement.
+Chaque élément est paramétrable et mène à une page dédiée où l'utilisateur peut configurer son comportement.
 
 ## Fonctionnalités
 
 - Tableau de bord visuel avec des éléments interactifs
-- Animation de remplissage du verre
-- Pages de paramètres pour chaque élément
-- Simulation de remplissage et de vidage du verre
+- Animation et comportement dynamique de chaque composant
+- Pages de paramètres pour chaque composant
 
 ## Technologies utilisées
 
@@ -88,7 +88,7 @@ Voir les fichiers suivants pour plus de détails :
 ## Contact
 
 Pour toute demande concernant l'utilisation, la licence ou la collaboration :
-- Auteur : Thomas REL
+- Auteur : Thomas RELOT
 - Email : thomas.relot@gmail.com
 
 ## Protection du Logiciel
