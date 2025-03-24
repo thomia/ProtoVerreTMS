@@ -722,16 +722,6 @@ export default function Dashboard() {
                         <span className="text-sm text-blue-400">Débit actuel</span>
                       </div>
                       
-                      {/* Indicateur d'impact de l'agitation (centré en dessous) */}
-                      {environmentScore > 0 && (
-                        <div className="absolute top-10 flex w-full flex-col items-center justify-center">
-                          <div className="text-xs px-2 py-1 rounded bg-purple-950/30 border border-purple-800/30 text-purple-400">
-                            <span>+{Math.round(environmentScore * 0.3)}%</span>
-                          </div>
-                          <span className="text-xs text-purple-400 mt-1">Impact environnemental</span>
-                        </div>
-                      )}
-                      
                       {/* Conteneur pour la barre et la valeur */}
                       <div className="relative flex items-center mt-2">
                         {/* Barre de progression centrée */}
@@ -744,8 +734,8 @@ export default function Dashboard() {
                             flowRate < 66 ? "from-blue-400 to-blue-500" :
                             "from-blue-500 to-blue-600"
                           )} style={{ height: `${flowRate}%` }} />
-                </div>
-                
+                        </div>
+                        
                         {/* Valeur à droite */}
                         <div 
                           className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-blue-900/50 border border-blue-400/10 backdrop-blur-sm transition-all duration-300"
@@ -758,6 +748,16 @@ export default function Dashboard() {
                             {flowRate}%
                           </span>
                         </div>
+                        
+                        {/* Indicateur d'impact de l'agitation (repositionné à droite) */}
+                        {environmentScore > 0 && (
+                          <div className="absolute -right-[65px] top-[-30px] flex flex-col items-center justify-center">
+                            <div className="text-xs px-2 py-1 rounded bg-purple-950/30 border border-purple-800/30 text-purple-400">
+                              <span>+{Math.round(environmentScore * 0.3)}%</span>
+                            </div>
+                            <span className="text-xs text-purple-400 mt-1">Impact environnemental</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
