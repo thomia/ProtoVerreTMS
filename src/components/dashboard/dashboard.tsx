@@ -619,7 +619,7 @@ export default function Dashboard() {
 
           {/* Grille principale responsive */}
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(550px,_600px)_1fr] gap-8 mt-8 md:-mt-32">
-            {/* Panneau de gauche - Informations et contrôles */}
+          {/* Panneau de gauche - Informations et contrôles */}
             <div className="space-y-8 p-4 md:p-6 rounded-xl bg-gradient-to-br from-gray-900/70 via-gray-900/50 to-gray-900/70 border border-gray-800/50 backdrop-blur-sm shadow-lg">
               <div className="flex items-center justify-between pb-4 border-b border-gray-800/50">
                 <div className="flex items-center gap-3">
@@ -722,8 +722,18 @@ export default function Dashboard() {
                         <span className="text-sm text-blue-400">Débit actuel</span>
                       </div>
                       
+                      {/* Indicateur d'impact environnemental (entre le titre et la barre) */}
+                      {environmentScore > 0 && (
+                        <div className="flex flex-col items-center mb-1">
+                          <div className="text-xs px-2 py-0.5 rounded bg-purple-950/30 border border-purple-800/30 text-purple-400">
+                            <span>+{Math.round(environmentScore * 0.3)}%</span>
+                          </div>
+                          <span className="text-[9px] text-purple-400">Impact environnemental</span>
+                        </div>
+                      )}
+                      
                       {/* Conteneur pour la barre et la valeur */}
-                      <div className="relative flex items-center mt-2">
+                      <div className="relative flex items-center mt-1">
                         {/* Barre de progression centrée */}
                         <div className="relative h-[160px] w-2">
                           <div className={cn(
@@ -747,107 +757,8 @@ export default function Dashboard() {
                           <span className="text-sm font-medium text-blue-400">
                             {flowRate}%
                           </span>
-                        </div>
-                        
-                        {/* Indicateur d'impact de l'agitation (repositionné à droite) */}
-                        {environmentScore > 0 && (
-                          <div className="absolute -right-[65px] top-[-30px] flex flex-col items-center justify-center">
-                            <div className="text-xs px-2 py-1 rounded bg-purple-950/30 border border-purple-800/30 text-purple-400">
-                              <span>+{Math.round(environmentScore * 0.3)}%</span>
-                            </div>
-                            <span className="text-xs text-purple-400 mt-1">Impact environnemental</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
                 </div>
-              </div>
-
-              {/* Paille */}
-              <div className="space-y-3 p-6 rounded-lg bg-green-950/20 hover:bg-green-950/30 transition-colors border-2 border-green-900/30">
-                <div className="flex h-[200px]">
-                  {/* Contenu principal avec largeur fixe */}
-                  <div className="w-[300px] flex flex-col">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <RectangleHorizontal className="w-6 h-6 text-green-400" />
-                        <h3 className="text-xl font-semibold text-green-400">Paille</h3>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={cn(
-                          "text-base font-medium transition-colors",
-                          isStrawEnabled 
-                            ? "text-green-400" 
-                            : "text-gray-500"
-                        )}>
-                          {isStrawEnabled ? "Activée" : "Désactivée"}
-                        </span>
-                        <Switch
-                          checked={isStrawEnabled}
-                          onCheckedChange={setIsStrawEnabled}
-                          className={cn(
-                            "transition-all duration-200",
-                            isStrawEnabled 
-                              ? "bg-green-400/30 hover:bg-green-400/40" 
-                              : "bg-gray-800 hover:bg-gray-700"
-                          )}
-                        />
-                      </div>
-                    </div>
-                    <p className="text-base text-gray-400 leading-relaxed mt-3">
-                      Représente la capacité de récupération (étirements, échauffements, pauses, relaxation, sommeil).
-                    </p>
-                    <div className="flex-grow" />
-                    <button 
-                      onClick={() => setActiveModal('straw')}
-                      className="group relative w-fit mt-4 px-3 py-1.5 text-base text-green-400 hover:text-green-300 transition-colors"
-                    >
-                      <Settings className="w-5 h-5 inline-block mr-2" />
-                      Configurer les paramètres
-                      <span className="absolute left-0 -bottom-px h-px w-full origin-left scale-x-0 bg-green-400 transition-transform duration-200 ease-out group-hover:scale-x-100" />
-                    </button>
-                  </div>
-                  
-                  {/* Séparateur et barre de progression */}
-                  <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l border-green-400/20">
-                    <div className="relative h-full w-full flex flex-col items-center">
-                      {/* Label supérieur avec espacement fixe */}
-                      <div className="h-[40px] flex items-center justify-center -mt-2 pt-0">
-                        <span className="text-sm text-green-400">Récupération</span>
-                      </div>
-                      
-                      {/* Conteneur pour la barre et la valeur */}
-                      <div className="relative flex items-center mt-2">
-                        {/* Barre de progression centrée */}
-                        <div className="relative h-[160px] w-2">
-                          <div className={cn(
-                            "absolute bottom-0 w-full transition-all duration-300",
-                            "bg-gradient-to-t",
-                            absorptionRate === 0 ? "from-green-200 to-green-300" :
-                            absorptionRate < 33 ? "from-green-300 to-green-400" :
-                            absorptionRate < 66 ? "from-green-400 to-green-500" :
-                            "from-green-500 to-green-600"
-                          )} style={{ height: `${absorptionRate}%` }} />
-                        </div>
-                        
-                        {/* Valeur à droite */}
-                        <div 
-                          className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-green-900/50 border border-green-400/10 backdrop-blur-sm transition-all duration-300"
-                          style={{
-                            bottom: `${absorptionRate}%`,
-                            transform: 'translateY(50%)'
-                          }}
-                        >
-                          <span className={cn(
-                            "text-sm font-medium",
-                            isStrawEnabled ? "text-green-400" : "text-gray-500"
-                          )}>
-                            {absorptionRate}%
-                          </span>
-                        </div>
-                      </div>
-                  </div>
+                </div>
                 </div>
               </div>
             </div>
