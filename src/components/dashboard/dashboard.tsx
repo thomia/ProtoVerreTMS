@@ -337,11 +337,20 @@ export default function Dashboard() {
       const now = Date.now()
       const deltaTime = Math.min(now - lastUpdateTime, 100)
       
+      // Calculer le facteur d'agitation en direct
+      let agitationFactor = 1.0;
+      if (environmentScore > 0) {
+        // Augmentation de 3% pour chaque 10% de score d'agitation
+        agitationFactor = 1 + (environmentScore * 0.003);
+      }
+      
       setFillLevel(prevLevel => {
         const capacityFactor = glassWidth / 20
+        // Appliquer le facteur d'agitation au débit
+        const adjustedFlowRate = flowRate * agitationFactor;
         const netFlow = isStrawEnabled 
-          ? (flowRate - absorptionRate) / capacityFactor 
-          : flowRate / capacityFactor
+          ? (adjustedFlowRate - absorptionRate) / capacityFactor 
+          : adjustedFlowRate / capacityFactor
         const newLevel = prevLevel + (netFlow * deltaTime * simulationSpeed / 100000)
         return Math.min(Math.max(newLevel, 0), 100)
       })
@@ -350,7 +359,7 @@ export default function Dashboard() {
     }, 50)
     
     return () => clearInterval(updateInterval)
-  }, [flowRate, lastUpdateTime, isPaused, glassWidth, absorptionRate, isStrawEnabled, simulationSpeed])
+  }, [flowRate, lastUpdateTime, isPaused, glassWidth, absorptionRate, isStrawEnabled, simulationSpeed, environmentScore])
 
   // Gérer l'exposition TMS basée sur le niveau de remplissage
   useEffect(() => {
@@ -369,12 +378,20 @@ export default function Dashboard() {
 
   // Fonction pour obtenir la largeur du filet d'eau en fonction du débit
   const getWaterStreamWidth = () => {
-    return 2 + (flowRate / 100) * 8 // Entre 2px et 10px
+    // Calculer le facteur d'agitation
+    const agitationFactor = environmentScore > 0 ? 1 + (environmentScore * 0.003) : 1.0;
+    // Appliquer au débit
+    const adjustedFlowRate = flowRate * agitationFactor;
+    return 2 + (adjustedFlowRate / 100) * 8 // Entre 2px et 10px
   }
 
   // Fonction pour obtenir l'opacité du filet d'eau en fonction du débit
   const getWaterStreamOpacity = () => {
-    return 0.3 + (flowRate / 100) * 0.7 // Entre 0.3 et 1.0
+    // Calculer le facteur d'agitation
+    const agitationFactor = environmentScore > 0 ? 1 + (environmentScore * 0.003) : 1.0;
+    // Appliquer au débit
+    const adjustedFlowRate = flowRate * agitationFactor;
+    return 0.3 + (adjustedFlowRate / 100) * 0.7 // Entre 0.3 et 1.0
   }
 
   // Gérer le changement de débit du robinet
@@ -707,9 +724,9 @@ export default function Dashboard() {
                       
                       {/* Indicateur d'impact de l'agitation */}
                       {environmentScore > 0 && (
-                        <div className="absolute top-10 right-[-120px] w-[120px] flex items-center justify-center">
+                        <div className="absolute top-10 left-[-100px] w-[100px] flex items-center justify-center">
                           <div className="text-xs px-2 py-1 rounded bg-purple-950/30 border border-purple-800/30 text-purple-400">
-                            <span>Impact agitation: +{Math.round(environmentScore * 0.3)}%</span>
+                            <span>Impact: +{Math.round(environmentScore * 0.3)}%</span>
                           </div>
                         </div>
                       )}
