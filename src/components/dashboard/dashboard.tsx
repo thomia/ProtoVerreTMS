@@ -718,17 +718,19 @@ export default function Dashboard() {
                   <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l border-blue-400/20">
                     <div className="relative h-full w-full flex flex-col items-center">
                       {/* Label supérieur avec espacement fixe */}
-                      <div className="h-[40px] flex items-center justify-center -mt-2 pt-0">
+                      <div className="h-[40px] flex flex-col items-center justify-center -mt-2 pt-0">
                         <span className="text-sm text-blue-400">Débit actuel</span>
-                        {/* Indicateur d'impact de l'agitation */}
-                        {environmentScore > 0 && (
-                          <div className="ml-2 flex items-center">
-                            <div className="text-xs px-2 py-1 rounded bg-purple-950/30 border border-purple-800/30 text-purple-400">
-                              <span>+{Math.round(environmentScore * 0.3)}%</span>
-                            </div>
-                          </div>
-                        )}
                       </div>
+                      
+                      {/* Indicateur d'impact de l'agitation (centré en dessous) */}
+                      {environmentScore > 0 && (
+                        <div className="absolute top-10 flex w-full flex-col items-center justify-center">
+                          <div className="text-xs px-2 py-1 rounded bg-purple-950/30 border border-purple-800/30 text-purple-400">
+                            <span>+{Math.round(environmentScore * 0.3)}%</span>
+                          </div>
+                          <span className="text-xs text-purple-400 mt-1">Impact environnemental</span>
+                        </div>
+                      )}
                       
                       {/* Conteneur pour la barre et la valeur */}
                       <div className="relative flex items-center mt-2">
