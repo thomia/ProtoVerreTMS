@@ -508,6 +508,23 @@ export default function TapSettingsForm() {
     // 5. Score des risques psychosociaux - Déjà normalisé sur 100
     const psychosocialScore = calculatePsychosocialScore();
 
+    // 6. Prise en compte du score d'agitation (environnement)
+    // Récupération du score d'agitation depuis localStorage
+    let agitationFactor = 1.0; // Facteur par défaut (pas d'augmentation)
+    const savedEnvironmentScore = localStorage.getItem('environmentScore');
+    
+    if (savedEnvironmentScore) {
+      try {
+        const environmentScore = parseInt(savedEnvironmentScore);
+        // Augmentation de 3% pour chaque 10% de score d'agitation
+        // Exemple: un score de 70% d'agitation = +21% de débit
+        agitationFactor = 1 + (environmentScore * 0.003);
+        console.log("Facteur d'agitation appliqué:", agitationFactor, "pour un score d'environnement de", environmentScore);
+      } catch (e) {
+        console.error("Erreur lors du chargement du score d'agitation:", e);
+      }
+    }
+
     // Calcul de la moyenne pondérée
     const weights = {
       weight: 0.2,      // 20% pour la charge physique
@@ -517,13 +534,16 @@ export default function TapSettingsForm() {
       psycho: 0.2       // 20% pour les risques psychosociaux
     };
 
-    const weightedScore = Math.round(
+    const baseWeightedScore = Math.round(
       weightScore * weights.weight +
       postureScore * weights.posture +
       frequencyScore * weights.frequency +
       mentalScore * weights.mental +
       psychosocialScore * weights.psycho
     );
+    
+    // Application du facteur d'agitation au score final
+    const weightedScore = Math.min(100, Math.round(baseWeightedScore * agitationFactor));
 
     console.log("Calcul détaillé du débit:", {
       weightScore,
@@ -531,6 +551,8 @@ export default function TapSettingsForm() {
       frequencyScore,
       mentalScore,
       psychosocialScore,
+      baseWeightedScore,
+      agitationFactor,
       weightedScore
     });
 

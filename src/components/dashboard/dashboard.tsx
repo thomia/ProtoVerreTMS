@@ -705,6 +705,15 @@ export default function Dashboard() {
                         <span className="text-sm text-blue-400">Débit actuel</span>
                       </div>
                       
+                      {/* Indicateur d'impact de l'agitation */}
+                      {environmentScore > 0 && (
+                        <div className="absolute top-10 right-[-120px] w-[120px] flex items-center justify-center">
+                          <div className="text-xs px-2 py-1 rounded bg-purple-950/30 border border-purple-800/30 text-purple-400">
+                            <span>Impact agitation: +{Math.round(environmentScore * 0.3)}%</span>
+                          </div>
+                        </div>
+                      )}
+                      
                       {/* Conteneur pour la barre et la valeur */}
                       <div className="relative flex items-center mt-2">
                         {/* Barre de progression centrée */}
