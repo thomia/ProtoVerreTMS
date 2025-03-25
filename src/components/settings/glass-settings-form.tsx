@@ -185,15 +185,27 @@ export default function GlassSettingsForm() {
       absorptionCapacity: capacity
     };
     
+    console.log('Sauvegarde de la capacité:', capacity);
+    
     // Sauvegarder dans localStorage
     setLocalStorage('glassSettings', JSON.stringify(settings));
     setLocalStorage('glassCapacity', capacity.toString());
     
     // Émettre un événement pour notifier les autres composants
-    const event = new CustomEvent('glassCapacityUpdated', {
-      detail: { capacity }
-    });
-    window.dispatchEvent(event);
+    try {
+      // Émission de l'événement personnalisé
+      const event = new CustomEvent('glassCapacityUpdated', {
+        detail: { capacity },
+        bubbles: true,
+        cancelable: true
+      });
+      document.dispatchEvent(event);
+      window.dispatchEvent(event);
+      
+      console.log('Événement émis:', event);
+    } catch (error) {
+      console.error('Erreur lors de l\'émission de l\'événement:', error);
+    }
     
     // Émettre un événement storage
     emitStorageEvent();

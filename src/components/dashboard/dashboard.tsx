@@ -289,31 +289,56 @@ export default function Dashboard() {
     }
   }, [])
 
-  // Charger les facteurs personnels depuis localStorage
+  // Mettre à jour la largeur du verre en fonction de la capacité
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    // La largeur du verre est proportionnelle à la capacité d'absorption
+    // 10% de capacité = 20% de largeur
+    // 100% de capacité = 90% de largeur
+    const newWidth = 20 + (glassCapacity / 100) * 70;
     
-    const savedCapacity = localStorage.getItem('glassCapacity')
+    console.log("Mise à jour de la largeur du verre:", {
+      capacité: glassCapacity,
+      nouvelleLargeur: newWidth,
+      ancienneLargeur: glassWidth
+    });
+    
+    setGlassWidth(newWidth);
+  }, [glassCapacity]);
+
+  // Charger la capacité du verre depuis localStorage
+  useEffect(() => {
+    if (!isMounted) return;
+    
+    const savedCapacity = getLocalStorage('glassCapacity');
     if (savedCapacity) {
       try {
-        const capacity = parseInt(savedCapacity)
-        // La largeur du verre est proportionnelle à la capacité d'absorption
-        // 10% de capacité = 20% de largeur
-        // 100% de capacité = 90% de largeur
-        const newWidth = 20 + (capacity / 100) * 70
-        console.log("Chargement de la capacité:", {
-          capacité: capacity,
-          nouvelleLargeur: newWidth,
-          ancienneLargeur: glassWidth
-        })
-        if (newWidth !== glassWidth) {
-          setGlassWidth(newWidth)
+        const capacity = parseInt(savedCapacity);
+        if (!isNaN(capacity) && capacity !== glassCapacity) {
+          console.log("Chargement de la capacité du verre depuis localStorage:", capacity);
+          setGlassCapacity(capacity);
         }
       } catch (e) {
-        console.error("Erreur lors du chargement de la capacité d'absorption:", e)
+        console.error("Erreur lors du chargement de la capacité d'absorption:", e);
       }
     }
-  }, [glassWidth])
+    
+    // Écouter les changements de capacité via les événements personnalisés
+    const handleCapacityUpdate = (e: CustomEvent<{ capacity: number }>) => {
+      if (e.detail && typeof e.detail.capacity === 'number') {
+        console.log("Événement de mise à jour de capacité reçu:", e.detail.capacity);
+        setGlassCapacity(e.detail.capacity);
+      }
+    };
+    
+    // Écouter à la fois sur window et document pour plus de robustesse
+    window.addEventListener('glassCapacityUpdated', handleCapacityUpdate as EventListener);
+    document.addEventListener('glassCapacityUpdated', handleCapacityUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('glassCapacityUpdated', handleCapacityUpdate as EventListener);
+      document.removeEventListener('glassCapacityUpdated', handleCapacityUpdate as EventListener);
+    };
+  }, [isMounted, glassCapacity]);
 
   // Charger l'état d'activation de la paille au démarrage
   useEffect(() => {
@@ -508,7 +533,7 @@ export default function Dashboard() {
   }, [simulationSpeed]);
 
   return (
-    <div className="space-y-6">
+    <div className="relative min-h-screen bg-gray-950 overflow-x-hidden py-6">
       {/* En-tête avec description et titre animé */}
       <ModelDescription />
 
