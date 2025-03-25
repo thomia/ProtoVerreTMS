@@ -1,8 +1,14 @@
 "use client"
 
 import React, { lazy, Suspense, useEffect, useState } from 'react'
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { LoaderCircle } from "lucide-react"
+import { 
+  Droplet, 
+  GlassWater, 
+  RectangleHorizontal, 
+  Cloud 
+} from "lucide-react"
 
 // Chargement paresseux des composants de formulaire
 const TapSettingsForm = lazy(() => import('@/components/settings/tap-settings-form'));
@@ -40,6 +46,37 @@ export function ParameterModals({
   const handleClose = () => {
     setIsOpen(false);
     onCloseModal();
+  };
+  
+  // Obtenir le titre et l'icône en fonction du modal actif
+  const getModalConfig = () => {
+    switch(activeModal) {
+      case 'tap':
+        return { 
+          title: 'Paramètres du Robinet',
+          icon: <Droplet className="h-5 w-5 text-blue-500 mr-2" />
+        };
+      case 'glass':
+        return { 
+          title: 'Paramètres du Verre',
+          icon: <GlassWater className="h-5 w-5 text-gray-200 mr-2" />
+        };
+      case 'straw':
+        return { 
+          title: 'Paramètres de la Paille',
+          icon: <RectangleHorizontal className="h-5 w-5 text-green-500 transform rotate-90 scale-y-[0.3] mr-2" />
+        };
+      case 'bubble':
+        return { 
+          title: 'Paramètres de la Bulle',
+          icon: <Cloud className="h-5 w-5 text-purple-500 mr-2" />
+        };
+      default:
+        return { 
+          title: 'Paramètres',
+          icon: null
+        };
+    }
   };
   
   // Gérer le contenu en fonction du modal actif
@@ -87,9 +124,17 @@ export function ParameterModals({
     }
   };
   
+  const { title, icon } = getModalConfig();
+  
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center text-xl">
+            {icon}
+            {title}
+          </DialogTitle>
+        </DialogHeader>
         {renderContent()}
       </DialogContent>
     </Dialog>

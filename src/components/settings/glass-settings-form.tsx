@@ -209,10 +209,15 @@ export default function GlassSettingsForm() {
     // ou lorsque autoSave est activé
     if (!formSubmitted && !autoSave) return;
     
-    const capacity = calculateCapacity();
-    if (capacity !== absorptionCapacity) {
-      saveCapacity(capacity);
-    }
+    // Utiliser un debounce pour éviter les mises à jour trop fréquentes
+    const debounceTimer = setTimeout(() => {
+      const capacity = calculateCapacity();
+      if (capacity !== absorptionCapacity) {
+        saveCapacity(capacity);
+      }
+    }, 300); // 300ms de délai
+    
+    return () => clearTimeout(debounceTimer);
   }, [calculatedCapacity, formSubmitted, autoSave, isInitialized, calculateCapacity, saveCapacity, absorptionCapacity]);
 
   // Gérer la soumission du formulaire (mémorisée)
@@ -227,12 +232,26 @@ export default function GlassSettingsForm() {
     }, 2000);
   }, [calculateCapacity, saveCapacity]);
 
+  // Mettre à jour les facteurs individuels
+  const updateIndividualFactor = useCallback((factorId: string, value: number) => {
+    // Utiliser un setTimeout pour éviter les mises à jour trop fréquentes
+    setTimeout(() => {
+      if (factorId === 'age') setAge(value);
+      else if (factorId === 'physicalActivity') setPhysicalActivity(value);
+      else if (factorId === 'nutrition') setNutrition(value);
+      else if (factorId === 'sleepDuration') setSleepDuration(value);
+    }, 0);
+  }, []);
+
   // Gérer les changements d'antécédents médicaux (mémorisée)
   const handleMedicalHistoryChange = useCallback((key: MedicalHistoryKey, checked: boolean) => {
-    setMedicalHistory(prev => ({
-      ...prev,
-      [key]: checked
-    }));
+    // Utiliser un setTimeout pour éviter les mises à jour trop fréquentes
+    setTimeout(() => {
+      setMedicalHistory(prev => ({
+        ...prev,
+        [key]: checked
+      }));
+    }, 0);
   }, []);
 
   const individualFactors = [
@@ -300,19 +319,14 @@ export default function GlassSettingsForm() {
                 <span className="text-lg font-medium text-gray-200 bg-gray-700/50 px-3 py-1.5 rounded-md">
                   {factor.value}{factor.unit}
                 </span>
-          </div>
+              </div>
               <div className="relative pt-1">
-            <input
-              type="range"
+                <input
+                  type="range"
                   min={factor.min}
                   max={factor.max}
                   value={factor.value}
-                  onChange={(e) => {
-                    if (factor.id === 'age') setAge(parseInt(e.target.value))
-                    else if (factor.id === 'physicalActivity') setPhysicalActivity(parseInt(e.target.value))
-                    else if (factor.id === 'nutrition') setNutrition(parseInt(e.target.value))
-                    else if (factor.id === 'sleepDuration') setSleepDuration(parseInt(e.target.value))
-                  }}
+                  onChange={(e) => updateIndividualFactor(factor.id, parseInt(e.target.value))}
                   className="w-full h-2.5 bg-gray-600/50 rounded-lg appearance-none cursor-pointer accent-blue-500
                     [&::-webkit-slider-thumb]:w-5 
                     [&::-webkit-slider-thumb]:h-5 
@@ -327,13 +341,13 @@ export default function GlassSettingsForm() {
                 <div className="flex justify-between mt-2 text-base text-gray-400">
                   <span>{factor.min}{factor.unit}</span>
                   <span>{factor.max}{factor.unit}</span>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
           ))}
-      </div>
-      
-      {/* Antécédents médicaux */}
+        </div>
+        
+        {/* Antécédents médicaux */}
         <div className="space-y-4">
           <h3 className="text-xl font-medium text-gray-200 mb-2">Antécédents médicaux</h3>
           <div className="grid grid-cols-2 gap-4">
@@ -361,7 +375,7 @@ export default function GlassSettingsForm() {
                       <p className={`text-base ${isSelected ? 'text-blue-300/80' : 'text-gray-500'}`}>
                         {pathology.description}
                       </p>
-            </div>
+                    </div>
                     <div className={`ml-3 rounded-full p-1.5 
                       ${isSelected 
                         ? 'bg-blue-500 text-white' 
@@ -377,8 +391,8 @@ export default function GlassSettingsForm() {
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-            </div>
-          </div>
+                    </div>
+                  </div>
                 </button>
               );
             })}

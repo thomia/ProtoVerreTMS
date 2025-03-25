@@ -441,46 +441,46 @@ export default function Dashboard() {
 
     setWorkStartTime(newStartTime);
     setLastSimulationSpeed(simulationSpeed);
-  }, [simulationSpeed, isPaused]);
+  }, [simulationSpeed, isPaused, lastSimulationSpeed, workStartTime]);
 
   // Fonction pour obtenir la largeur du filet d'eau en fonction du débit
-  const getWaterStreamWidth = () => {
+  const getWaterStreamWidth = useCallback(() => {
     // Calculer le facteur d'agitation
     const agitationFactor = environmentScore > 0 ? 1 + (environmentScore * 0.003) : 1.0;
     // Appliquer au débit
     const adjustedFlowRate = flowRate * agitationFactor;
     return 2 + (adjustedFlowRate / 100) * 8 // Entre 2px et 10px
-  }
+  }, [flowRate, environmentScore]);
 
   // Fonction pour obtenir l'opacité du filet d'eau en fonction du débit
-  const getWaterStreamOpacity = () => {
+  const getWaterStreamOpacity = useCallback(() => {
     // Calculer le facteur d'agitation
     const agitationFactor = environmentScore > 0 ? 1 + (environmentScore * 0.003) : 1.0;
     // Appliquer au débit
     const adjustedFlowRate = flowRate * agitationFactor;
     return 0.3 + (adjustedFlowRate / 100) * 0.7 // Entre 0.3 et 1.0
-  }
+  }, [flowRate, environmentScore]);
 
   // Gérer le changement de débit du robinet
-  const handleFlowRateChange = (rate: number) => {
+  const handleFlowRateChange = useCallback((rate: number) => {
     setFlowRate(rate);
     // Sauvegarder le débit dans le localStorage pour persistance
     setLocalStorage('flowRate', rate.toString());
     // Déclencher un événement de stockage pour notifier les autres composants
     emitStorageEvent();
-  }
+  }, []);
 
   // Fonction pour réinitialiser le niveau du verre
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setFillLevel(0)
     setFlowRate(0)
     setAbsorptionRate(0)
     setWorkTime(0)
     setWorkStartTime(Date.now())
-  }
+  }, []);
 
   // Gérer la mise en pause/reprise de la simulation
-  const handlePauseToggle = () => {
+  const handlePauseToggle = useCallback(() => {
     if (isPaused) {
       // On reprend, on ajuste le temps de démarrage pour ne pas avoir de saut
       const now = Date.now();
@@ -488,15 +488,24 @@ export default function Dashboard() {
       setWorkStartTime(now - (workTime / (4 * simulationSpeed)) * 1000);
     }
     setIsPaused(!isPaused)
-  }
+  }, [isPaused, workTime, simulationSpeed]);
   
   // Fonction pour formater le temps de travail (HH:MM)
-  const formatWorkTime = () => {
+  const formatWorkTime = useCallback(() => {
     const totalMinutes = Math.floor(workTime);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-  }
+  }, [workTime]);
+
+  // Gestion du changement de vitesse de simulation
+  const handleSimulationSpeedChange = useCallback((values: number[]) => {
+    const newSpeed = values[0];
+    // Éviter de déclencher des mises à jour si la valeur n'a pas changé
+    if (newSpeed !== simulationSpeed) {
+      setSimulationSpeed(newSpeed);
+    }
+  }, [simulationSpeed]);
 
   return (
     <div className="space-y-6">
@@ -531,7 +540,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-4">
                 <Slider
                   value={[simulationSpeed]}
-                  onValueChange={(value) => setSimulationSpeed(value[0])}
+                  onValueChange={handleSimulationSpeedChange}
                   min={1}
                   max={10}
                   step={0.5}

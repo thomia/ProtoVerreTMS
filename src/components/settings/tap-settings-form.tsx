@@ -555,10 +555,15 @@ export default function TapSettingsForm() {
     // ou lorsque autoSave est activé
     if (!formSubmitted && !autoSave) return;
     
-    const newFlowRate = calculateFlowRate();
-    if (newFlowRate !== flowRate) {
-      saveFlowRate(newFlowRate);
-    }
+    // Utiliser un debounce pour éviter les mises à jour trop fréquentes
+    const debounceTimer = setTimeout(() => {
+      const newFlowRate = calculateFlowRate();
+      if (newFlowRate !== flowRate) {
+        saveFlowRate(newFlowRate);
+      }
+    }, 300); // 300ms de délai
+    
+    return () => clearTimeout(debounceTimer);
   }, [calculatedFlowRate, formSubmitted, autoSave, isInitialized, calculateFlowRate, saveFlowRate, flowRate]);
 
   // Gérer la soumission du formulaire
@@ -575,18 +580,40 @@ export default function TapSettingsForm() {
 
   // Mettre à jour un score de posture
   const updatePostureScore = useCallback((key: keyof typeof postureScores, value: number) => {
-    setPostureScores(prev => ({
-      ...prev,
-      [key]: value
-    }));
+    // Utiliser un setTimeout pour éviter les mises à jour trop fréquentes
+    setTimeout(() => {
+      setPostureScores(prev => ({
+        ...prev,
+        [key]: value
+      }));
+    }, 0);
   }, []);
 
   // Mettre à jour un ajustement de posture
   const updatePostureAdjustment = useCallback((key: keyof typeof postureAdjustments, checked: boolean) => {
-    setPostureAdjustments(prev => ({
-      ...prev,
-      [key]: checked
-    }));
+    // Utiliser un setTimeout pour éviter les mises à jour trop fréquentes  
+    setTimeout(() => {
+      setPostureAdjustments(prev => ({
+        ...prev,
+        [key]: checked
+      }));
+    }, 0);
+  }, []);
+
+  // Gérer les changements de charge
+  const handleLoadChange = useCallback((value: number) => {
+    // Utiliser un debounce pour éviter les mises à jour trop fréquentes
+    setTimeout(() => {
+      setLoad(value);
+    }, 0);
+  }, []);
+
+  // Gérer les changements de fréquence
+  const handleFrequencyChange = useCallback((value: number) => {
+    // Utiliser un debounce pour éviter les mises à jour trop fréquentes
+    setTimeout(() => {
+      setFrequency(value);
+    }, 0);
   }, []);
 
   return (
@@ -692,7 +719,7 @@ export default function TapSettingsForm() {
             min={0}
                       max={55}
                       value={load}
-                      onChange={(e) => setLoad(Number(e.target.value))}
+                      onChange={(e) => handleLoadChange(Number(e.target.value))}
                       className="absolute inset-0 w-full opacity-0 cursor-pointer"
                     />
           </div>
@@ -1125,7 +1152,7 @@ export default function TapSettingsForm() {
                       min={2}
               max={60}
                       value={frequency}
-                      onChange={(e) => setFrequency(Number(e.target.value))}
+                      onChange={(e) => handleFrequencyChange(Number(e.target.value))}
                       className="absolute inset-0 w-full opacity-0 cursor-pointer"
                     />
 
@@ -1196,7 +1223,7 @@ export default function TapSettingsForm() {
                       min={2}
                       max={60}
                       value={frequency}
-                      onChange={(e) => setFrequency(Number(e.target.value))}
+                      onChange={(e) => handleFrequencyChange(Number(e.target.value))}
                       className="absolute inset-0 w-full opacity-0 cursor-pointer"
                     />
 

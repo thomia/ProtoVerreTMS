@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Info } from 'lucide-react'
 import { Button } from "@/components/ui/button"
@@ -142,7 +142,9 @@ export default function BaseSettingsForm({
   const config = scoreConfigs[scoreType]
 
   // Gérer la soumission du formulaire
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
+    if (isSubmitting) return; // Éviter les doubles soumissions
+    
     setIsSubmitting(true);
     
     try {
@@ -154,7 +156,17 @@ export default function BaseSettingsForm({
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [isSubmitting, onSubmit]);
+
+  // Mettre à jour la valeur d'autosave avec un délai pour éviter les boucles
+  const handleAutoSaveChange = useCallback((checked: boolean) => {
+    if (onAutoSaveChange) {
+      // Utiliser un délai pour éviter les mises à jour trop fréquentes
+      setTimeout(() => {
+        onAutoSaveChange(checked);
+      }, 0);
+    }
+  }, [onAutoSaveChange]);
 
   return (
     <div className="space-y-6">
@@ -200,33 +212,43 @@ export default function BaseSettingsForm({
         {children}
       </div>
 
-      <div className="flex justify-between items-center">
-        {onAutoSaveChange && (
-          <div className="flex items-center space-x-2">
-            <Switch 
-              checked={autoSave} 
-              onCheckedChange={onAutoSaveChange}
-              id="auto-save"
-            />
-            <label htmlFor="auto-save" className="text-sm text-gray-400 cursor-pointer">
-              Sauvegarde automatique
-            </label>
-          </div>
-        )}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          {onAutoSaveChange && (
+            <>
+              <Switch 
+                id="auto-save" 
+                checked={autoSave} 
+                onCheckedChange={handleAutoSaveChange}
+              />
+              <label 
+                htmlFor="auto-save" 
+                className="text-sm font-medium text-gray-400 cursor-pointer"
+              >
+                Sauvegarde automatique
+              </label>
+            </>
+          )}
+        </div>
         
-        <div className="flex items-center space-x-4">
-          {showSaveMessage && (
-            <div className="flex items-center text-green-400 text-sm animate-in fade-in slide-in-from-right-10">
-              <Check className="w-4 h-4 mr-1" />
+        <div className="flex items-center gap-4">
+          {showSaveSuccess && (
+            <span className="flex items-center text-sm text-green-400">
+              <Check className="mr-1 h-4 w-4" />
               Paramètres sauvegardés
-            </div>
+            </span>
           )}
           
-          <Button onClick={handleSubmit} variant="default">
-            Sauvegarder
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isSubmitting ? 'Sauvegarde...' : 'Sauvegarder'}
           </Button>
         </div>
       </div>
     </div>
-  )
+  );
 } 
