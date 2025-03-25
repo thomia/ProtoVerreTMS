@@ -287,6 +287,7 @@ function SecondaryMark({ mark, value, activeClass }: SecondaryMarkProps) {
 
 export default function TapSettingsForm() {
   const [activeSection, setActiveSection] = React.useState<string>("charge")
+  const [formSaved, setFormSaved] = React.useState(false)
   
   // État pour les paramètres physiques
   const [physicalParams, setPhysicalParams] = React.useState({
@@ -294,6 +295,11 @@ export default function TapSettingsForm() {
     loadFrequency: 2,
     postureFrequency: 2
   })
+
+  // Alias pour les propriétés physiques (pour plus de clarté dans le code)
+  const selectedWeight = physicalParams.weight
+  const selectedLoadFrequency = physicalParams.loadFrequency
+  const selectedPostureFrequency = physicalParams.postureFrequency
 
   // État pour les scores de posture
   const [postureScores, setPostureScores] = React.useState<PostureScores>({
@@ -420,8 +426,8 @@ export default function TapSettingsForm() {
     }
   }
 
-  // Calculer le score total
-  const calculateTotalScore = () => {
+  // Fonction pour obtenir le score total de posture
+  const getTotalPostureScore = () => {
     // Score du cou
     let neckScore = postureScores.neck
     if (postureAdjustments.neckRotation) neckScore += 1
@@ -445,12 +451,12 @@ export default function TapSettingsForm() {
 
     // Normalisation des scores (0-100)
     const maxScore = 27 // Score maximum possible
-    const totalScore = (
+    const rawScore = (
       neckScore + shoulderScore + elbowScore + 
       wristScore + postureScores.trunk + postureScores.legs
     )
     
-    return Math.round((totalScore / maxScore) * 100)
+    return Math.round((rawScore / maxScore) * 100)
   }
 
   // Description du score
@@ -507,7 +513,7 @@ export default function TapSettingsForm() {
     const weightScore = Math.min((physicalParams.weight / 55) * 100, 100);
 
     // 2. Score des postures - Déjà normalisé sur 100
-    const postureScore = calculateTotalScore();
+    const postureScore = getTotalPostureScore();
 
     // 3. Score des fréquences - Max 60/h pour chaque
     const frequencyScore = Math.min(
@@ -572,45 +578,53 @@ export default function TapSettingsForm() {
     return weightedScore;
   }
 
-  // Fonction utilitaire pour sauvegarder les paramètres et le débit
-  const saveSettings = (params: any, flowRate: number) => {
-    // Sauvegarder les contraintes pour qu'elles soient disponibles pour le robinet
-    const constraints = {
-      postureScores,
-      postureAdjustments,
-      physicalParams: {
-        weight,
-        loadFrequency,
-        postureFrequency
-      },
-      mentalWorkload,
-      psychosocialRisks,
-      totalScore,
-      postureScore: getTotalPostureScore(),
-      psychosocialScore: calculatePsychosocialScore(),
-      mentalScore: calculateMentalWorkloadScore(),
-      physicalScore: calculatePhysicalScore()
-    };
-
-    // Utiliser les utilitaires sécurisés pour localStorage
+  // Sauvegarder les paramètres
+  const saveSettings = () => {
     try {
+      // Calcul du débit en fonction des paramètres
+      const calculatedFlowRate = calculateTapFlow();
+      
+      // Récupérer les scores nécessaires
+      const postureScore = getTotalPostureScore();
+      const psychosocialScore = calculatePsychosocialScore();
+      const mentalScore = calculateMentalWorkloadScore();
+      
+      // Créer l'objet des contraintes pour le robinet
+      const constraints = {
+        postureScores,
+        postureAdjustments,
+        physicalParams: {
+          weight: selectedWeight,
+          loadFrequency: selectedLoadFrequency,
+          postureFrequency: selectedPostureFrequency
+        },
+        mentalWorkload,
+        psychosocialRisks,
+        totalScore: calculatedFlowRate,
+        postureScore,
+        psychosocialScore,
+        mentalScore,
+        physicalScore: Math.round((selectedWeight / 25) * 100)
+      };
+
+      // Utiliser les utilitaires sécurisés pour localStorage
       setLocalStorage('tapConstraints', JSON.stringify(constraints));
-      setLocalStorage('flowRate', flowRate.toString());
+      setLocalStorage('flowRate', calculatedFlowRate.toString());
       
       // Émettre des événements personnalisés pour notifier d'autres composants
       const flowRateEvent = new CustomEvent('tapFlowUpdated', { 
-        detail: { flowRate } 
+        detail: { flowRate: calculatedFlowRate } 
       });
       window.dispatchEvent(flowRateEvent);
       
       // Émettre un événement storage pour la compatibilité
       emitStorageEvent();
       
-      setIsSaved(true);
+      setFormSaved(true);
       
       // Afficher le message pendant 2 secondes
       setTimeout(() => {
-        setIsSaved(false);
+        setFormSaved(false);
       }, 2000);
     } catch (error) {
       console.error("Erreur lors de la sauvegarde des paramètres:", error);
@@ -618,21 +632,7 @@ export default function TapSettingsForm() {
   }
 
   const handleSubmit = () => {
-    // Calculer le débit
-    const flowRate = calculateTapFlow()
-    console.log("Calcul du débit dans handleSubmit:", flowRate)
-
-    // Préparer l'objet des paramètres
-    const params = {
-      physicalParams,
-      postureScores,
-      postureAdjustments,
-      mentalWorkload,
-      psychosocialRisks
-    }
-
-    // Sauvegarder les paramètres et le débit
-    saveSettings(params, flowRate);
+    saveSettings();
   }
 
   return (

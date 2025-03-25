@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Info } from 'lucide-react'
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
+import { Check } from "lucide-react"
 
 // Props pour le composant InfoTooltip
 interface InfoTooltipProps {
@@ -35,14 +37,18 @@ export function getColorClass(value: number): string {
 }
 
 // Props pour le composant BaseSettingsForm
-export interface BaseSettingsFormProps {
+interface BaseSettingsFormProps {
   title: string
-  description: string
-  currentValue: number
-  getValueDescription: (score: number) => string
+  subtitle?: string
+  description?: string
+  currentValue?: number
+  getValueDescription?: (value: number) => string
   onSubmit: () => void
   children: React.ReactNode
-  scoreType: 'glass' | 'tap' | 'straw' | 'bubble'
+  scoreType?: 'tap' | 'glass' | 'straw'
+  showSaveMessage?: boolean
+  autoSave?: boolean
+  onAutoSaveChange?: (value: boolean) => void
 }
 
 // Configurations des couleurs pour chaque type de score
@@ -120,12 +126,16 @@ const scoreConfigs = {
 // Composant BaseSettingsForm
 export default function BaseSettingsForm({
   title,
+  subtitle,
   description,
   currentValue,
   getValueDescription,
   onSubmit,
   children,
-  scoreType
+  scoreType = 'tap',
+  showSaveMessage = false,
+  autoSave = false,
+  onAutoSaveChange
 }: BaseSettingsFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
@@ -147,73 +157,73 @@ export default function BaseSettingsForm({
   };
 
   return (
-    <div className="w-full h-full">
-      <div className="space-y-6">
-        {/* En-tête avec titre et description côte à côte */}
-        <div className="grid grid-cols-[1fr_auto] gap-8 items-start">
-          <div className="space-y-6">
-            <h2 className="text-4xl font-bold text-white text-center">
-              {title}
-            </h2>
-            <p className="text-xl text-gray-300 mt-12 text-center">
-              {description}
-            </p>
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-2">
+        <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
+        {subtitle && (
+          <p className="text-gray-400/80">{subtitle}</p>
+        )}
+        {description && (
+          <p className="text-gray-400/80">{description}</p>
+        )}
+      </div>
 
-          {/* Score final - Section améliorée */}
-          <div className="relative flex flex-col items-center p-6 rounded-xl bg-gradient-to-b from-gray-800/80 to-gray-900/80 border border-gray-700/50 min-w-[280px] backdrop-blur-sm shadow-xl transition-all duration-500 group">
-            {/* Effet de brillance */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-500/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            
-            {/* Effet de bordure animée */}
-            <div className="absolute -inset-0.5 rounded-xl blur opacity-0 group-hover:opacity-75 transition duration-500 group-hover:duration-200"
-              style={{
-                background: config.colors.gradient(currentValue)
-              }}
+      {currentValue !== undefined && getValueDescription && (
+        <div className="p-4 rounded-lg bg-gradient-to-r from-gray-900/60 via-gray-800/40 to-gray-900/60 border border-gray-800">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-base text-gray-400">Score calculé</span>
+            <span className={`text-lg font-medium ${
+              currentValue >= 80 ? "text-red-400" : 
+              currentValue >= 60 ? "text-orange-400" : 
+              currentValue >= 40 ? "text-yellow-400" : 
+              "text-green-400"
+            }`}>{currentValue}%</span>
+          </div>
+          
+          <div className="relative h-2 bg-gray-800 rounded-full overflow-hidden">
+            <div 
+              className={`absolute h-full left-0 top-0 rounded-full transition-all duration-300 ${
+                currentValue >= 80 ? "bg-gradient-to-r from-red-500 to-red-400" : 
+                currentValue >= 60 ? "bg-gradient-to-r from-orange-500 to-orange-400" : 
+                currentValue >= 40 ? "bg-gradient-to-r from-yellow-500 to-yellow-400" : 
+                "bg-gradient-to-r from-green-500 to-green-400"
+              }`}
+              style={{ width: `${currentValue}%` }}
             />
-            
-            <div className="relative flex flex-col items-center space-y-4">
-              <h3 className="text-xl font-medium text-gray-300">{config.title}</h3>
-              <div className="text-6xl font-bold" style={config.colors.text(currentValue)}>
-                {currentValue}%
-              </div>
-              <div className="w-full h-2.5 bg-gray-700/50 rounded-full overflow-hidden">
-                <div 
-                  className="h-full transition-all duration-500 ease-out"
-                  style={{ 
-                    width: `${currentValue}%`,
-                    background: config.colors.gradient(currentValue)
-                  }}
-                />
-              </div>
-              <div className="text-sm font-medium" style={config.colors.text(currentValue)}>
-                {getValueDescription(currentValue)}
-              </div>
-            </div>
           </div>
+          
+          <p className="mt-2 text-sm text-gray-500">{getValueDescription(currentValue)}</p>
         </div>
+      )}
 
+      <div className="rounded-lg border-2 border-gray-800/50 p-6">
         {children}
+      </div>
 
-        <div className="flex justify-center pt-6">
-          <Button 
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className={`relative px-12 py-6 text-xl font-medium transition-all duration-300 save-button min-w-[200px]
-              ${isSubmitting ? 'bg-emerald-600 cursor-wait' : ''}
-              ${showSaveSuccess ? 'bg-emerald-500' : ''}`}
-          >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                Enregistrement...
-              </span>
-            ) : showSaveSuccess ? (
-              <span className="flex items-center justify-center gap-2">
-                Enregistré ✓
-              </span>
-            ) : (
-              "Enregistrer"
-            )}
+      <div className="flex justify-between items-center">
+        {onAutoSaveChange && (
+          <div className="flex items-center space-x-2">
+            <Switch 
+              checked={autoSave} 
+              onCheckedChange={onAutoSaveChange}
+              id="auto-save"
+            />
+            <label htmlFor="auto-save" className="text-sm text-gray-400 cursor-pointer">
+              Sauvegarde automatique
+            </label>
+          </div>
+        )}
+        
+        <div className="flex items-center space-x-4">
+          {showSaveMessage && (
+            <div className="flex items-center text-green-400 text-sm animate-in fade-in slide-in-from-right-10">
+              <Check className="w-4 h-4 mr-1" />
+              Paramètres sauvegardés
+            </div>
+          )}
+          
+          <Button onClick={handleSubmit} variant="default">
+            Sauvegarder
           </Button>
         </div>
       </div>
