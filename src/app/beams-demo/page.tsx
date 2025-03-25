@@ -1,26 +1,43 @@
 'use client'
 
-import { BackgroundBeamsWithCollisionDemo } from "@/components/ui/background-beams-demo";
-import Link from "next/link";
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import BubbleSettingsForm from '@/components/settings/bubble-settings-form'
 
-export default function BeamsDemoPage() {
-  return (
-    <div className="min-h-screen flex flex-col">
-      <div className="container mx-auto p-4">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Démonstration des Beams</h1>
-          <Link 
-            href="/"
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-          >
-            Retour au tableau de bord
-          </Link>
+export default function BubbleSettingsPage() {
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  if (!isMounted) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-between p-24 bg-black text-white">
+        <div className="flex flex-col items-center justify-center h-full">
+          <p>Chargement en cours...</p>
         </div>
       </div>
-      
-      <div className="flex-1">
-        <BackgroundBeamsWithCollisionDemo />
+    )
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-between p-6 md:p-24 bg-black text-white">
+      <div className="w-full max-w-5xl">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-center mb-2">Paramètres d'environnement</h1>
+          <Link 
+            href="/" 
+            className="text-blue-400 hover:text-blue-300 transition-colors flex items-center justify-center"
+          >
+            ← Retour au tableau de bord
+          </Link>
+        </div>
+        
+        <div className="mt-8">
+          <BubbleSettingsForm />
+        </div>
       </div>
     </div>
-  );
+  )
 } 

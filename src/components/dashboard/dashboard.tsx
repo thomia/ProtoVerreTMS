@@ -10,6 +10,7 @@ import ParameterModals from './parameter-modals'
 import { Settings, Droplet, Wind, GlassWater, RectangleHorizontal, Cloud, ActivitySquare, Activity, Lightbulb, AlertTriangle, AlertCircle, HelpCircle, ExternalLink, BookOpen, Scale, FileText, Stethoscope, AlertOctagon, InfoIcon, Clock } from 'lucide-react'
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+import { getLocalStorage, setLocalStorage, emitStorageEvent } from '@/lib/localStorage'
 import { EnvironmentParticles } from './environment-particles'
 import { ModelDescription } from '../ui/model-description'
 import { AnimatedTitle } from '../ui/animated-title'
@@ -19,11 +20,14 @@ import { Slider } from "@/components/ui/slider"
 import { FastForward } from 'lucide-react'
 
 export default function Dashboard() {
+  // État pour garantir que le composant est monté (côté client uniquement)
+  const [isMounted, setIsMounted] = useState(false)
   const [flowRate, setFlowRate] = useState(0)
   const [fillLevel, setFillLevel] = useState(0)
   const [absorptionRate, setAbsorptionRate] = useState(0)
   const [glassWidth, setGlassWidth] = useState(20)
   const [glassWidthPx, setGlassWidthPx] = useState(200)
+  const [glassCapacity, setGlassCapacity] = useState(0)
   const [lastUpdateTime, setLastUpdateTime] = useState(Date.now())
   const [environmentScore, setEnvironmentScore] = useState(0)
   const [accidentRisk, setAccidentRisk] = useState(0)
@@ -80,20 +84,87 @@ export default function Dashboard() {
   const [workStartTime, setWorkStartTime] = useState(Date.now()) // moment de démarrage du chrono
   const [lastSimulationSpeed, setLastSimulationSpeed] = useState(1) // pour suivre les changements de vitesse
 
+  // Effet pour marquer le composant comme monté
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  // Charger les paramètres initiaux
+  useEffect(() => {
+    if (!isMounted) return;
+
+    // Charger les paramètres stockés
+    const savedFlowRate = getLocalStorage('flowRate');
+    const savedFillLevel = getLocalStorage('fillLevel');
+    const savedGlassCapacity = getLocalStorage('glassCapacity');
+    const savedEnvironmentScore = getLocalStorage('environmentScore');
+
+    if (savedFlowRate) {
+      try {
+        setFlowRate(Number(savedFlowRate));
+        lastFlowRateRef.current = Number(savedFlowRate);
+      } catch (e) {
+        console.error("Erreur lors du chargement du débit:", e);
+      }
+    }
+
+    if (savedFillLevel) {
+      try {
+        setFillLevel(Number(savedFillLevel));
+      } catch (e) {
+        console.error("Erreur lors du chargement du niveau de remplissage:", e);
+      }
+    }
+
+    if (savedGlassCapacity) {
+      try {
+        setGlassCapacity(Number(savedGlassCapacity));
+      } catch (e) {
+        console.error("Erreur lors du chargement de la capacité du verre:", e);
+      }
+    }
+
+    if (savedEnvironmentScore) {
+      try {
+        setEnvironmentScore(Number(savedEnvironmentScore));
+      } catch (e) {
+        console.error("Erreur lors du chargement du score environnemental:", e);
+      }
+    }
+
+    // Écouter l'événement de mise à jour de la capacité du verre
+    const handleGlassCapacityUpdate = (e: CustomEvent<{ capacity: number }>) => {
+      if (e.detail && typeof e.detail.capacity === 'number') {
+        setGlassCapacity(e.detail.capacity);
+      }
+    };
+
+    window.addEventListener('glassCapacityUpdated', handleGlassCapacityUpdate as EventListener);
+    window.addEventListener('environmentScoreUpdated', ((e: CustomEvent<{ score: number }>) => {
+      if (e.detail && typeof e.detail.score === 'number') {
+        setEnvironmentScore(e.detail.score);
+      }
+    }) as EventListener);
+
+    return () => {
+      window.removeEventListener('glassCapacityUpdated', handleGlassCapacityUpdate as EventListener);
+      window.removeEventListener('environmentScoreUpdated', (() => {}) as EventListener);
+    };
+  }, [isMounted]);
+
   // Charger les paramètres de posture depuis localStorage
   useEffect(() => {
+    if (!isMounted) return;
+    
     const loadPostureSettings = () => {
-      // Vérifier que nous sommes côté client avant d'accéder à localStorage
-      if (typeof window !== 'undefined') {
-        const savedConstraints = localStorage.getItem('tapConstraints')
-        if (savedConstraints) {
-          try {
-            const parsed = JSON.parse(savedConstraints)
-            if (parsed.postureScores) setPostureScores(parsed.postureScores)
-            if (parsed.postureAdjustments) setPostureAdjustments(parsed.postureAdjustments)
-          } catch (e) {
-            console.error("Erreur lors du chargement des paramètres de posture:", e)
-          }
+      const savedConstraints = getLocalStorage('tapConstraints')
+      if (savedConstraints) {
+        try {
+          const parsed = JSON.parse(savedConstraints)
+          if (parsed.postureScores) setPostureScores(parsed.postureScores)
+          if (parsed.postureAdjustments) setPostureAdjustments(parsed.postureAdjustments)
+        } catch (e) {
+          console.error("Erreur lors du chargement des paramètres de posture:", e)
         }
       }
     }
@@ -106,21 +177,18 @@ export default function Dashboard() {
       loadPostureSettings()
     }
     
-    // Vérifier que nous sommes côté client avant d'ajouter l'écouteur d'événements
-    if (typeof window !== 'undefined') {
-      window.addEventListener('storage', handleStorageChange)
-      
-      return () => {
-        window.removeEventListener('storage', handleStorageChange)
-      }
+    window.addEventListener('storage', handleStorageChange)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
     }
-  }, [])
+  }, [isMounted])
 
   // Charger les antécédents médicaux depuis localStorage
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (!isMounted) return;
     
-    const savedGlassSettings = localStorage.getItem('glassSettings')
+    const savedGlassSettings = getLocalStorage('glassSettings')
     if (savedGlassSettings) {
       try {
         const settings = JSON.parse(savedGlassSettings)
@@ -134,7 +202,7 @@ export default function Dashboard() {
     
     // Écouter les changements dans localStorage
     const handleStorageChange = () => {
-      const savedSettings = localStorage.getItem('glassSettings')
+      const savedSettings = getLocalStorage('glassSettings')
       if (savedSettings) {
         try {
           const settings = JSON.parse(savedSettings)
@@ -149,7 +217,7 @@ export default function Dashboard() {
     
     window.addEventListener('storage', handleStorageChange)
     return () => window.removeEventListener('storage', handleStorageChange)
-  }, [])
+  }, [isMounted])
 
   // Charger le niveau de remplissage depuis localStorage
   useEffect(() => {
@@ -169,13 +237,13 @@ export default function Dashboard() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    const savedFlowRate = localStorage.getItem('flowRate')
-    if (savedFlowRate) {
-      try {
+      const savedFlowRate = localStorage.getItem('flowRate')
+      if (savedFlowRate) {
+        try {
         setFlowRate(Number(savedFlowRate))
         lastFlowRateRef.current = Number(savedFlowRate)
-      } catch (e) {
-        console.error("Erreur lors du chargement du débit:", e)
+        } catch (e) {
+          console.error("Erreur lors du chargement du débit:", e)
       }
     }
     
@@ -272,20 +340,6 @@ export default function Dashboard() {
         setAbsorptionRate(Number(savedCapacity))
       } catch (e) {
         console.error("Erreur lors du chargement de la capacité de récupération:", e)
-      }
-    }
-  }, [])
-
-  // Charger le score environnemental depuis localStorage
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    const savedScore = localStorage.getItem('environmentScore')
-    if (savedScore) {
-      try {
-        setEnvironmentScore(Number(savedScore))
-      } catch (e) {
-        console.error("Erreur lors du chargement du score environnemental:", e)
       }
     }
   }, [])
@@ -402,12 +456,9 @@ export default function Dashboard() {
   const handleFlowRateChange = (rate: number) => {
     setFlowRate(rate);
     // Sauvegarder le débit dans le localStorage pour persistance
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('flowRate', rate.toString());
-      
-      // Déclencher un événement de stockage pour notifier les autres composants
-      window.dispatchEvent(new Event('storage'));
-    }
+    setLocalStorage('flowRate', rate.toString());
+    // Déclencher un événement de stockage pour notifier les autres composants
+    emitStorageEvent();
   }
 
   // Fonction pour réinitialiser le niveau du verre
@@ -982,7 +1033,11 @@ export default function Dashboard() {
               {/* Robinet et son filet d'eau */}
                     <div className="flex justify-center mb-4">
                       <div className="relative">
-                <TapComponent onFlowRateChange={handleFlowRateChange} hideDebitLabel={true} />
+                <TapComponent 
+                  flowRate={flowRate}
+                  onFlowRateChange={handleFlowRateChange} 
+                  hideDebitLabel={true} 
+                />
                 {/* Flux d'eau continu */}
                 <div 
                           className="absolute top-[60px] left-[-4px] z-10"

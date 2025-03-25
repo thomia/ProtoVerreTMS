@@ -574,32 +574,48 @@ export default function TapSettingsForm() {
 
   // Fonction utilitaire pour sauvegarder les paramètres et le débit
   const saveSettings = (params: any, flowRate: number) => {
-    // Sauvegarder les paramètres
-    setLocalStorage('tapConstraints', JSON.stringify(params));
-    
-    // S'assurer que le débit est un nombre valide
-    if (typeof flowRate === 'number' && !isNaN(flowRate)) {
-      const roundedFlowRate = Math.max(0, Math.min(100, Math.round(flowRate)));
+    // Sauvegarder les contraintes pour qu'elles soient disponibles pour le robinet
+    const constraints = {
+      postureScores,
+      postureAdjustments,
+      physicalParams: {
+        weight,
+        loadFrequency,
+        postureFrequency
+      },
+      mentalWorkload,
+      psychosocialRisks,
+      totalScore,
+      postureScore: getTotalPostureScore(),
+      psychosocialScore: calculatePsychosocialScore(),
+      mentalScore: calculateMentalWorkloadScore(),
+      physicalScore: calculatePhysicalScore()
+    };
+
+    // Utiliser les utilitaires sécurisés pour localStorage
+    try {
+      setLocalStorage('tapConstraints', JSON.stringify(constraints));
+      setLocalStorage('flowRate', flowRate.toString());
       
-      // Sauvegarder le débit calculé
-      setLocalStorage('flowRate', roundedFlowRate.toString());
-      console.log("Débit sauvegardé dans localStorage:", roundedFlowRate);
+      // Émettre des événements personnalisés pour notifier d'autres composants
+      const flowRateEvent = new CustomEvent('tapFlowUpdated', { 
+        detail: { flowRate } 
+      });
+      window.dispatchEvent(flowRateEvent);
       
-      // Émettre un événement personnalisé pour notifier le tableau de bord
-      if (typeof window !== 'undefined') {
-        const event = new CustomEvent('tapFlowUpdated', {
-          detail: { flowRate: roundedFlowRate }
-        });
-        window.dispatchEvent(event);
-        console.log("Événement tapFlowUpdated émis avec le débit:", roundedFlowRate);
-        
-        // Émettre l'événement storage une seule fois
-        emitStorageEvent();
-      }
-    } else {
-      console.error("Erreur: débit invalide calculé", flowRate);
+      // Émettre un événement storage pour la compatibilité
+      emitStorageEvent();
+      
+      setIsSaved(true);
+      
+      // Afficher le message pendant 2 secondes
+      setTimeout(() => {
+        setIsSaved(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde des paramètres:", error);
     }
-  };
+  }
 
   const handleSubmit = () => {
     // Calculer le débit
@@ -719,7 +735,7 @@ export default function TapSettingsForm() {
                     {/* Input range masqué */}
           <input
             type="range"
-                      min={0}
+            min={0}
                       max={55}
                       value={physicalParams.weight}
                       onChange={(e) => setPhysicalParams({
@@ -839,7 +855,7 @@ export default function TapSettingsForm() {
                         <span className="text-white">Inclinaison du cou (+1)</span>
                       </label>
           </div>
-                  </div>
+        </div>
 
                   {/* Épaule */}
                   <div className="space-y-4 p-4 rounded-lg bg-gray-800/50 border-l-4 border-sky-500">
@@ -859,8 +875,8 @@ export default function TapSettingsForm() {
                           (postureAdjustments.shoulderSupport ? -1 : 0)}
                         /{maxScores.shoulder}
             </span>
-        </div>
-        
+      </div>
+      
                     <RadioGroup
                       value={String(postureScores.shoulder)}
                       onValueChange={(value: string) => setPostureScores({
@@ -900,7 +916,7 @@ export default function TapSettingsForm() {
                           className="h-5 w-5 group-hover:border-blue-400"
                         />
                         <span className="text-white">Épaule levée (+1)</span>
-                      </label>
+          </label>
                       <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
                         <Checkbox
                           id="shoulder-abduction"
@@ -997,8 +1013,8 @@ export default function TapSettingsForm() {
                           (postureAdjustments.wristFullRotation ? 2 : 0)}
                         /{maxScores.wrist}
             </span>
-      </div>
-      
+        </div>
+        
                     <RadioGroup
                       value={String(postureScores.wrist)}
                       onValueChange={(value: string) => setPostureScores({
@@ -1010,7 +1026,7 @@ export default function TapSettingsForm() {
                       <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
                         <RadioGroupItem value="1" id="wrist-1" className="h-5 w-5 group-hover:border-purple-400" />
                         <span className="text-white">0° (+1)</span>
-                      </label>
+          </label>
                       <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
                         <RadioGroupItem value="2" id="wrist-2" className="h-5 w-5 group-hover:border-purple-400" />
                         <span className="text-white">-15° à 15° (+2)</span>
@@ -1065,7 +1081,7 @@ export default function TapSettingsForm() {
                         />
                         <span className="text-white">Pronation/supination complète (+2)</span>
                       </label>
-        </div>
+          </div>
       </div>
       
                   {/* Tronc */}
@@ -1078,8 +1094,8 @@ export default function TapSettingsForm() {
                         'yellow'
                       )}`}>
                         Score: {postureScores.trunk}/{maxScores.trunk}
-                      </span>
-                    </div>
+            </span>
+          </div>
 
                     <RadioGroup
                       value={String(postureScores.trunk)}
@@ -1106,7 +1122,7 @@ export default function TapSettingsForm() {
                         <span className="text-white">60° ou plus (+4)</span>
                       </label>
                     </RadioGroup>
-          </div>
+        </div>
           
                   {/* Jambes */}
                   <div className="space-y-4 p-4 rounded-lg bg-gray-800/50 border-l-4 border-orange-500">
@@ -1119,8 +1135,8 @@ export default function TapSettingsForm() {
                       )}`}>
                         Score: {postureScores.legs}/{maxScores.legs}
                       </span>
-                    </div>
-
+      </div>
+      
                     <RadioGroup
                       value={String(postureScores.legs)}
                       onValueChange={(value: string) => setPostureScores({
@@ -1142,8 +1158,8 @@ export default function TapSettingsForm() {
                         <span className="text-white">Position debout (+2)</span>
                       </label>
                     </RadioGroup>
-            </div>
-                </div>
+        </div>
+      </div>
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -1164,24 +1180,24 @@ export default function TapSettingsForm() {
               <div className="space-y-6 p-4">
                 <div className="text-sm text-gray-400 mb-4">
                   {getSectionStatus('frequences')}
-      </div>
-      
+          </div>
+          
                 {/* Fréquence de manipulation */}
                 <div className={`group p-4 pb-16 rounded-lg bg-gray-800/30 hover:bg-gray-800/40 transition-all duration-300 border-l-4 ${physicalSliderColors.loadFrequency.border}`}>
                   <div className="flex items-center justify-between mb-10">
                     <div className="flex items-center gap-2">
                       <span className={`text-3xl font-semibold ${physicalSliderColors.loadFrequency.text}`}>Fréquence de manipulation</span>
                       <InfoTooltip content="Combien de fois je manipule la/les charges par heure (Pousser, Tirer, Tourner, Maintenir, Porter, Jeter)" />
-                    </div>
+            </div>
                     <div className="flex items-center gap-2">
                       <span className="text-3xl font-semibold text-gray-400">Fréquence:</span>
                       <span className={`text-5xl font-mono font-bold ${physicalSliderColors.loadFrequency.text} bg-gray-800 px-4 py-2 rounded-md min-w-[6rem] text-center`}>
                         {physicalParams.loadFrequency.toString().padStart(2, '0')}
                       </span>
                       <span className="text-3xl font-semibold text-gray-400">/h</span>
-                    </div>
-                  </div>
-
+        </div>
+      </div>
+      
                   <div className="relative mt-6">
                     {/* Barre de progression */}
                     <div className="h-2 bg-gray-700 rounded-sm overflow-hidden">
@@ -1189,7 +1205,7 @@ export default function TapSettingsForm() {
                         className={`h-full bg-gradient-to-r ${physicalSliderColors.loadFrequency.from} ${physicalSliderColors.loadFrequency.to} transition-all duration-150`}
                         style={{ width: `${((physicalParams.loadFrequency - 2) / 58) * 100}%` }}
                       />
-                    </div>
+            </div>
 
                     {/* Curseur personnalisé */}
                     <div 
@@ -1197,13 +1213,13 @@ export default function TapSettingsForm() {
                       style={{ left: `calc(${((physicalParams.loadFrequency - 2) / 58) * 100}% - 6px)` }}
                     >
                       <div className={`w-3 h-6 bg-white rounded-sm shadow-lg border ${physicalSliderColors.loadFrequency.border}`} />
-                    </div>
-
+          </div>
+          
                     {/* Input range masqué */}
-                    <input
-                      type="range"
+            <input
+              type="range"
                       min={2}
-                      max={60}
+              max={60}
                       value={physicalParams.loadFrequency}
                       onChange={(e) => setPhysicalParams({
                         ...physicalParams,
@@ -1220,10 +1236,10 @@ export default function TapSettingsForm() {
                           <span className={`text-3xl mt-1 ${physicalParams.loadFrequency >= mark ? physicalSliderColors.loadFrequency.text : 'text-gray-500'}`}>
                             {mark}
                           </span>
-                        </div>
+            </div>
                       ))}
-                    </div>
-
+          </div>
+          
                     {/* Graduations secondaires */}
                     <div className="absolute w-full flex justify-between px-1 top-4">
                       {Array.from({ length: 58 }, (_, i) => i + 3)
@@ -1236,8 +1252,8 @@ export default function TapSettingsForm() {
                             activeClass={physicalSliderColors.loadFrequency.activeLight}
                           />
                         ))}
-                    </div>
-                  </div>
+            </div>
+          </div>
                 </div>
 
                 {/* Fréquence posture contraignante */}
@@ -1253,9 +1269,9 @@ export default function TapSettingsForm() {
                         {physicalParams.postureFrequency.toString().padStart(2, '0')}
                       </span>
                       <span className="text-3xl font-semibold text-gray-400">/h</span>
-                    </div>
-                  </div>
-
+        </div>
+      </div>
+      
                   <div className="relative mt-6">
                     {/* Barre de progression */}
                     <div className="h-2 bg-gray-700 rounded-sm overflow-hidden">
@@ -1263,7 +1279,7 @@ export default function TapSettingsForm() {
                         className={`h-full bg-gradient-to-r ${physicalSliderColors.postureFrequency.from} ${physicalSliderColors.postureFrequency.to} transition-all duration-150`}
                         style={{ width: `${((physicalParams.postureFrequency - 2) / 58) * 100}%` }}
                       />
-                    </div>
+            </div>
 
                     {/* Curseur personnalisé */}
                     <div 
@@ -1271,11 +1287,11 @@ export default function TapSettingsForm() {
                       style={{ left: `calc(${((physicalParams.postureFrequency - 2) / 58) * 100}% - 6px)` }}
                     >
                       <div className={`w-3 h-6 bg-white rounded-sm shadow-lg border ${physicalSliderColors.postureFrequency.border}`} />
-                    </div>
-
+          </div>
+          
                     {/* Input range masqué */}
-                    <input
-                      type="range"
+            <input
+              type="range"
                       min={2}
                       max={60}
                       value={physicalParams.postureFrequency}
@@ -1294,10 +1310,10 @@ export default function TapSettingsForm() {
                           <span className={`text-3xl mt-1 ${physicalParams.postureFrequency >= mark ? physicalSliderColors.postureFrequency.text : 'text-gray-500'}`}>
                             {mark}
                           </span>
-                        </div>
+            </div>
                       ))}
-                    </div>
-
+          </div>
+          
                     {/* Graduations secondaires */}
                     <div className="absolute w-full flex justify-between px-1 top-4">
                       {Array.from({ length: 58 }, (_, i) => i + 3)
@@ -1310,8 +1326,8 @@ export default function TapSettingsForm() {
                             activeClass={physicalSliderColors.postureFrequency.activeLight}
                           />
                         ))}
-                    </div>
-                  </div>
+            </div>
+          </div>
                 </div>
               </div>
             </AccordionContent>
@@ -1329,8 +1345,8 @@ export default function TapSettingsForm() {
                   )}
                   <span className="text-xl font-semibold text-white hover:text-gray-300">Charge Mentale</span>
                   <span className="text-sm font-normal text-gray-400 italic">Adaptation du questionnaire NASA-TLX (Task Load Index) par Hart et Staveland, 1988</span>
-                </div>
-              </div>
+            </div>
+          </div>
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-6 p-4">
@@ -1341,9 +1357,9 @@ export default function TapSettingsForm() {
                     <span className="text-3xl font-bold text-emerald-400/80">
                       {calculateMentalWorkloadScore()}/120
                     </span>
-                  </div>
-                </div>
-
+        </div>
+      </div>
+      
                 {/* Sliders */}
                 {Object.entries(mentalWorkload).map(([key, value]) => {
                   const colors = {
@@ -1427,13 +1443,13 @@ export default function TapSettingsForm() {
                             <span className={`text-5xl font-mono font-bold ${itemColors.text} bg-gray-800 px-4 py-2 rounded-md min-w-[6rem] text-center`}>
                               {value.toString().padStart(2, '0')}
                             </span>
-                          </div>
+            </div>
                         </div>
                         <p className="text-base text-gray-400 mt-1">
                           {mentalWorkloadDefinitions[key as keyof typeof mentalWorkloadDefinitions]}
                         </p>
-                      </div>
-
+          </div>
+          
                       <div className="relative mt-6">
                         {/* Barre de progression */}
                         <div className="h-2 bg-gray-700 rounded-sm overflow-hidden">
@@ -1441,7 +1457,7 @@ export default function TapSettingsForm() {
                             className={`h-full bg-gradient-to-r ${itemColors.from} ${itemColors.to} transition-all duration-150`}
                             style={{ width: `${(value / 20) * 100}%` }}
                           />
-                        </div>
+            </div>
 
                         {/* Curseur personnalisé */}
                         <div 
@@ -1449,12 +1465,12 @@ export default function TapSettingsForm() {
                           style={{ left: `calc(${(value / 20) * 100}% - 6px)` }}
                         >
                           <div className={`w-3 h-6 bg-white rounded-sm shadow-lg border ${itemColors.border}`} />
-                        </div>
-
+          </div>
+          
                         {/* Input range masqué */}
-                        <input
-                          type="range"
-                          min={0}
+            <input
+              type="range"
+              min={0}
                           max={20}
                           step={1}
                           value={value}
@@ -1473,10 +1489,10 @@ export default function TapSettingsForm() {
                               <span className={`text-3xl mt-1 ${value >= mark ? itemColors.text : 'text-gray-500'}`}>
                                 {mark}
                               </span>
-                            </div>
+            </div>
                           ))}
-                        </div>
-
+          </div>
+          
                         {/* Graduations secondaires */}
                         <div className="absolute w-full flex justify-between px-1 top-4">
                           {Array.from({ length: 19 }, (_, i) => i + 1)
@@ -1489,8 +1505,8 @@ export default function TapSettingsForm() {
                                 activeClass={itemColors.activeLight}
                               />
                             ))}
-                        </div>
-                      </div>
+            </div>
+          </div>
                     </div>
                   )
                 })}

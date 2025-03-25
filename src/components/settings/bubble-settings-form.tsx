@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import BaseSettingsForm from './base-settings-form'
+import { getLocalStorage, setLocalStorage, emitStorageEvent } from '@/lib/localStorage'
 
 interface BubbleSettings {
   temperature: number // 5-30°C
@@ -75,17 +76,34 @@ export default function BubbleSettingsForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    const savedSettings = localStorage.getItem('bubbleSettings')
+    const savedSettings = getLocalStorage('bubbleSettings')
     if (savedSettings) {
-      setSettings(JSON.parse(savedSettings))
+      try {
+        const parsedSettings = JSON.parse(savedSettings)
+        setSettings(parsedSettings)
+      } catch (e) {
+        console.error("Erreur lors du chargement des paramètres des bulles:", e)
+      }
     }
   }, [])
 
   const handleSubmit = () => {
-    localStorage.setItem('bubbleSettings', JSON.stringify(settings))
     const score = calculateEnvironmentScore(settings)
-    localStorage.setItem('environmentScore', score.toString())
-    window.dispatchEvent(new Event('environmentScoreUpdated'))
+    
+    // Sauvegarder les paramètres
+    setLocalStorage('bubbleSettings', JSON.stringify(settings))
+    setLocalStorage('environmentScore', score.toString())
+    
+    // Émettre un événement de stockage pour notifier les autres composants
+    emitStorageEvent()
+    
+    // Émettre un événement personnalisé pour la mise à jour du tableau de bord
+    if (typeof window !== 'undefined') {
+      const event = new CustomEvent('environmentScoreUpdated', {
+        detail: { score }
+      })
+      window.dispatchEvent(event)
+    }
   }
 
   const score = calculateEnvironmentScore(settings)

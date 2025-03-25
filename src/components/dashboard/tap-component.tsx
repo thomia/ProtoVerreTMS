@@ -2,110 +2,94 @@
 
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
+import { getLocalStorage, setLocalStorage, emitStorageEvent } from '@/lib/localStorage'
 
 interface TapComponentProps {
-  onFlowRateChange?: (rate: number) => void;
+  flowRate: number;
+  onFlowRateChange: (rate: number) => void;
   hideDebitLabel?: boolean; // Propriété pour masquer l'étiquette de débit
 }
 
-export default function TapComponent({ onFlowRateChange, hideDebitLabel = false }: TapComponentProps) {
+export default function TapComponent({ flowRate, onFlowRateChange, hideDebitLabel = false }: TapComponentProps) {
   const router = useRouter()
   const [showConstraints, setShowConstraints] = useState(false)
   
   // Facteurs de contrainte (valeurs entre 0 et 100)
   const [constraints, setConstraints] = useState({
-    charge: 75, // Charge de travail
-    frequence: 60, // Fréquence des mouvements
-    posture: 85, // Posture de travail
+    postureScores: {
+      head: 0,
+      back: 0,
+      shoulder: 0,
+      elbow: 0,
+      wrist: 0
+    },
+    postureAdjustments: false
   })
   
-  // Charger les contraintes sauvegardées au démarrage et à chaque changement
+  const flowRateRef = useRef(0)
+  
+  // Obtenir la classe de couleur en fonction du niveau de contrainte
+  const getConstraintColor = (value: number) => {
+    if (value >= 80) return "text-red-500";
+    if (value >= 60) return "text-amber-500";
+    if (value >= 40) return "text-yellow-500";
+    return "text-green-500";
+  }
+  
+  // Charger les contraintes depuis localStorage
   useEffect(() => {
-    const loadConstraints = () => {
-      const savedConstraints = localStorage.getItem('tapConstraints');
-      if (savedConstraints) {
-        try {
-          const parsed = JSON.parse(savedConstraints);
-          setConstraints(parsed);
-          
-          // Notifier immédiatement le parent du changement de débit
-          if (onFlowRateChange) {
-            const newFlowRate = calculateFlowRate(parsed);
-            onFlowRateChange(newFlowRate);
-          }
-        } catch (e) {
-          console.error("Erreur lors du chargement des contraintes:", e);
-        }
+    const savedConstraints = getLocalStorage('tapConstraints');
+    if (savedConstraints) {
+      try {
+        setConstraints(JSON.parse(savedConstraints));
+      } catch (e) {
+        console.error("Erreur lors du chargement des contraintes:", e);
+      }
+    }
+
+    // Fonction pour mettre à jour le débit à partir des événements
+    const handleFlowRateUpdate = (e: CustomEvent<{ flowRate: number }>) => {
+      if (e.detail && typeof e.detail.flowRate === 'number' && onFlowRateChange) {
+        onFlowRateChange(e.detail.flowRate);
       }
     };
-    
-    // Charger les contraintes au démarrage
-    loadConstraints();
-    
-    // Ajouter un écouteur d'événements pour détecter les changements de localStorage
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'tapConstraints') {
-        loadConstraints();
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Vérifier périodiquement les changements dans localStorage
-    const intervalId = setInterval(loadConstraints, 1000);
-    
+
+    // Écouter les événements personnalisés
+    window.addEventListener('tapFlowUpdated', handleFlowRateUpdate as EventListener);
+
+    // Nettoyage à la destruction du composant
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(intervalId);
+      window.removeEventListener('tapFlowUpdated', handleFlowRateUpdate as EventListener);
     };
   }, [onFlowRateChange]);
-  
-  // Calculer le débit en fonction des contraintes
-  const calculateFlowRate = (constraintsToUse = constraints) => {
-    // Vérifier si nous sommes côté client
-    if (typeof window === 'undefined') return 0;
-    
-    // Lire le débit depuis localStorage
-    const savedFlowRate = localStorage.getItem('flowRate');
-    if (savedFlowRate) {
-      const parsedFlowRate = parseInt(savedFlowRate);
-      if (!isNaN(parsedFlowRate)) {
-        return parsedFlowRate;
+
+  // Gérer le changement de débit
+  useEffect(() => {
+    // Lire le débit depuis localStorage lors du premier montage
+    if (flowRateRef.current === 0) {
+      const savedFlowRate = getLocalStorage('flowRate');
+      if (savedFlowRate && onFlowRateChange) {
+        const parsedRate = parseInt(savedFlowRate);
+        if (!isNaN(parsedRate)) {
+          onFlowRateChange(parsedRate);
+        }
       }
     }
-    
-    // Fallback si pas de débit sauvegardé
-    return 0;
-  }
-  
-  const flowRate = calculateFlowRate();
-  
-  // Notifier le parent du changement de débit
-  useEffect(() => {
-    if (onFlowRateChange) {
-      onFlowRateChange(flowRate);
-    }
+
+    // Mettre à jour la référence du débit actuel
+    flowRateRef.current = flowRate;
     
     // Sauvegarder le débit dans localStorage pour que d'autres composants puissent y accéder
-    localStorage.setItem('flowRate', flowRate.toString());
+    setLocalStorage('flowRate', flowRate.toString());
+    
+    // Émettre un événement de stockage pour notifier les autres composants
+    emitStorageEvent();
   }, [flowRate, onFlowRateChange]);
-
-  const handleClick = () => {
-    setShowConstraints(true);
-    // Afficher les contraintes pendant 3 secondes, puis rediriger
-    setTimeout(() => {
-      router.push('/tap-settings')
-    }, 3000)
-  }
   
-  // Obtenir la couleur en fonction du niveau de contrainte
-  const getConstraintColor = (value: number) => {
-    if (value <= 40) return "text-green-500";
-    if (value <= 70) return "text-yellow-500";
-    if (value <= 90) return "text-orange-500";
-    return "text-red-500";
+  const handleClick = () => {
+    setShowConstraints(!showConstraints)
   }
   
   // Obtenir la largeur du flux d'eau en fonction du débit
@@ -201,22 +185,22 @@ export default function TapComponent({ onFlowRateChange, hideDebitLabel = false 
                 <div className="flex flex-col gap-3 mb-4">
                   <div className="flex justify-between items-center">
                     <span className="text-white">Charge:</span>
-                    <span className={cn("text-xl font-bold", getConstraintColor(constraints.charge))}>
-                      {constraints.charge}%
+                    <span className={cn("text-xl font-bold", getConstraintColor(constraints.postureScores.head))}>
+                      {constraints.postureScores.head}%
                     </span>
                   </div>
                   
                   <div className="flex justify-between items-center">
                     <span className="text-white">Fréquence:</span>
-                    <span className={cn("text-xl font-bold", getConstraintColor(constraints.frequence))}>
-                      {constraints.frequence}%
+                    <span className={cn("text-xl font-bold", getConstraintColor(constraints.postureScores.back))}>
+                      {constraints.postureScores.back}%
                     </span>
                   </div>
                   
                   <div className="flex justify-between items-center">
                     <span className="text-white">Posture:</span>
-                    <span className={cn("text-xl font-bold", getConstraintColor(constraints.posture))}>
-                      {constraints.posture}%
+                    <span className={cn("text-xl font-bold", getConstraintColor(constraints.postureScores.shoulder))}>
+                      {constraints.postureScores.shoulder}%
                     </span>
                   </div>
                 </div>
