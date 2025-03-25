@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import React, { useState, Suspense } from 'react'
 import { 
   Dialog, 
   DialogContent, 
@@ -9,12 +9,22 @@ import {
   DialogDescription,
   DialogFooter
 } from '@/components/ui/dialog'
-import { GlassWater, Droplet, RectangleHorizontal, Cloud } from 'lucide-react'
-import GlassSettingsForm from '@/components/settings/glass-settings-form'
-import StrawSettingsForm from '@/components/settings/straw-settings-form'
-import TapSettingsForm from '@/components/settings/tap-settings-form'
-import BubbleSettingsForm from '@/components/settings/bubble-settings-form'
+import { GlassWater, Droplet, RectangleHorizontal, Cloud, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+
+// Charger les composants dynamiquement pour éviter les rendus inutiles
+const GlassSettingsForm = React.lazy(() => import('@/components/settings/glass-settings-form'))
+const StrawSettingsForm = React.lazy(() => import('@/components/settings/straw-settings-form'))
+const TapSettingsForm = React.lazy(() => import('@/components/settings/tap-settings-form'))
+const BubbleSettingsForm = React.lazy(() => import('@/components/settings/bubble-settings-form'))
+
+// Composant de chargement pour Suspense
+const FormLoader = () => (
+  <div className="flex items-center justify-center w-full py-20">
+    <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+    <span className="ml-3 text-lg text-gray-400">Chargement du formulaire...</span>
+  </div>
+)
 
 interface ParameterModalsProps {
   activeModal: 'tap' | 'glass' | 'straw' | 'bubble' | null
@@ -52,7 +62,11 @@ export default function ParameterModals({
           </DialogHeader>
           
           <div className="mt-4">
-            <TapSettingsForm />
+            {activeModal === 'tap' && (
+              <Suspense fallback={<FormLoader />}>
+                <TapSettingsForm />
+              </Suspense>
+            )}
           </div>
         </AnimatedDialogContent>
       </Dialog>
@@ -67,7 +81,11 @@ export default function ParameterModals({
           </DialogHeader>
           
           <div className="mt-4">
-            <GlassSettingsForm />
+            {activeModal === 'glass' && (
+              <Suspense fallback={<FormLoader />}>
+                <GlassSettingsForm />
+              </Suspense>
+            )}
           </div>
         </AnimatedDialogContent>
       </Dialog>
@@ -82,7 +100,11 @@ export default function ParameterModals({
           </DialogHeader>
           
           <div className="mt-4">
-            <StrawSettingsForm />
+            {activeModal === 'straw' && (
+              <Suspense fallback={<FormLoader />}>
+                <StrawSettingsForm />
+              </Suspense>
+            )}
           </div>
         </AnimatedDialogContent>
       </Dialog>
@@ -97,7 +119,11 @@ export default function ParameterModals({
           </DialogHeader>
           
           <div className="mt-4">
-            <BubbleSettingsForm />
+            {activeModal === 'bubble' && (
+              <Suspense fallback={<FormLoader />}>
+                <BubbleSettingsForm />
+              </Suspense>
+            )}
           </div>
         </AnimatedDialogContent>
       </Dialog>

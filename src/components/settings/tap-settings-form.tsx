@@ -1,25 +1,11 @@
 "use client"
 
 import * as React from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import BaseSettingsForm from './base-settings-form'
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Checkbox } from "@/components/ui/checkbox"
-import { InfoCircledIcon } from "@radix-ui/react-icons"
-import { CheckCircle2, AlertCircle, Circle } from "lucide-react"
-import { useEffect, useState } from 'react'
+import { Label } from '@/components/ui/label'
 import { getLocalStorage, setLocalStorage, emitStorageEvent } from '@/lib/localStorage'
+import { cn } from '@/lib/utils'
 
 // Types pour les postures
 interface PostureScores {
@@ -286,361 +272,200 @@ function SecondaryMark({ mark, value, activeClass }: SecondaryMarkProps) {
 }
 
 export default function TapSettingsForm() {
-  const [activeSection, setActiveSection] = React.useState<string>("charge")
-  const [formSaved, setFormSaved] = React.useState(false)
+  // États pour les contraintes
+  const [load, setLoad] = useState(50)
+  const [frequency, setFrequency] = useState(50)
+  const [flowRate, setFlowRate] = useState(50)
+  const [isSaved, setIsSaved] = useState(false)
+  const [formSubmitted, setFormSubmitted] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
   
-  // État pour les paramètres physiques
-  const [physicalParams, setPhysicalParams] = React.useState({
-    weight: 10,
-    loadFrequency: 2,
-    postureFrequency: 2
+  // Définir l'état de sauvegarde automatique
+  const [autoSave, setAutoSave] = useState(true)
+  
+  // États pour les scores de posture (ajustables par slider)
+  const [postureScores, setPostureScores] = useState({
+    neck: 1, // Score pour le cou (1-4)
+    shoulder: 1, // Score pour l'épaule (1-4)
+    elbow: 1, // Score pour le coude (1-4)
+    wrist: 1, // Score pour le poignet (1-4)
+    trunk: 1, // Score pour le tronc (1-4)
+    legs: 1 // Score pour les jambes (1-4)
+  })
+  
+  // États pour les ajustements de posture (boolean)
+  const [postureAdjustments, setPostureAdjustments] = useState({
+    neckRotation: false, // Rotation du cou
+    neckInclination: false, // Inclinaison latérale du cou
+    shoulderRaised: false, // Épaule surélevée
+    shoulderAbduction: false, // Abduction de l'épaule
+    shoulderSupport: false, // Support de l'épaule/bras
+    elbowOpposite: false, // Coude au-delà de la ligne médiane
+    wristDeviation: false, // Déviation latérale du poignet
+    wristPartialRotation: false, // Rotation partielle du poignet
+    wristFullRotation: false // Rotation complète du poignet
   })
 
-  // Alias pour les propriétés physiques (pour plus de clarté dans le code)
-  const selectedWeight = physicalParams.weight
-  const selectedLoadFrequency = physicalParams.loadFrequency
-  const selectedPostureFrequency = physicalParams.postureFrequency
-
-  // État pour les scores de posture
-  const [postureScores, setPostureScores] = React.useState<PostureScores>({
-    neck: 0,
-    shoulder: 0,
-    elbow: 0,
-    wrist: 0,
-    trunk: 0,
-    legs: 0
-  })
-
-  // État pour les ajustements de posture
-  const [postureAdjustments, setPostureAdjustments] = React.useState<PostureAdjustments>({
-    neckRotation: false,
-    neckInclination: false,
-    shoulderRaised: false,
-    shoulderAbduction: false,
-    shoulderSupport: false,
-    elbowOpposite: false,
-    wristDeviation: false,
-    wristPartialRotation: false,
-    wristFullRotation: false
-  })
-
-  // État pour les scores de charge mentale
-  const [mentalWorkload, setMentalWorkload] = React.useState({
-    mentalDemand: 0,
-    physicalDemand: 0,
-    temporalDemand: 0,
-    performance: 0,
-    effort: 0,
-    frustration: 0
-  })
-
-  // État pour les risques psychosociaux
-  const [psychosocialRisks, setPsychosocialRisks] = React.useState<PsychosocialRisks>({
-    workAutonomy: {
-      taskAutonomy: 0,
-      temporalAutonomy: 0,
-      skillsUse: 0
-    },
-    socialRelations: {
-      colleagueSupport: 0,
-      hierarchySupport: 0,
-      professionalDisagreements: 0,
-      workRecognition: 0
-    },
-    valueConflicts: {
-      preventedQuality: 0,
-      uselessWork: 0
-    },
-    jobInsecurity: {
-      socioeconomicInsecurity: 0,
-      changeManagement: 0
-    }
-  })
-
-  // État pour le score d'agitation environnementale
-  const [environmentScore, setEnvironmentScore] = React.useState(0)
-
-  // Charger les paramètres au démarrage
+  // Chargement des paramètres depuis localStorage au montage du composant
   useEffect(() => {
-    // Charger les contraintes depuis localStorage
+    // Récupérer les contraintes sauvegardées
     const savedConstraints = getLocalStorage('tapConstraints')
+    
     if (savedConstraints) {
       try {
-        const parsed = JSON.parse(savedConstraints)
+        const constraints = JSON.parse(savedConstraints)
         
-        // Mettre à jour les états en une seule opération pour éviter les re-renders multiples
-        if (parsed.physicalParams) setPhysicalParams(parsed.physicalParams)
-        if (parsed.postureScores) setPostureScores(parsed.postureScores)
-        if (parsed.postureAdjustments) setPostureAdjustments(parsed.postureAdjustments)
-        if (parsed.mentalWorkload) setMentalWorkload(parsed.mentalWorkload)
-        if (parsed.psychosocialRisks) setPsychosocialRisks(parsed.psychosocialRisks)
-      } catch (e) {
-        console.error("Erreur lors du chargement des contraintes du robinet:", e)
+        // Contraintes principales
+        if (constraints.load) setLoad(constraints.load)
+        if (constraints.frequency) setFrequency(constraints.frequency)
+        
+        // Scores de posture
+        if (constraints.postureScores) setPostureScores(constraints.postureScores)
+        
+        // Ajustements de posture
+        if (constraints.postureAdjustments) setPostureAdjustments(constraints.postureAdjustments)
+        
+        // Si le débit est déjà défini, l'utiliser
+        if (constraints.flowRate) {
+          setFlowRate(constraints.flowRate)
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des contraintes:", error)
       }
     }
     
-    // Récupération du score d'agitation depuis localStorage
-    const savedEnvironmentScore = getLocalStorage('environmentScore');
-    if (savedEnvironmentScore && !isNaN(Number(savedEnvironmentScore))) {
-      setEnvironmentScore(Number(savedEnvironmentScore));
+    // Récupérer le débit depuis localStorage si disponible
+    const savedFlowRate = getLocalStorage('flowRate')
+    if (savedFlowRate) {
+      try {
+        setFlowRate(Number(savedFlowRate))
+      } catch (e) {
+        console.error("Erreur lors du chargement du débit:", e)
+      }
     }
+    
+    setIsInitialized(true)
   }, [])
 
-  // Fonction pour vérifier si une section est complète
-  const isSectionComplete = (section: string) => {
-    switch (section) {
-      case 'charge':
-        return physicalParams.weight > 0
-      case 'postures':
-        return Object.values(postureScores).some(score => score > 0)
-      case 'frequences':
-        return physicalParams.loadFrequency > 2 || physicalParams.postureFrequency > 2
-      case 'mental-workload':
-        return calculateMentalWorkloadScore() > 0
-      default:
-        return false
-    }
-  }
-
-  // Fonction pour obtenir le message d'état
-  const getSectionStatus = (section: string) => {
-    switch (section) {
-      case 'charge':
-        return physicalParams.weight > 0 
-          ? "Poids unitaire défini" 
-          : "Quels est le poids unitaire de la plus grosse charge que j'ai à manipuler ou la somme des petites charges (Manipuler = Pousser, Tirer, Tourner, Maintenir, Porter, Jeter etc..)"
-      case 'postures':
-        return Object.values(postureScores).some(score => score > 0)
-          ? "Postures évaluées"
-          : "Évaluez au moins une posture"
-      case 'frequences':
-        return physicalParams.loadFrequency > 2 || physicalParams.postureFrequency > 2
-          ? "Fréquences définies"
-          : "Définissez les fréquences"
-      case 'mental-workload':
-        return calculateMentalWorkloadScore() > 0
-          ? "Charge mentale évaluée"
-          : "Évaluez la charge mentale"
-      default:
-        return ""
-    }
-  }
-
-  // Fonction pour obtenir le score total de posture
-  const getTotalPostureScore = () => {
-    // Score du cou
-    let neckScore = postureScores.neck
-    if (postureAdjustments.neckRotation) neckScore += 1
-    if (postureAdjustments.neckInclination) neckScore += 1
-
-    // Score de l'épaule
-    let shoulderScore = postureScores.shoulder
-    if (postureAdjustments.shoulderRaised) shoulderScore += 1
-    if (postureAdjustments.shoulderAbduction) shoulderScore += 1
-    if (postureAdjustments.shoulderSupport) shoulderScore -= 1
-
-    // Score du coude
-    let elbowScore = postureScores.elbow
-    if (postureAdjustments.elbowOpposite) elbowScore += 1
-
-    // Score du poignet
-    let wristScore = postureScores.wrist
-    if (postureAdjustments.wristDeviation) wristScore += 1
-    if (postureAdjustments.wristPartialRotation) wristScore += 1
-    if (postureAdjustments.wristFullRotation) wristScore += 2
-
-    // Normalisation des scores (0-100)
-    const maxScore = 27 // Score maximum possible
-    const rawScore = (
-      neckScore + shoulderScore + elbowScore + 
-      wristScore + postureScores.trunk + postureScores.legs
-    )
+  // Fonction pour calculer le débit en fonction des contraintes et de la posture
+  const calculateFlowRate = useCallback(() => {
+    // Calcul du score de posture
+    const postureScore = (
+      // Somme des scores de base
+      (postureScores.neck || 0) + 
+      (postureScores.shoulder || 0) + 
+      (postureScores.elbow || 0) + 
+      (postureScores.wrist || 0) + 
+      (postureScores.trunk || 0) + 
+      (postureScores.legs || 0)
+    ) / 24 * 100; // Conversion en pourcentage (score max = 24)
     
-    return Math.round((rawScore / maxScore) * 100)
-  }
-
-  // Description du score
-  const getScoreDescription = (value: number) => {
-    if (value < 40) return "Débit faible"
-    if (value < 60) return "Débit modéré"
-    if (value < 80) return "Débit élevé"
-    return "Débit critique"
-  }
-
-  // Calcul du score total de charge mentale
-  const calculateMentalWorkloadScore = () => {
-    return Object.values(mentalWorkload).reduce((acc, curr) => acc + curr, 0)
-  }
-
-  // Fonction pour mettre à jour les risques psychosociaux
-  const updatePsychosocialRisk = (
-    category: keyof PsychosocialRisks,
-    subCategory: string,
-    value: number
-  ) => {
-    setPsychosocialRisks(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        [subCategory]: value
-      }
-    }))
-  }
-
-  // Fonction pour calculer le score des risques psychosociaux
-  const calculatePsychosocialScore = () => {
-    let totalScore = 0;
-    let maxPossibleScore = 0;
-
-    Object.entries(psychosocialRisks).forEach(([category, values]) => {
-      Object.entries(values).forEach(([subCategory, value]) => {
-        const isPositive = psychosocialDirections[category as keyof typeof psychosocialDirections][subCategory as keyof typeof psychosocialDirections[keyof typeof psychosocialDirections]];
-        // Inverser la logique : pour les questions positives, on soustrait de 3 pour avoir un score de risque
-        // Pour les questions négatives, on garde la valeur telle quelle
-        const adjustedValue = isPositive ? (3 - (value as number)) : (value as number);
-        totalScore += adjustedValue;
-        maxPossibleScore += 3; // Le maximum possible pour chaque question est 3
-      });
-    });
-
-    // Le score final représente maintenant le niveau de risque
-    return maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0;
-  }
-
-  // Fonction pour calculer le débit global du robinet
-  const calculateTapFlow = () => {
-    // 1. Score de charge physique (poids) - Max 55kg
-    const weightScore = Math.min((physicalParams.weight / 55) * 100, 100);
-
-    // 2. Score des postures - Déjà normalisé sur 100
-    const postureScore = getTotalPostureScore();
-
-    // 3. Score des fréquences - Max 60/h pour chaque
-    const frequencyScore = Math.min(
-      ((physicalParams.loadFrequency / 60) + (physicalParams.postureFrequency / 60)) * 50,
-      100
+    // Ajustements de posture (chaque ajustement ajoute un pourcentage)
+    const adjustmentsScore = (
+      (postureAdjustments.neckRotation ? 5 : 0) +
+      (postureAdjustments.neckInclination ? 5 : 0) +
+      (postureAdjustments.shoulderRaised ? 5 : 0) +
+      (postureAdjustments.shoulderAbduction ? 5 : 0) +
+      (postureAdjustments.shoulderSupport ? -5 : 0) + // Cet ajustement réduit le score
+      (postureAdjustments.elbowOpposite ? 5 : 0) +
+      (postureAdjustments.wristDeviation ? 5 : 0) +
+      (postureAdjustments.wristPartialRotation ? 5 : 0) +
+      (postureAdjustments.wristFullRotation ? 10 : 0)
     );
-
-    // 4. Score de charge mentale - Max 120
-    const mentalScore = Math.min((calculateMentalWorkloadScore() / 120) * 100, 100);
-
-    // 5. Score des risques psychosociaux - Déjà normalisé sur 100
-    const psychosocialScore = calculatePsychosocialScore();
-
-    // 6. Prise en compte du score d'agitation (environnement)
-    // Récupération du score d'agitation depuis localStorage
-    let agitationFactor = 1.0; // Facteur par défaut (pas d'augmentation)
-    const savedEnvironmentScore = localStorage.getItem('environmentScore');
     
-    if (savedEnvironmentScore) {
-      try {
-        const environmentScore = parseInt(savedEnvironmentScore);
-        // Augmentation de 3% pour chaque 10% de score d'agitation
-        // Exemple: un score de 70% d'agitation = +21% de débit
-        agitationFactor = 1 + (environmentScore * 0.003);
-        console.log("Facteur d'agitation appliqué:", agitationFactor, "pour un score d'environnement de", environmentScore);
-      } catch (e) {
-        console.error("Erreur lors du chargement du score d'agitation:", e);
-      }
-    }
+    // Calcul du débit (charge, fréquence et posture)
+    // La formule donne plus de poids à la charge (40%), puis à la fréquence (30%) et enfin à la posture (30%)
+    const calculatedFlowRate = Math.round(
+      (load * 0.4) +
+      (frequency * 0.3) +
+      ((postureScore + adjustmentsScore) * 0.3)
+    );
+    
+    // Limiter le débit entre 0 et 100
+    return Math.max(0, Math.min(100, calculatedFlowRate));
+  }, [load, frequency, postureScores, postureAdjustments]);
 
-    // Calcul de la moyenne pondérée
-    const weights = {
-      weight: 0.2,      // 20% pour la charge physique
-      posture: 0.25,    // 25% pour les postures
-      frequency: 0.15,  // 15% pour les fréquences
-      mental: 0.2,      // 20% pour la charge mentale
-      psycho: 0.2       // 20% pour les risques psychosociaux
+  // Mémoriser le débit calculé
+  const calculatedFlowRate = useMemo(() => calculateFlowRate(), [calculateFlowRate]);
+  
+  // Sauvegarder le débit calculé
+  const saveFlowRate = useCallback((newFlowRate: number) => {
+    // Mettre à jour l'état
+    setFlowRate(newFlowRate);
+    
+    // Sauvegarder les contraintes et le débit
+    const constraints = {
+      load,
+      frequency,
+      postureScores,
+      postureAdjustments,
+      flowRate: newFlowRate
     };
-
-    const baseWeightedScore = Math.round(
-      weightScore * weights.weight +
-      postureScore * weights.posture +
-      frequencyScore * weights.frequency +
-      mentalScore * weights.mental +
-      psychosocialScore * weights.psycho
-    );
     
-    // Application du facteur d'agitation au score final
-    const weightedScore = Math.min(100, Math.round(baseWeightedScore * agitationFactor));
-
-    console.log("Calcul détaillé du débit:", {
-      weightScore,
-      postureScore,
-      frequencyScore,
-      mentalScore,
-      psychosocialScore,
-      baseWeightedScore,
-      agitationFactor,
-      weightedScore
+    // Sauvegarder dans localStorage
+    setLocalStorage('tapConstraints', JSON.stringify(constraints));
+    setLocalStorage('flowRate', newFlowRate.toString());
+    
+    // Émettre un événement personnalisé pour notifier les autres composants
+    const event = new CustomEvent('tapFlowUpdated', {
+      detail: { flowRate: newFlowRate }
     });
+    window.dispatchEvent(event);
+    
+    // Émettre un événement storage
+    emitStorageEvent();
+    
+    return newFlowRate;
+  }, [load, frequency, postureScores, postureAdjustments]);
 
-    return weightedScore;
-  }
-
-  // Sauvegarder les paramètres
-  const saveSettings = () => {
-    try {
-      // Calcul du débit en fonction des paramètres
-      const calculatedFlowRate = calculateTapFlow();
-      
-      // Récupérer les scores nécessaires
-      const postureScore = getTotalPostureScore();
-      const psychosocialScore = calculatePsychosocialScore();
-      const mentalScore = calculateMentalWorkloadScore();
-      
-      // Créer l'objet des contraintes pour le robinet
-      const constraints = {
-        postureScores,
-        postureAdjustments,
-        physicalParams: {
-          weight: selectedWeight,
-          loadFrequency: selectedLoadFrequency,
-          postureFrequency: selectedPostureFrequency
-        },
-        mentalWorkload,
-        psychosocialRisks,
-        totalScore: calculatedFlowRate,
-        postureScore,
-        psychosocialScore,
-        mentalScore,
-        physicalScore: Math.round((selectedWeight / 25) * 100)
-      };
-
-      // Utiliser les utilitaires sécurisés pour localStorage
-      setLocalStorage('tapConstraints', JSON.stringify(constraints));
-      setLocalStorage('flowRate', calculatedFlowRate.toString());
-      
-      // Émettre des événements personnalisés pour notifier d'autres composants
-      const flowRateEvent = new CustomEvent('tapFlowUpdated', { 
-        detail: { flowRate: calculatedFlowRate } 
-      });
-      window.dispatchEvent(flowRateEvent);
-      
-      // Émettre un événement storage pour la compatibilité
-      emitStorageEvent();
-      
-      setFormSaved(true);
-      
-      // Afficher le message pendant 2 secondes
-      setTimeout(() => {
-        setFormSaved(false);
-      }, 2000);
-    } catch (error) {
-      console.error("Erreur lors de la sauvegarde des paramètres:", error);
+  // Calculer et sauvegarder le débit quand nécessaire
+  useEffect(() => {
+    if (!isInitialized) return;
+    
+    // Ne calculer et mettre à jour que lorsque formSubmitted est true (après la première soumission)
+    // ou lorsque autoSave est activé
+    if (!formSubmitted && !autoSave) return;
+    
+    const newFlowRate = calculateFlowRate();
+    if (newFlowRate !== flowRate) {
+      saveFlowRate(newFlowRate);
     }
-  }
+  }, [calculatedFlowRate, formSubmitted, autoSave, isInitialized, calculateFlowRate, saveFlowRate, flowRate]);
 
-  const handleSubmit = () => {
-    saveSettings();
-  }
+  // Gérer la soumission du formulaire
+  const handleSubmit = useCallback(() => {
+    setFormSubmitted(true);
+    const newFlowRate = calculateFlowRate();
+    saveFlowRate(newFlowRate);
+    
+    setIsSaved(true);
+    setTimeout(() => {
+      setIsSaved(false);
+    }, 2000);
+  }, [calculateFlowRate, saveFlowRate]);
+
+  // Mettre à jour un score de posture
+  const updatePostureScore = useCallback((key: keyof typeof postureScores, value: number) => {
+    setPostureScores(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  }, []);
+
+  // Mettre à jour un ajustement de posture
+  const updatePostureAdjustment = useCallback((key: keyof typeof postureAdjustments, checked: boolean) => {
+    setPostureAdjustments(prev => ({
+      ...prev,
+      [key]: checked
+    }));
+  }, []);
 
   return (
     <BaseSettingsForm
       title="Paramètres du Robinet"
       description="Le travail, avec l'ensemble de ses composantes, constitue le facteur clé dans l'analyse du risque de troubles musculo-squelettiques (TMS) et de probabilité d'accident de travail. Quels sont les déterminants physiques, psychologiques et organisationnels impliqués ? Examinez chaque aspect pour évaluer le niveau de contrainte : la charge manipulée (poids, fréquence), les postures adoptées, ainsi que l'état émotionnel (charge mentale, facteurs psychosociaux)."
-      currentValue={calculateTapFlow()}
-      getValueDescription={getScoreDescription}
+      currentValue={calculatedFlowRate}
+      getValueDescription={() => "Débit du robinet"}
       onSubmit={handleSubmit}
       scoreType="tap"
     >
@@ -682,7 +507,7 @@ export default function TapSettingsForm() {
                       <div className="flex items-center gap-2">
                         <span className="text-3xl font-semibold text-gray-400">Charge:</span>
                         <span className={`text-5xl font-mono font-bold ${physicalSliderColors.weight.text} bg-gray-800 px-4 py-2 rounded-md min-w-[6rem] text-center`}>
-                          {physicalParams.weight.toString().padStart(2, '0')}
+                          {load.toString().padStart(2, '0')}
           </span>
                         <span className="text-3xl font-semibold text-gray-400">kg</span>
         </div>
@@ -694,10 +519,10 @@ export default function TapSettingsForm() {
                     <div className="absolute w-full flex justify-between px-1 -top-8">
                       {[0, 15, 30, 45, 55].map((mark) => (
                         <div key={mark} className="flex flex-col items-center">
-                          <span className={`text-3xl ${physicalParams.weight >= mark ? physicalSliderColors.weight.text : 'text-gray-500'} mb-1`}>
+                          <span className={`text-3xl ${load >= mark ? physicalSliderColors.weight.text : 'text-gray-500'} mb-1`}>
                             {mark}
                           </span>
-                          <div className={`h-2 w-0.5 ${physicalParams.weight >= mark ? physicalSliderColors.weight.active : physicalSliderColors.weight.inactive}`} />
+                          <div className={`h-2 w-0.5 ${load >= mark ? physicalSliderColors.weight.active : physicalSliderColors.weight.inactive}`} />
                         </div>
                       ))}
                     </div>
@@ -710,7 +535,7 @@ export default function TapSettingsForm() {
                           <SecondaryMark
                             key={mark}
                             mark={mark}
-                            value={physicalParams.weight}
+                            value={load}
                             activeClass={physicalSliderColors.weight.activeLight}
                           />
                         ))}
@@ -720,14 +545,14 @@ export default function TapSettingsForm() {
                     <div className="h-2 bg-gray-700 rounded-sm overflow-hidden">
                       <div 
                         className={`h-full bg-gradient-to-r ${physicalSliderColors.weight.from} ${physicalSliderColors.weight.to} transition-all duration-150`}
-                        style={{ width: `${(physicalParams.weight / 55) * 100}%` }}
+                        style={{ width: `${(load / 55) * 100}%` }}
                       />
         </div>
 
                     {/* Curseur personnalisé */}
                     <div 
                       className="absolute top-1/2 -translate-y-1/2 pointer-events-none"
-                      style={{ left: `calc(${(physicalParams.weight / 55) * 100}% - 6px)` }}
+                      style={{ left: `calc(${(load / 55) * 100}% - 6px)` }}
                     >
                       <div className={`w-3 h-6 bg-white rounded-sm shadow-lg border ${physicalSliderColors.weight.border}`} />
       </div>
@@ -737,11 +562,8 @@ export default function TapSettingsForm() {
             type="range"
             min={0}
                       max={55}
-                      value={physicalParams.weight}
-                      onChange={(e) => setPhysicalParams({
-                        ...physicalParams,
-                        weight: Number(e.target.value)
-                      })}
+                      value={load}
+                      onChange={(e) => setLoad(Number(e.target.value))}
                       className="absolute inset-0 w-full opacity-0 cursor-pointer"
                     />
           </div>
@@ -804,10 +626,7 @@ export default function TapSettingsForm() {
 
                     <RadioGroup
                       value={String(postureScores.neck)}
-                      onValueChange={(value: string) => setPostureScores({
-                        ...postureScores,
-                        neck: Number(value)
-                      })}
+                      onValueChange={(value: string) => updatePostureScore('neck', Number(value))}
                       className="grid grid-cols-2 gap-3"
                     >
                       <label className="flex items-center space-x-3 p-4 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
@@ -834,10 +653,7 @@ export default function TapSettingsForm() {
                         <Checkbox
                           id="neck-rotation"
                           checked={postureAdjustments.neckRotation}
-                          onCheckedChange={(checked: boolean) => setPostureAdjustments({
-                            ...postureAdjustments,
-                            neckRotation: checked
-                          })}
+                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('neckRotation', checked)}
                           className="h-5 w-5 group-hover:border-red-400"
                         />
                         <span className="text-white">Rotation du cou (+1)</span>
@@ -846,10 +662,7 @@ export default function TapSettingsForm() {
                         <Checkbox
                           id="neck-inclination"
                           checked={postureAdjustments.neckInclination}
-                          onCheckedChange={(checked: boolean) => setPostureAdjustments({
-                            ...postureAdjustments,
-                            neckInclination: checked
-                          })}
+                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('neckInclination', checked)}
                           className="h-5 w-5 group-hover:border-red-400"
                         />
                         <span className="text-white">Inclinaison du cou (+1)</span>
@@ -879,10 +692,7 @@ export default function TapSettingsForm() {
       
                     <RadioGroup
                       value={String(postureScores.shoulder)}
-                      onValueChange={(value: string) => setPostureScores({
-                        ...postureScores,
-                        shoulder: Number(value)
-                      })}
+                      onValueChange={(value: string) => updatePostureScore('shoulder', Number(value))}
                       className="grid grid-cols-2 gap-3"
                     >
                       <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
@@ -909,10 +719,7 @@ export default function TapSettingsForm() {
                         <Checkbox
                           id="shoulder-raised"
                           checked={postureAdjustments.shoulderRaised}
-                          onCheckedChange={(checked: boolean) => setPostureAdjustments({
-                            ...postureAdjustments,
-                            shoulderRaised: checked
-                          })}
+                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('shoulderRaised', checked)}
                           className="h-5 w-5 group-hover:border-blue-400"
                         />
                         <span className="text-white">Épaule levée (+1)</span>
@@ -921,10 +728,7 @@ export default function TapSettingsForm() {
                         <Checkbox
                           id="shoulder-abduction"
                           checked={postureAdjustments.shoulderAbduction}
-                          onCheckedChange={(checked: boolean) => setPostureAdjustments({
-                            ...postureAdjustments,
-                            shoulderAbduction: checked
-                          })}
+                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('shoulderAbduction', checked)}
                           className="h-5 w-5 group-hover:border-blue-400"
                         />
                         <span className="text-white">Bras en abduction (+1)</span>
@@ -933,10 +737,7 @@ export default function TapSettingsForm() {
                         <Checkbox
                           id="shoulder-support"
                           checked={postureAdjustments.shoulderSupport}
-                          onCheckedChange={(checked: boolean) => setPostureAdjustments({
-                            ...postureAdjustments,
-                            shoulderSupport: checked
-                          })}
+                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('shoulderSupport', checked)}
                           className="h-5 w-5 group-hover:border-blue-400"
                         />
                         <span className="text-white">Bras en appui (-1)</span>
@@ -962,10 +763,7 @@ export default function TapSettingsForm() {
         
                     <RadioGroup
                       value={String(postureScores.elbow)}
-                      onValueChange={(value: string) => setPostureScores({
-                        ...postureScores,
-                        elbow: Number(value)
-                      })}
+                      onValueChange={(value: string) => updatePostureScore('elbow', Number(value))}
                       className="grid grid-cols-2 gap-3"
                     >
                       <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
@@ -984,10 +782,7 @@ export default function TapSettingsForm() {
                         <Checkbox
                           id="elbow-opposite"
                           checked={postureAdjustments.elbowOpposite}
-                          onCheckedChange={(checked: boolean) => setPostureAdjustments({
-                            ...postureAdjustments,
-                            elbowOpposite: checked
-                          })}
+                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('elbowOpposite', checked)}
                           className="h-5 w-5 group-hover:border-green-400"
                         />
                         <span className="text-white">Travail sur la moitié du corps opposé (+1)</span>
@@ -1017,10 +812,7 @@ export default function TapSettingsForm() {
         
                     <RadioGroup
                       value={String(postureScores.wrist)}
-                      onValueChange={(value: string) => setPostureScores({
-                        ...postureScores,
-                        wrist: Number(value)
-                      })}
+                      onValueChange={(value: string) => updatePostureScore('wrist', Number(value))}
                       className="grid grid-cols-2 gap-3"
                     >
                       <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
@@ -1047,10 +839,7 @@ export default function TapSettingsForm() {
                         <Checkbox
                           id="wrist-deviation"
                           checked={postureAdjustments.wristDeviation}
-                          onCheckedChange={(checked: boolean) => setPostureAdjustments({
-                            ...postureAdjustments,
-                            wristDeviation: checked
-                          })}
+                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('wristDeviation', checked)}
                           className="h-5 w-5 group-hover:border-purple-400"
                         />
                         <span className="text-white">Déviation radiale/ulnaire (+1)</span>
@@ -1059,11 +848,7 @@ export default function TapSettingsForm() {
                         <Checkbox
                           id="wrist-partial-rotation"
                           checked={postureAdjustments.wristPartialRotation}
-                          onCheckedChange={(checked: boolean) => setPostureAdjustments({
-                            ...postureAdjustments,
-                            wristPartialRotation: checked,
-                            wristFullRotation: checked ? false : postureAdjustments.wristFullRotation
-                          })}
+                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('wristPartialRotation', checked)}
                           className="h-5 w-5 group-hover:border-purple-400"
                         />
                         <span className="text-white">Pronation/supination partielle (+1)</span>
@@ -1072,11 +857,7 @@ export default function TapSettingsForm() {
                         <Checkbox
                           id="wrist-full-rotation"
                           checked={postureAdjustments.wristFullRotation}
-                          onCheckedChange={(checked: boolean) => setPostureAdjustments({
-                            ...postureAdjustments,
-                            wristFullRotation: checked,
-                            wristPartialRotation: checked ? false : postureAdjustments.wristPartialRotation
-                          })}
+                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('wristFullRotation', checked)}
                           className="h-5 w-5 group-hover:border-purple-400"
                         />
                         <span className="text-white">Pronation/supination complète (+2)</span>
@@ -1099,10 +880,7 @@ export default function TapSettingsForm() {
 
                     <RadioGroup
                       value={String(postureScores.trunk)}
-                      onValueChange={(value: string) => setPostureScores({
-                        ...postureScores,
-                        trunk: Number(value)
-                      })}
+                      onValueChange={(value: string) => updatePostureScore('trunk', Number(value))}
                       className="grid grid-cols-2 gap-3"
                     >
                       <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
@@ -1139,10 +917,7 @@ export default function TapSettingsForm() {
       
                     <RadioGroup
                       value={String(postureScores.legs)}
-                      onValueChange={(value: string) => setPostureScores({
-                        ...postureScores,
-                        legs: Number(value)
-                      })}
+                      onValueChange={(value: string) => updatePostureScore('legs', Number(value))}
                       className="grid grid-cols-2 gap-3"
                     >
                       <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
@@ -1192,7 +967,7 @@ export default function TapSettingsForm() {
                     <div className="flex items-center gap-2">
                       <span className="text-3xl font-semibold text-gray-400">Fréquence:</span>
                       <span className={`text-5xl font-mono font-bold ${physicalSliderColors.loadFrequency.text} bg-gray-800 px-4 py-2 rounded-md min-w-[6rem] text-center`}>
-                        {physicalParams.loadFrequency.toString().padStart(2, '0')}
+                        {frequency.toString().padStart(2, '0')}
                       </span>
                       <span className="text-3xl font-semibold text-gray-400">/h</span>
         </div>
@@ -1203,14 +978,14 @@ export default function TapSettingsForm() {
                     <div className="h-2 bg-gray-700 rounded-sm overflow-hidden">
                       <div 
                         className={`h-full bg-gradient-to-r ${physicalSliderColors.loadFrequency.from} ${physicalSliderColors.loadFrequency.to} transition-all duration-150`}
-                        style={{ width: `${((physicalParams.loadFrequency - 2) / 58) * 100}%` }}
+                        style={{ width: `${((frequency - 2) / 58) * 100}%` }}
                       />
             </div>
 
                     {/* Curseur personnalisé */}
                     <div 
                       className="absolute top-1/2 -translate-y-1/2 pointer-events-none"
-                      style={{ left: `calc(${((physicalParams.loadFrequency - 2) / 58) * 100}% - 6px)` }}
+                      style={{ left: `calc(${((frequency - 2) / 58) * 100}% - 6px)` }}
                     >
                       <div className={`w-3 h-6 bg-white rounded-sm shadow-lg border ${physicalSliderColors.loadFrequency.border}`} />
           </div>
@@ -1220,11 +995,8 @@ export default function TapSettingsForm() {
               type="range"
                       min={2}
               max={60}
-                      value={physicalParams.loadFrequency}
-                      onChange={(e) => setPhysicalParams({
-                        ...physicalParams,
-                        loadFrequency: Number(e.target.value)
-                      })}
+                      value={frequency}
+                      onChange={(e) => setFrequency(Number(e.target.value))}
                       className="absolute inset-0 w-full opacity-0 cursor-pointer"
                     />
 
@@ -1232,8 +1004,8 @@ export default function TapSettingsForm() {
                     <div className="absolute w-full flex justify-between px-1 top-4 mt-2">
                       {[2, 15, 30, 45, 60].map((mark) => (
                         <div key={mark} className="flex flex-col items-center">
-                          <div className={`h-2 w-0.5 ${physicalParams.loadFrequency >= mark ? physicalSliderColors.loadFrequency.active : physicalSliderColors.loadFrequency.inactive}`} />
-                          <span className={`text-3xl mt-1 ${physicalParams.loadFrequency >= mark ? physicalSliderColors.loadFrequency.text : 'text-gray-500'}`}>
+                          <div className={`h-2 w-0.5 ${frequency >= mark ? physicalSliderColors.loadFrequency.active : physicalSliderColors.loadFrequency.inactive}`} />
+                          <span className={`text-3xl mt-1 ${frequency >= mark ? physicalSliderColors.loadFrequency.text : 'text-gray-500'}`}>
                             {mark}
                           </span>
             </div>
@@ -1248,7 +1020,7 @@ export default function TapSettingsForm() {
                           <SecondaryMark
                             key={mark}
                             mark={mark}
-                            value={physicalParams.loadFrequency}
+                            value={frequency}
                             activeClass={physicalSliderColors.loadFrequency.activeLight}
                           />
                         ))}
@@ -1266,7 +1038,7 @@ export default function TapSettingsForm() {
                     <div className="flex items-center gap-2">
                       <span className="text-3xl font-semibold text-gray-400">Fréquence:</span>
                       <span className={`text-5xl font-mono font-bold ${physicalSliderColors.postureFrequency.text} bg-gray-800 px-4 py-2 rounded-md min-w-[6rem] text-center`}>
-                        {physicalParams.postureFrequency.toString().padStart(2, '0')}
+                        {frequency.toString().padStart(2, '0')}
                       </span>
                       <span className="text-3xl font-semibold text-gray-400">/h</span>
         </div>
@@ -1277,14 +1049,14 @@ export default function TapSettingsForm() {
                     <div className="h-2 bg-gray-700 rounded-sm overflow-hidden">
                       <div 
                         className={`h-full bg-gradient-to-r ${physicalSliderColors.postureFrequency.from} ${physicalSliderColors.postureFrequency.to} transition-all duration-150`}
-                        style={{ width: `${((physicalParams.postureFrequency - 2) / 58) * 100}%` }}
+                        style={{ width: `${((frequency - 2) / 58) * 100}%` }}
                       />
             </div>
 
                     {/* Curseur personnalisé */}
                     <div 
                       className="absolute top-1/2 -translate-y-1/2 pointer-events-none"
-                      style={{ left: `calc(${((physicalParams.postureFrequency - 2) / 58) * 100}% - 6px)` }}
+                      style={{ left: `calc(${((frequency - 2) / 58) * 100}% - 6px)` }}
                     >
                       <div className={`w-3 h-6 bg-white rounded-sm shadow-lg border ${physicalSliderColors.postureFrequency.border}`} />
           </div>
@@ -1294,11 +1066,8 @@ export default function TapSettingsForm() {
               type="range"
                       min={2}
                       max={60}
-                      value={physicalParams.postureFrequency}
-                      onChange={(e) => setPhysicalParams({
-                        ...physicalParams,
-                        postureFrequency: Number(e.target.value)
-                      })}
+                      value={frequency}
+                      onChange={(e) => setFrequency(Number(e.target.value))}
                       className="absolute inset-0 w-full opacity-0 cursor-pointer"
                     />
 
@@ -1306,8 +1075,8 @@ export default function TapSettingsForm() {
                     <div className="absolute w-full flex justify-between px-1 top-4 mt-2">
                       {[2, 15, 30, 45, 60].map((mark) => (
                         <div key={mark} className="flex flex-col items-center">
-                          <div className={`h-2 w-0.5 ${physicalParams.postureFrequency >= mark ? physicalSliderColors.postureFrequency.active : physicalSliderColors.postureFrequency.inactive}`} />
-                          <span className={`text-3xl mt-1 ${physicalParams.postureFrequency >= mark ? physicalSliderColors.postureFrequency.text : 'text-gray-500'}`}>
+                          <div className={`h-2 w-0.5 ${frequency >= mark ? physicalSliderColors.postureFrequency.active : physicalSliderColors.postureFrequency.inactive}`} />
+                          <span className={`text-3xl mt-1 ${frequency >= mark ? physicalSliderColors.postureFrequency.text : 'text-gray-500'}`}>
                             {mark}
                           </span>
             </div>
@@ -1322,7 +1091,7 @@ export default function TapSettingsForm() {
                           <SecondaryMark
                             key={mark}
                             mark={mark}
-                            value={physicalParams.postureFrequency}
+                            value={frequency}
                             activeClass={physicalSliderColors.postureFrequency.activeLight}
                           />
                         ))}

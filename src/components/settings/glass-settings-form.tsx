@@ -1,10 +1,12 @@
 "use client"
 
 import * as React from 'react'
-import BaseSettingsForm from './base-settings-form'
-import { Checkbox } from "@/components/ui/checkbox"
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useMemo } from 'react'
+import BaseSettingsForm from '@/components/settings/base-settings-form'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { getLocalStorage, setLocalStorage, emitStorageEvent } from '@/lib/localStorage'
+import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from '@/lib/utils'
 
 // Définitions des facteurs individuels
@@ -77,9 +79,10 @@ export default function GlassSettingsForm() {
   const [absorptionCapacity, setAbsorptionCapacity] = useState(50)
   const [isSaved, setIsSaved] = useState(false)
   const [formSubmitted, setFormSubmitted] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // État pour les antécédents médicaux
-  const [medicalHistory, setMedicalHistory] = useState({
+  const [medicalHistory, setMedicalHistory] = useState<MedicalHistory>({
     neckProblems: false,
     backProblems: false,
     shoulderProblems: false,
@@ -120,19 +123,12 @@ export default function GlassSettingsForm() {
         console.error("Erreur lors du chargement des paramètres:", error)
       }
     }
+    
+    setIsInitialized(true)
   }, [])
 
-  // Calcul de la capacité d'absorption en fonction des paramètres individuels
-  useEffect(() => {
-    // Ne calculer et mettre à jour que lorsque formSubmitted est true (après la première soumission)
-    // ou lorsque autoSave est activé
-    if (!formSubmitted && !autoSave) return;
-    
-    calculateAndSaveCapacity();
-  }, [age, physicalActivity, nutrition, sleepDuration, stress, medicalHistory, formSubmitted, autoSave]);
-
-  // Fonction pour calculer et sauvegarder la capacité
-  const calculateAndSaveCapacity = () => {
+  // Fonction pour calculer la capacité d'absorption (mémorisée)
+  const calculateCapacity = useCallback(() => {
     // Calculer la capacité d'absorption en fonction des paramètres
     const baseCapacity = 50;
     
@@ -167,6 +163,14 @@ export default function GlassSettingsForm() {
     // Limiter la capacité entre 10% et 100%
     capacity = Math.max(10, Math.min(100, capacity));
     
+    return Math.round(capacity);
+  }, [age, physicalActivity, nutrition, sleepDuration, stress, medicalHistory]);
+
+  // Mémoriser la capacité calculée
+  const calculatedCapacity = useMemo(() => calculateCapacity(), [calculateCapacity]);
+
+  // Sauvegarder la capacité calculée
+  const saveCapacity = useCallback((capacity: number) => {
     // Mettre à jour l'état
     setAbsorptionCapacity(capacity);
     
@@ -193,248 +197,191 @@ export default function GlassSettingsForm() {
     
     // Émettre un événement storage
     emitStorageEvent();
-
+    
     return capacity;
-  };
+  }, [age, physicalActivity, nutrition, sleepDuration, stress, medicalHistory]);
 
-  // Gérer la soumission du formulaire
-  const handleSubmit = () => {
+  // Calculer et sauvegarder la capacité quand nécessaire
+  useEffect(() => {
+    if (!isInitialized) return;
+    
+    // Ne calculer et mettre à jour que lorsque formSubmitted est true (après la première soumission)
+    // ou lorsque autoSave est activé
+    if (!formSubmitted && !autoSave) return;
+    
+    const capacity = calculateCapacity();
+    if (capacity !== absorptionCapacity) {
+      saveCapacity(capacity);
+    }
+  }, [calculatedCapacity, formSubmitted, autoSave, isInitialized, calculateCapacity, saveCapacity, absorptionCapacity]);
+
+  // Gérer la soumission du formulaire (mémorisée)
+  const handleSubmit = useCallback(() => {
     setFormSubmitted(true);
-    const capacity = calculateAndSaveCapacity();
+    const capacity = calculateCapacity();
+    saveCapacity(capacity);
     
     setIsSaved(true);
     setTimeout(() => {
       setIsSaved(false);
     }, 2000);
-  };
+  }, [calculateCapacity, saveCapacity]);
 
-  const handleMedicalHistoryChange = (key: keyof typeof medicalHistory, checked: boolean) => {
+  // Gérer les changements d'antécédents médicaux (mémorisée)
+  const handleMedicalHistoryChange = useCallback((key: MedicalHistoryKey, checked: boolean) => {
     setMedicalHistory(prev => ({
       ...prev,
       [key]: checked
     }));
-  };
+  }, []);
+
+  const individualFactors = [
+    {
+      id: 'age',
+      label: 'Âge',
+      min: 18,
+      max: 65,
+      unit: 'ans',
+      value: age
+    },
+    {
+      id: 'physicalActivity',
+      label: 'Activité sportive',
+      min: 0,
+      max: 7,
+      unit: 'fois/semaine',
+      value: physicalActivity
+    },
+    {
+      id: 'nutrition',
+      label: 'Alimentation',
+      min: 1,
+      max: 5,
+      unit: '/5',
+      value: nutrition
+    },
+    {
+      id: 'sleepDuration',
+      label: 'Sommeil',
+      min: 5,
+      max: 9,
+      unit: 'h',
+      value: sleepDuration
+    }
+  ];
+
+  // Description de la capacité d'absorption
+  const getAbsorptionDescription = (value: number) => {
+    if (value < 40) return "Faible capacité d'absorption"
+    if (value < 60) return "Capacité d'absorption modérée"
+    if (value < 80) return "Bonne capacité d'absorption"
+    return "Excellente capacité d'absorption"
+  }
 
   return (
     <BaseSettingsForm
-      title="Paramètres du verre"
-      subtitle="Configurez les facteurs individuels qui influencent la capacité d'absorption des contraintes."
+      title="Paramètres du Verre"
+      description="Chaque individu présente des caractéristiques physiques et des habitudes de vie qui lui sont propres. Ces facteurs individuels doivent impérativement être pris en compte lorsqu'il s'agit d'évaluer le risque TMS ou d'anticiper la probabilité d'accident de travail."
+      currentValue={calculatedCapacity}
+      getValueDescription={getAbsorptionDescription}
       onSubmit={handleSubmit}
-      showSaveMessage={isSaved}
-      autoSave={autoSave}
-      onAutoSaveChange={setAutoSave}
+      scoreType="glass"
     >
       <div className="space-y-8">
-        <div className="p-6 rounded-lg border border-slate-700/50 bg-gradient-to-br from-slate-900/60 via-slate-900/40 to-slate-900/60">
-          <h3 className="text-lg font-semibold text-slate-300 mb-4">Capacité d'absorption calculée</h3>
-          
-          <div className="relative h-6 bg-slate-800 rounded-full overflow-hidden">
+        {/* Facteurs individuels */}
+        <div className="grid grid-cols-2 gap-6">
+          {individualFactors.map((factor) => (
             <div 
-              className={cn(
-                "absolute h-full left-0 top-0 rounded-full transition-all duration-500",
-                absorptionCapacity >= 80 ? "bg-gradient-to-r from-emerald-500 to-emerald-400" :
-                absorptionCapacity >= 60 ? "bg-gradient-to-r from-sky-500 to-sky-400" :
-                absorptionCapacity >= 40 ? "bg-gradient-to-r from-amber-500 to-amber-400" :
-                "bg-gradient-to-r from-rose-500 to-rose-400"
-              )}
-              style={{ width: `${absorptionCapacity}%` }}
-            />
-            <div className="absolute inset-0 flex items-center justify-center z-10">
-              <span className="text-sm font-medium text-white">{absorptionCapacity}%</span>
+              key={factor.id} 
+              className="bg-gray-800/40 rounded-lg p-6 space-y-4"
+            >
+              <div className="flex items-center justify-between">
+                <Label className="text-xl font-medium text-gray-200">{factor.label}</Label>
+                <span className="text-lg font-medium text-gray-200 bg-gray-700/50 px-3 py-1.5 rounded-md">
+                  {factor.value}{factor.unit}
+                </span>
+          </div>
+              <div className="relative pt-1">
+            <input
+              type="range"
+                  min={factor.min}
+                  max={factor.max}
+                  value={factor.value}
+                  onChange={(e) => {
+                    if (factor.id === 'age') setAge(parseInt(e.target.value))
+                    else if (factor.id === 'physicalActivity') setPhysicalActivity(parseInt(e.target.value))
+                    else if (factor.id === 'nutrition') setNutrition(parseInt(e.target.value))
+                    else if (factor.id === 'sleepDuration') setSleepDuration(parseInt(e.target.value))
+                  }}
+                  className="w-full h-2.5 bg-gray-600/50 rounded-lg appearance-none cursor-pointer accent-blue-500
+                    [&::-webkit-slider-thumb]:w-5 
+                    [&::-webkit-slider-thumb]:h-5 
+                    [&::-webkit-slider-thumb]:appearance-none 
+                    [&::-webkit-slider-thumb]:bg-white 
+                    [&::-webkit-slider-thumb]:rounded-full 
+                    [&::-webkit-slider-thumb]:shadow-lg
+                    [&::-webkit-slider-thumb]:transition-all
+                    [&::-webkit-slider-thumb]:duration-150
+                    [&::-webkit-slider-thumb]:hover:scale-110"
+                />
+                <div className="flex justify-between mt-2 text-base text-gray-400">
+                  <span>{factor.min}{factor.unit}</span>
+                  <span>{factor.max}{factor.unit}</span>
             </div>
           </div>
-          
-          <p className="text-sm text-slate-400 mt-2">
-            Cette valeur représente la capacité du corps à absorber les contraintes. Une capacité plus élevée rend le verre plus large.
-          </p>
         </div>
-        
-        <div className="grid gap-6">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-300 mb-4">Facteurs individuels</h3>
-            
-            <div className="space-y-4">
-              {/* Âge */}
-              <div>
-                <div className="flex justify-between mb-2">
-                  <label className="text-sm font-medium text-slate-300">Âge</label>
-                  <span className="text-sm text-slate-400">{age} ans</span>
-                </div>
-                <input
-                  type="range"
-                  min="20"
-                  max="70"
-                  value={age}
-                  onChange={(e) => setAge(Number(e.target.value))}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-slate-500 mt-1">
-                  <span>20</span>
-                  <span>45</span>
-                  <span>70</span>
-                </div>
-              </div>
-              
-              {/* Activité physique */}
-              <div>
-                <div className="flex justify-between mb-2">
-                  <label className="text-sm font-medium text-slate-300">Activité physique</label>
-                  <span className="text-sm text-slate-400">{physicalActivity}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={physicalActivity}
-                  onChange={(e) => setPhysicalActivity(Number(e.target.value))}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-slate-500 mt-1">
-                  <span>Sédentaire</span>
-                  <span>Modérée</span>
-                  <span>Intense</span>
-                </div>
-              </div>
-              
-              {/* Nutrition */}
-              <div>
-                <div className="flex justify-between mb-2">
-                  <label className="text-sm font-medium text-slate-300">Nutrition</label>
-                  <span className="text-sm text-slate-400">{nutrition}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={nutrition}
-                  onChange={(e) => setNutrition(Number(e.target.value))}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-slate-500 mt-1">
-                  <span>Déséquilibrée</span>
-                  <span>Correcte</span>
-                  <span>Optimale</span>
-                </div>
-              </div>
-              
-              {/* Durée de sommeil */}
-              <div>
-                <div className="flex justify-between mb-2">
-                  <label className="text-sm font-medium text-slate-300">Durée de sommeil</label>
-                  <span className="text-sm text-slate-400">{sleepDuration} heures</span>
-                </div>
-                <input
-                  type="range"
-                  min="4"
-                  max="10"
-                  step="0.5"
-                  value={sleepDuration}
-                  onChange={(e) => setSleepDuration(Number(e.target.value))}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-slate-500 mt-1">
-                  <span>4h</span>
-                  <span>7h</span>
-                  <span>10h</span>
-                </div>
-              </div>
-              
-              {/* Niveau de stress */}
-              <div>
-                <div className="flex justify-between mb-2">
-                  <label className="text-sm font-medium text-slate-300">Niveau de stress</label>
-                  <span className="text-sm text-slate-400">{stress}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={stress}
-                  onChange={(e) => setStress(Number(e.target.value))}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-slate-500 mt-1">
-                  <span>Faible</span>
-                  <span>Modéré</span>
-                  <span>Élevé</span>
-                </div>
-              </div>
+          ))}
+      </div>
+      
+      {/* Antécédents médicaux */}
+        <div className="space-y-4">
+          <h3 className="text-xl font-medium text-gray-200 mb-2">Antécédents médicaux</h3>
+          <div className="grid grid-cols-2 gap-4">
+            {pathologies.map((pathology) => {
+              const isSelected = medicalHistory[pathology.id as MedicalHistoryKey];
+              return (
+                <button
+                  key={pathology.id}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleMedicalHistoryChange(pathology.id as MedicalHistoryKey, !isSelected);
+                  }}
+                  className={`w-full text-left transition-all duration-200 px-4 py-3 rounded-lg group
+                    ${isSelected 
+                      ? 'bg-blue-500/20 border-2 border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' 
+                      : 'bg-gray-800/40 border-2 border-transparent hover:border-gray-600'
+                    }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className={`text-lg font-medium mb-1 ${isSelected ? 'text-blue-400' : 'text-gray-300'}`}>
+                        {pathology.label}
+                      </p>
+                      <p className={`text-base ${isSelected ? 'text-blue-300/80' : 'text-gray-500'}`}>
+                        {pathology.description}
+                      </p>
+            </div>
+                    <div className={`ml-3 rounded-full p-1.5 
+                      ${isSelected 
+                        ? 'bg-blue-500 text-white' 
+                        : 'bg-gray-700/50 text-gray-400'
+                      }`}
+                    >
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        className={`w-5 h-5 transition-transform duration-200 ${isSelected ? 'scale-100' : 'scale-0'}`}
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
             </div>
           </div>
-          
-          <div>
-            <h3 className="text-lg font-semibold text-slate-300 mb-4">Antécédents médicaux</h3>
-            <p className="text-sm text-slate-400 mb-4">
-              Cochez les options qui correspondent à votre situation médicale actuelle ou passée.
-            </p>
-            
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="neckProblems" 
-                  checked={medicalHistory.neckProblems}
-                  onCheckedChange={(checked) => handleMedicalHistoryChange('neckProblems', checked === true)}
-                />
-                <label htmlFor="neckProblems" className="text-sm font-medium text-slate-300 cursor-pointer">
-                  Problèmes cervicaux
-                </label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="backProblems" 
-                  checked={medicalHistory.backProblems}
-                  onCheckedChange={(checked) => handleMedicalHistoryChange('backProblems', checked === true)}
-                />
-                <label htmlFor="backProblems" className="text-sm font-medium text-slate-300 cursor-pointer">
-                  Problèmes dorsaux ou lombaires
-                </label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="shoulderProblems" 
-                  checked={medicalHistory.shoulderProblems}
-                  onCheckedChange={(checked) => handleMedicalHistoryChange('shoulderProblems', checked === true)}
-                />
-                <label htmlFor="shoulderProblems" className="text-sm font-medium text-slate-300 cursor-pointer">
-                  Problèmes d'épaule
-                </label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="wristProblems" 
-                  checked={medicalHistory.wristProblems}
-                  onCheckedChange={(checked) => handleMedicalHistoryChange('wristProblems', checked === true)}
-                />
-                <label htmlFor="wristProblems" className="text-sm font-medium text-slate-300 cursor-pointer">
-                  Problèmes de poignet
-                </label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="kneeProblems" 
-                  checked={medicalHistory.kneeProblems}
-                  onCheckedChange={(checked) => handleMedicalHistoryChange('kneeProblems', checked === true)}
-                />
-                <label htmlFor="kneeProblems" className="text-sm font-medium text-slate-300 cursor-pointer">
-                  Problèmes de genou
-                </label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="previousTMS" 
-                  checked={medicalHistory.previousTMS}
-                  onCheckedChange={(checked) => handleMedicalHistoryChange('previousTMS', checked === true)}
-                />
-                <label htmlFor="previousTMS" className="text-sm font-medium text-slate-300 cursor-pointer">
-                  Antécédents de TMS
-                </label>
-              </div>
-            </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

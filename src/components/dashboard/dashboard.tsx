@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import TapComponent from './tap-component'
 import GlassComponent from './glass-component'
@@ -83,6 +83,15 @@ export default function Dashboard() {
   const [workTime, setWorkTime] = useState(0) // temps écoulé en minutes simulées
   const [workStartTime, setWorkStartTime] = useState(Date.now()) // moment de démarrage du chrono
   const [lastSimulationSpeed, setLastSimulationSpeed] = useState(1) // pour suivre les changements de vitesse
+
+  // Utilisation de useCallback pour éviter les recréations de fonctions à chaque rendu
+  const handleOpenModal = useCallback((modalType: 'tap' | 'glass' | 'straw' | 'bubble') => {
+    setActiveModal(modalType)
+  }, [])
+  
+  const handleCloseModal = useCallback(() => {
+    setActiveModal(null)
+  }, [])
 
   // Effet pour marquer le composant comme monté
   useEffect(() => {
@@ -730,7 +739,7 @@ export default function Dashboard() {
                     </p>
                     <div className="flex-grow" />
                     <button 
-                      onClick={() => setActiveModal('glass')}
+                      onClick={() => handleOpenModal('glass')}
                       className="group relative w-fit mt-4 px-3 py-1.5 text-base text-gray-400 hover:text-gray-300 transition-colors"
                     >
                       <Settings className="w-5 h-5 inline-block mr-2" />
@@ -802,7 +811,7 @@ export default function Dashboard() {
                     </p>
                     <div className="flex-grow" />
                     <button 
-                      onClick={() => setActiveModal('tap')}
+                      onClick={() => handleOpenModal('tap')}
                       className="group relative w-fit mt-4 px-3 py-1.5 text-base text-blue-400 hover:text-blue-300 transition-colors"
                     >
                       <Settings className="w-5 h-5 inline-block mr-2" />
@@ -887,7 +896,7 @@ export default function Dashboard() {
                     </p>
                     <div className="flex-grow" />
                     <button 
-                      onClick={() => setActiveModal('straw')}
+                      onClick={() => handleOpenModal('straw')}
                       className="group relative w-fit mt-4 px-3 py-1.5 text-base text-green-400 hover:text-green-300 transition-colors"
                     >
                       <Settings className="w-5 h-5 inline-block mr-2" />
@@ -953,7 +962,7 @@ export default function Dashboard() {
                     </p>
                     <div className="flex-grow" />
                     <button
-                      onClick={() => setActiveModal('bubble')}
+                      onClick={() => handleOpenModal('bubble')}
                       className="group relative w-fit mt-4 px-3 py-1.5 text-base text-purple-400 hover:text-purple-300 transition-colors"
                     >
                       <Settings className="w-5 h-5 inline-block mr-2" />
@@ -1130,7 +1139,7 @@ export default function Dashboard() {
       {/* Modales de paramètres */}
       <ParameterModals 
         activeModal={activeModal}
-        onClose={() => setActiveModal(null)}
+        onClose={handleCloseModal}
       />
 
       {/* Ajuster l'animation pour un effet plus subtil */}
