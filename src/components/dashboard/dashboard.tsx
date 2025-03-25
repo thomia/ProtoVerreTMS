@@ -538,7 +538,7 @@ export default function Dashboard() {
       <ModelDescription />
 
       {/* Dashboard principal */}
-      <div className="w-full max-w-[1400px] mx-auto">
+      <div className="w-full max-w-[1800px] mx-auto">
         {/* Conteneur principal avec marges adaptatives */}
         <div className="bg-black backdrop-blur-md border border-gray-800/50 rounded-xl p-4 md:p-8 mx-auto">
           {/* Contrôles de simulation avec flex wrap */}
@@ -594,14 +594,14 @@ export default function Dashboard() {
           </div>
 
           {/* Section supérieure - Risques unifiés avec adaptation mobile */}
-          <div className="flex justify-center md:justify-center mb-8">
-            <div className="w-full md:w-[750px] relative">
+          <div className="flex justify-center md:justify-center mb-12">
+            <div className="w-full md:w-[900px] relative">
               <div className="p-6 rounded-xl bg-gradient-to-br from-gray-900/70 via-gray-900/50 to-gray-900/70 border border-gray-800/50 backdrop-blur-md">
                 <div className="grid grid-cols-2 gap-6">
                   {/* Risque d'accident */}
                   <div className="relative group">
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-xl blur-md group-hover:blur-lg transition-all duration-500" />
-                    <div className="relative h-[80px] p-4 rounded-xl backdrop-blur-[2px] overflow-hidden">
+                    <div className="relative h-[100px] p-4 rounded-xl backdrop-blur-[2px] overflow-hidden">
                       {/* Bordure de progression */}
                       <div className="absolute inset-0 rounded-xl border-[4px] border-gray-800/50" />
                       <div 
@@ -632,7 +632,7 @@ export default function Dashboard() {
                   {/* Exposition TMS */}
                   <div className="relative group">
                     <div className="absolute inset-0 bg-gradient-to-br from-teal-500/20 to-cyan-500/20 rounded-xl blur-md group-hover:blur-lg transition-all duration-500" />
-                    <div className="relative h-[80px] p-4 rounded-xl backdrop-blur-[2px] overflow-hidden">
+                    <div className="relative h-[100px] p-4 rounded-xl backdrop-blur-[2px] overflow-hidden">
                       {/* Bordure de progression */}
                       <div className="absolute inset-0 rounded-xl border-[4px] border-gray-800/50" />
                       <div 
@@ -749,7 +749,7 @@ export default function Dashboard() {
           </div>
 
           {/* Grille principale responsive */}
-          <div className="grid grid-cols-1 lg:grid-cols-[600px_1fr] gap-8 mt-8 md:-mt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-[750px_1fr] gap-8 mt-8 md:mt-0">
           {/* Panneau de gauche - Informations et contrôles */}
             <div className="space-y-8 p-4 md:p-6 rounded-xl bg-gradient-to-br from-gray-900/70 via-gray-900/50 to-gray-900/70 border border-gray-800/50 backdrop-blur-sm shadow-lg">
               <div className="flex items-center justify-between pb-4 border-b border-gray-800/50">
@@ -763,7 +763,7 @@ export default function Dashboard() {
               <div className="space-y-3 p-6 rounded-lg bg-gray-900/30 hover:bg-gray-900/40 transition-colors border-2 border-gray-800/40">
                 <div className="flex h-[200px]">
                   {/* Contenu principal avec largeur fixe */}
-                  <div className="w-[300px] flex flex-col">
+                  <div className="w-[400px] flex flex-col">
                     <div className="flex items-center gap-3">
                       <GlassWater className="w-6 h-6 text-gray-400" />
                       <h3 className="text-xl font-semibold text-gray-300">Verre</h3>
@@ -826,7 +826,7 @@ export default function Dashboard() {
               <div className="space-y-3 p-6 rounded-lg bg-blue-950/20 hover:bg-blue-950/30 transition-colors border-2 border-blue-900/30">
                 <div className="flex h-[200px]">
                   {/* Contenu principal avec largeur fixe */}
-                  <div className="w-[300px] flex flex-col">
+                  <div className="w-[400px] flex flex-col">
                     <div className="flex items-center gap-3">
                       <Droplet className="w-6 h-6 text-blue-400" />
                       <h3 className="text-xl font-semibold text-blue-400">Robinet</h3>
@@ -898,7 +898,7 @@ export default function Dashboard() {
               <div className="space-y-3 p-6 rounded-lg bg-green-950/20 hover:bg-green-950/30 transition-colors border-2 border-green-900/30">
                 <div className="flex h-[200px]">
                   {/* Contenu principal avec largeur fixe */}
-                  <div className="w-[300px] flex flex-col">
+                  <div className="w-[400px] flex flex-col">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <RectangleHorizontal className="w-6 h-6 text-green-400" />
@@ -986,7 +986,7 @@ export default function Dashboard() {
               <div className="space-y-3 p-6 rounded-lg bg-purple-950/20 hover:bg-purple-950/30 transition-colors border-2 border-purple-900/30">
                 <div className="flex h-[200px]">
                   {/* Contenu principal avec largeur fixe */}
-                  <div className="w-[300px] flex flex-col">
+                  <div className="w-[400px] flex flex-col">
                     <div className="flex items-center gap-3">
                       <Cloud className="w-6 h-6 text-purple-400" />
                       <h3 className="text-xl font-semibold text-purple-400">Bulle</h3>
@@ -1048,15 +1048,15 @@ export default function Dashboard() {
             
             {/* Panneau central - Visualisation avec adaptation mobile */}
             <div className="relative flex items-center justify-center h-full">
-              <div className="relative w-full max-w-[900px] transform scale-100">
+              <div className="relative w-full max-w-[1000px] transform scale-100">
                 {/* Ensemble unifié bulle + composants */}
-                <div className="relative flex items-center justify-center mt-[100px] md:mt-[200px]">
+                <div className="relative flex items-center justify-center mt-[50px] md:mt-[100px]">
                   {/* Bulle environnementale */}
-                  <div className="absolute inset-[-80px] z-0">
+                  <div className="absolute inset-[-120px] z-0">
                     <div 
-                      className="relative w-[70%] h-full rounded-[50%] bg-gradient-to-br from-purple-500/3 to-purple-700/5 backdrop-blur-[2px] border border-purple-400/10" 
+                      className="relative w-[80%] h-full rounded-[50%] bg-gradient-to-br from-purple-500/3 to-purple-700/5 backdrop-blur-[2px] border border-purple-400/10" 
                       style={{
-                        aspectRatio: '0.8',
+                        aspectRatio: '0.9',
                         transform: 'scale(1.1)',
                         animation: 'bubblePulse 8s ease-in-out infinite',
                         boxShadow: `
@@ -1072,9 +1072,9 @@ export default function Dashboard() {
           </div>
           
                   {/* Ensemble verre-robinet-paille centré dans la bulle */}
-                  <div className="relative z-10 -translate-x-32">
+                  <div className="relative z-10 -translate-x-0 md:-translate-x-20">
               {/* Robinet et son filet d'eau */}
-                    <div className="flex justify-center mb-4">
+                    <div className="flex justify-center mb-10">
                       <div className="relative">
                 <TapComponent 
                   flowRate={flowRate}
@@ -1085,7 +1085,7 @@ export default function Dashboard() {
                 <div 
                           className="absolute top-[60px] left-[-4px] z-10"
                   style={{
-                    height: '140px',
+                    height: '180px',
                     width: `${getWaterStreamWidth()}px`,
                     background: `linear-gradient(180deg, 
                       rgba(59, 130, 246, ${getWaterStreamOpacity()}) 0%,
@@ -1171,7 +1171,7 @@ export default function Dashboard() {
       </div>
       
       {/* Modales de paramètres */}
-      <ParameterModals
+      <ParameterModals 
         activeModal={activeModal}
         onCloseModal={handleCloseModal}
       />
@@ -1193,7 +1193,7 @@ export default function Dashboard() {
       `}</style>
 
       {/* Panneau des coûts repositionné de manière responsive */}
-      <div className="relative w-full lg:w-[400px] mt-8 mx-auto">
+      <div className="relative w-full lg:w-[500px] mt-8 mx-auto lg:mx-0 lg:ml-auto lg:mr-[5%]">
         <div className="p-6 rounded-xl bg-gradient-to-br from-slate-800/90 via-slate-800/80 to-slate-900/90 border border-slate-700/50 backdrop-blur-sm shadow-xl">
           <CostPanel
             bodyParts={[
