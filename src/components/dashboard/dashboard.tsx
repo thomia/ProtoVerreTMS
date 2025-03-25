@@ -6,7 +6,7 @@ import TapComponent from './tap-component'
 import GlassComponent from './glass-component'
 import StrawComponent from './straw-component'
 import React from 'react'
-import ParameterModals from './parameter-modals'
+import { ParameterModals } from './parameter-modals'
 import { Settings, Droplet, Wind, GlassWater, RectangleHorizontal, Cloud, ActivitySquare, Activity, Lightbulb, AlertTriangle, AlertCircle, HelpCircle, ExternalLink, BookOpen, Scale, FileText, Stethoscope, AlertOctagon, InfoIcon, Clock } from 'lucide-react'
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
@@ -1137,9 +1137,9 @@ export default function Dashboard() {
       </div>
       
       {/* Modales de paramètres */}
-      <ParameterModals 
+      <ParameterModals
         activeModal={activeModal}
-        onClose={handleCloseModal}
+        onCloseModal={handleCloseModal}
       />
 
       {/* Ajuster l'animation pour un effet plus subtil */}

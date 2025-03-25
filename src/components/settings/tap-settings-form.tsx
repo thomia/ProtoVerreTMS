@@ -4,11 +4,27 @@ import * as React from 'react'
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import BaseSettingsForm from './base-settings-form'
 import { Label } from '@/components/ui/label'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Checkbox } from "@/components/ui/checkbox"
+import { InfoCircledIcon } from "@radix-ui/react-icons"
+import { CheckCircle2, AlertCircle, Circle } from "lucide-react"
 import { getLocalStorage, setLocalStorage, emitStorageEvent } from '@/lib/localStorage'
 import { cn } from '@/lib/utils'
 
 // Types pour les postures
-interface PostureScores {
+type PostureScores = {
   neck: number;
   shoulder: number;
   elbow: number;
@@ -17,7 +33,7 @@ interface PostureScores {
   legs: number;
 }
 
-interface PostureAdjustments {
+type PostureAdjustments = {
   neckRotation: boolean;
   neckInclination: boolean;
   shoulderRaised: boolean;
@@ -30,7 +46,7 @@ interface PostureAdjustments {
 }
 
 // Types pour les risques psychosociaux
-interface PsychosocialRisks {
+type PsychosocialRisks = {
   workAutonomy: {
     taskAutonomy: number;
     temporalAutonomy: number;
@@ -150,28 +166,28 @@ const psychosocialColors = {
   }
 }
 
-// Définition de la direction des questions (true = positif, false = négatif)
+// Direction des facteurs psychosociaux (positif ou négatif)
 const psychosocialDirections = {
   workAutonomy: {
-    taskAutonomy: true,
-    temporalAutonomy: true,
-    skillsUse: true
+    taskAutonomy: true, // Positif: plus d'autonomie = moins de risque
+    temporalAutonomy: true, // Positif
+    skillsUse: true, // Positif
   },
   socialRelations: {
-    colleagueSupport: true,
-    hierarchySupport: true,
-    professionalDisagreements: false,
-    workRecognition: true
+    colleagueSupport: true, // Positif
+    hierarchySupport: true, // Positif
+    professionalDisagreements: false, // Négatif: plus de désaccords = plus de risque
+    workRecognition: true, // Positif
   },
   valueConflicts: {
-    preventedQuality: true,
-    uselessWork: false
+    preventedQuality: false, // Négatif
+    uselessWork: false, // Négatif
   },
   jobInsecurity: {
-    socioeconomicInsecurity: false,
-    changeManagement: true
-  }
-}
+    socioeconomicInsecurity: false, // Négatif
+    changeManagement: false, // Négatif
+  },
+};
 
 // Ajout des couleurs pour les sliders physiques
 const physicalSliderColors = {
@@ -279,6 +295,40 @@ export default function TapSettingsForm() {
   const [isSaved, setIsSaved] = useState(false)
   const [formSubmitted, setFormSubmitted] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
+  const [activeSection, setActiveSection] = useState<string>("charge")
+  
+  // État pour les risques psychosociaux
+  const [psychosocialRisks, setPsychosocialRisks] = useState<PsychosocialRisks>({
+    workAutonomy: {
+      taskAutonomy: 0,
+      temporalAutonomy: 0,
+      skillsUse: 0
+    },
+    socialRelations: {
+      colleagueSupport: 0,
+      hierarchySupport: 0,
+      professionalDisagreements: 0,
+      workRecognition: 0
+    },
+    valueConflicts: {
+      preventedQuality: 0,
+      uselessWork: 0
+    },
+    jobInsecurity: {
+      socioeconomicInsecurity: 0,
+      changeManagement: 0
+    }
+  })
+  
+  // État pour les scores de charge mentale
+  const [mentalWorkload, setMentalWorkload] = useState({
+    mentalDemand: 0,
+    physicalDemand: 0,
+    temporalDemand: 0,
+    performance: 0,
+    effort: 0,
+    frustration: 0
+  })
   
   // Définir l'état de sauvegarde automatique
   const [autoSave, setAutoSave] = useState(true)
@@ -305,6 +355,85 @@ export default function TapSettingsForm() {
     wristPartialRotation: false, // Rotation partielle du poignet
     wristFullRotation: false // Rotation complète du poignet
   })
+
+  // Fonction pour vérifier si une section est complète
+  const isSectionComplete = useCallback((section: string) => {
+    switch (section) {
+      case 'charge':
+        return load > 0
+      case 'postures':
+        return Object.values(postureScores).some(score => score > 0)
+      case 'frequences':
+        return frequency > 2
+      case 'mental-workload':
+        return calculateMentalWorkloadScore() > 0
+      default:
+        return false
+    }
+  }, [load, frequency, postureScores]);
+
+  // Fonction pour obtenir le message d'état
+  const getSectionStatus = useCallback((section: string) => {
+    switch (section) {
+      case 'charge':
+        return load > 0 
+          ? "Poids unitaire défini" 
+          : "Quels est le poids unitaire de la plus grosse charge que j'ai à manipuler"
+      case 'postures':
+        return Object.values(postureScores).some(score => score > 0)
+          ? "Postures évaluées"
+          : "Évaluez au moins une posture"
+      case 'frequences':
+        return frequency > 2
+          ? "Fréquences définies"
+          : "Définissez les fréquences"
+      case 'mental-workload':
+        return calculateMentalWorkloadScore() > 0
+          ? "Charge mentale évaluée"
+          : "Évaluez la charge mentale"
+      default:
+        return ""
+    }
+  }, [load, frequency, postureScores]);
+
+  // Calcul du score total de charge mentale
+  const calculateMentalWorkloadScore = useCallback(() => {
+    return Object.values(mentalWorkload).reduce((acc, curr) => acc + curr, 0);
+  }, [mentalWorkload]);
+
+  // Fonction pour mettre à jour les risques psychosociaux
+  const updatePsychosocialRisk = useCallback(
+    (category: keyof PsychosocialRisks, subCategory: string, value: number) => {
+      setPsychosocialRisks(prev => ({
+        ...prev,
+        [category]: {
+          ...prev[category],
+          [subCategory]: value
+        }
+      }));
+    },
+    []
+  );
+
+  // Fonction pour calculer le score des risques psychosociaux
+  const calculatePsychosocialScore = useCallback(() => {
+    let totalScore = 0;
+    let maxPossibleScore = 0;
+
+    Object.entries(psychosocialRisks).forEach(([category, values]) => {
+      Object.entries(values).forEach(([subCategory, value]) => {
+        const isPositive = psychosocialDirections[category as keyof typeof psychosocialDirections][subCategory as keyof typeof psychosocialDirections[keyof typeof psychosocialDirections]];
+        // Inverser la logique : pour les questions positives, on soustrait de 3 pour avoir un score de risque
+        // Pour les questions négatives, on garde la valeur telle quelle
+        const adjustedValue = isPositive ? (3 - (value as number)) : (value as number);
+        totalScore += adjustedValue;
+        maxPossibleScore += 3; // Le maximum possible pour chaque question est 3
+      });
+    });
+
+    // Le score final représente maintenant le niveau de risque
+    return maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0;
+  }, [psychosocialRisks]);
 
   // Chargement des paramètres depuis localStorage au montage du composant
   useEffect(() => {
