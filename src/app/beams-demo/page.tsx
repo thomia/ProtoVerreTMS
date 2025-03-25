@@ -1,3 +1,5 @@
+'use client'
+
 import { BackgroundBeamsWithCollisionDemo } from "@/components/ui/background-beams-demo";
 import Link from "next/link";
 

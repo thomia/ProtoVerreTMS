@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import TapSettingsForm from '@/components/settings/tap-settings-form'
 

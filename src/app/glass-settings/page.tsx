@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import GlassSettingsForm from '@/components/settings/glass-settings-form'
 
