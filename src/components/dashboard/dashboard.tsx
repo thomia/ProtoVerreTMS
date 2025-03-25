@@ -7,7 +7,7 @@ import GlassComponent from './glass-component'
 import StrawComponent from './straw-component'
 import React from 'react'
 import ParameterModals from './parameter-modals'
-import { Settings, Droplet, Wind, GlassWater, RectangleHorizontal, Cloud, ActivitySquare, Activity, Lightbulb, AlertTriangle, AlertCircle, HelpCircle, ExternalLink, BookOpen, Scale, FileText, Stethoscope, AlertOctagon, InfoIcon } from 'lucide-react'
+import { Settings, Droplet, Wind, GlassWater, RectangleHorizontal, Cloud, ActivitySquare, Activity, Lightbulb, AlertTriangle, AlertCircle, HelpCircle, ExternalLink, BookOpen, Scale, FileText, Stethoscope, AlertOctagon, InfoIcon, Clock } from 'lucide-react'
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { EnvironmentParticles } from './environment-particles'
@@ -75,17 +75,25 @@ export default function Dashboard() {
   const glassRef = React.useRef<HTMLDivElement>(null)
   const lastFlowRateRef = React.useRef<number>(0)
 
+  // États pour le chronomètre de travail (8h)
+  const [workTime, setWorkTime] = useState(0) // temps écoulé en minutes simulées
+  const [workStartTime, setWorkStartTime] = useState(Date.now()) // moment de démarrage du chrono
+  const [lastSimulationSpeed, setLastSimulationSpeed] = useState(1) // pour suivre les changements de vitesse
+
   // Charger les paramètres de posture depuis localStorage
   useEffect(() => {
     const loadPostureSettings = () => {
-      const savedConstraints = localStorage.getItem('tapConstraints')
-      if (savedConstraints) {
-        try {
-          const parsed = JSON.parse(savedConstraints)
-          if (parsed.postureScores) setPostureScores(parsed.postureScores)
-          if (parsed.postureAdjustments) setPostureAdjustments(parsed.postureAdjustments)
-        } catch (e) {
-          console.error("Erreur lors du chargement des paramètres de posture:", e)
+      // Vérifier que nous sommes côté client avant d'accéder à localStorage
+      if (typeof window !== 'undefined') {
+        const savedConstraints = localStorage.getItem('tapConstraints')
+        if (savedConstraints) {
+          try {
+            const parsed = JSON.parse(savedConstraints)
+            if (parsed.postureScores) setPostureScores(parsed.postureScores)
+            if (parsed.postureAdjustments) setPostureAdjustments(parsed.postureAdjustments)
+          } catch (e) {
+            console.error("Erreur lors du chargement des paramètres de posture:", e)
+          }
         }
       }
     }
@@ -94,37 +102,48 @@ export default function Dashboard() {
     loadPostureSettings()
     
     // Écouter les changements dans localStorage
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'tapConstraints') {
-        loadPostureSettings()
-      }
+    const handleStorageChange = () => {
+      loadPostureSettings()
     }
     
-    window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
+    // Vérifier que nous sommes côté client avant d'ajouter l'écouteur d'événements
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageChange)
+      
+      return () => {
+        window.removeEventListener('storage', handleStorageChange)
+      }
+    }
   }, [])
 
   // Charger les antécédents médicaux depuis localStorage
   useEffect(() => {
-    const loadMedicalHistory = () => {
-      const savedGlassSettings = localStorage.getItem('glassSettings')
-      if (savedGlassSettings) {
-        try {
-          const parsed = JSON.parse(savedGlassSettings)
-          if (parsed.medicalHistory) setMedicalHistory(parsed.medicalHistory)
-        } catch (e) {
-          console.error("Erreur lors du chargement des antécédents médicaux:", e)
+    if (typeof window === 'undefined') return;
+    
+    const savedGlassSettings = localStorage.getItem('glassSettings')
+    if (savedGlassSettings) {
+      try {
+        const settings = JSON.parse(savedGlassSettings)
+        if (settings.medicalHistory) {
+          setMedicalHistory(settings.medicalHistory)
         }
+      } catch (e) {
+        console.error("Erreur lors du chargement des antécédents médicaux:", e)
       }
     }
     
-    // Charger au démarrage
-    loadMedicalHistory()
-    
     // Écouter les changements dans localStorage
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'glassSettings') {
-        loadMedicalHistory()
+    const handleStorageChange = () => {
+      const savedSettings = localStorage.getItem('glassSettings')
+      if (savedSettings) {
+        try {
+          const settings = JSON.parse(savedSettings)
+          if (settings.medicalHistory) {
+            setMedicalHistory(settings.medicalHistory)
+          }
+        } catch (e) {
+          console.error("Erreur lors de la mise à jour des antécédents médicaux:", e)
+        }
       }
     }
     
@@ -134,15 +153,45 @@ export default function Dashboard() {
 
   // Charger le niveau de remplissage depuis localStorage
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const savedFillLevel = localStorage.getItem('fillLevel')
     if (savedFillLevel) {
-      setFillLevel(parseInt(savedFillLevel, 10))
+      try {
+        setFillLevel(Number(savedFillLevel))
+      } catch (e) {
+        console.error("Erreur lors du chargement du niveau de remplissage:", e)
+      }
     }
   }, [])
 
   // Charger le débit depuis localStorage et réagir aux changements
   useEffect(() => {
-    const loadFlowRate = () => {
+    if (typeof window === 'undefined') return;
+    
+    const savedFlowRate = localStorage.getItem('flowRate')
+    if (savedFlowRate) {
+      try {
+        setFlowRate(Number(savedFlowRate))
+        lastFlowRateRef.current = Number(savedFlowRate)
+      } catch (e) {
+        console.error("Erreur lors du chargement du débit:", e)
+      }
+    }
+    
+    // Écouter l'événement personnalisé pour les mises à jour du débit
+    const handleTapUpdate = (e: CustomEvent<{ flowRate: number }>) => {
+      const newFlowRate = e.detail.flowRate
+      if (!isNaN(newFlowRate)) {
+        setFlowRate(newFlowRate)
+        lastFlowRateRef.current = newFlowRate
+      }
+    }
+    
+    window.addEventListener('tapFlowUpdated', handleTapUpdate as EventListener)
+    
+    // Vérifier périodiquement les changements dans localStorage
+    const intervalId = setInterval(() => {
       const savedFlowRate = localStorage.getItem('flowRate')
       if (savedFlowRate) {
         try {
@@ -155,35 +204,9 @@ export default function Dashboard() {
           console.error("Erreur lors du chargement du débit:", e)
         }
       }
-    }
-    
-    // Charger le débit au démarrage
-    loadFlowRate()
-    
-    // Écouter les changements dans localStorage
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'flowRate' || e.key === 'tapConstraints') {
-        loadFlowRate()
-      }
-    }
-
-    // Écouter l'événement personnalisé pour les mises à jour du débit
-    const handleTapUpdate = (e: CustomEvent<{ flowRate: number }>) => {
-      const newFlowRate = e.detail.flowRate
-      if (!isNaN(newFlowRate)) {
-        setFlowRate(newFlowRate)
-        lastFlowRateRef.current = newFlowRate
-      }
-    }
-    
-    window.addEventListener('storage', handleStorageChange)
-    window.addEventListener('tapFlowUpdated', handleTapUpdate as EventListener)
-    
-    // Vérifier périodiquement les changements dans localStorage
-    const intervalId = setInterval(loadFlowRate, 100)
+    }, 100)
     
     return () => {
-      window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener('tapFlowUpdated', handleTapUpdate as EventListener)
       clearInterval(intervalId)
     }
@@ -191,148 +214,86 @@ export default function Dashboard() {
 
   // Charger les facteurs personnels depuis localStorage
   useEffect(() => {
-    const loadGlassCapacity = () => {
-      const savedCapacity = localStorage.getItem('glassCapacity')
-      if (savedCapacity) {
-        try {
-          const capacity = parseInt(savedCapacity)
-          // La largeur du verre est proportionnelle à la capacité d'absorption
-          // 10% de capacité = 20% de largeur
-          // 100% de capacité = 90% de largeur
-          const newWidth = 20 + (capacity / 100) * 70
-          console.log("Chargement de la capacité:", {
-            capacité: capacity,
-            nouvelleLargeur: newWidth,
-            ancienneLargeur: glassWidth
-          })
-          if (newWidth !== glassWidth) {
-            setGlassWidth(newWidth)
-          }
-        } catch (e) {
-          console.error("Erreur lors du chargement de la capacité d'absorption:", e)
+    if (typeof window === 'undefined') return;
+    
+    const savedCapacity = localStorage.getItem('glassCapacity')
+    if (savedCapacity) {
+      try {
+        const capacity = parseInt(savedCapacity)
+        // La largeur du verre est proportionnelle à la capacité d'absorption
+        // 10% de capacité = 20% de largeur
+        // 100% de capacité = 90% de largeur
+        const newWidth = 20 + (capacity / 100) * 70
+        console.log("Chargement de la capacité:", {
+          capacité: capacity,
+          nouvelleLargeur: newWidth,
+          ancienneLargeur: glassWidth
+        })
+        if (newWidth !== glassWidth) {
+          setGlassWidth(newWidth)
         }
+      } catch (e) {
+        console.error("Erreur lors du chargement de la capacité d'absorption:", e)
       }
-    }
-    
-    // Charger au démarrage
-    loadGlassCapacity()
-    
-    // Écouter les changements dans localStorage
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'glassCapacity' || e.key === 'glassSettings') {
-        loadGlassCapacity()
-      }
-    }
-    
-    window.addEventListener('storage', handleStorageChange)
-    
-    // Vérifier périodiquement les changements
-    const intervalId = setInterval(loadGlassCapacity, 100)
-    
-    // Écouter l'événement personnalisé pour les mises à jour des paramètres du verre
-    const handleGlassUpdate = (e: CustomEvent) => {
-      console.log("Événement glassCapacityUpdated reçu:", e.detail)
-      loadGlassCapacity()
-    }
-    window.addEventListener('glassCapacityUpdated', handleGlassUpdate as EventListener)
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      window.removeEventListener('glassCapacityUpdated', handleGlassUpdate as EventListener)
-      clearInterval(intervalId)
     }
   }, [glassWidth])
 
   // Charger l'état d'activation de la paille au démarrage
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const savedEnabled = localStorage.getItem('strawEnabled')
     if (savedEnabled !== null) {
-      setIsStrawEnabled(savedEnabled === 'true')
+      try {
+        setIsStrawEnabled(savedEnabled === 'true')
+      } catch (e) {
+        console.error("Erreur lors du chargement de l'état d'activation de la paille:", e)
+      }
     }
   }, [])
 
-  // Sauvegarder l'état d'activation de la paille
-  useEffect(() => {
-    localStorage.setItem('strawEnabled', isStrawEnabled.toString())
-  }, [isStrawEnabled])
+  // Gérer le changement d'état de la paille
+  const handleStrawToggle = () => {
+    const newState = !isStrawEnabled
+    setIsStrawEnabled(newState)
+    
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('strawEnabled', newState.toString())
+    }
+  }
 
   // Charger la capacité de récupération depuis localStorage
   useEffect(() => {
-    const loadRecoveryCapacity = () => {
-      const savedCapacity = localStorage.getItem('recoveryCapacity')
-      if (savedCapacity) {
-        try {
-          const capacity = parseInt(savedCapacity)
-          // Si la paille est désactivée, forcer le taux à 10 (minimum)
-          // Sinon utiliser la capacité calculée dans les paramètres
-          setAbsorptionRate(isStrawEnabled ? capacity : 10)
-        } catch (e) {
-          console.error("Erreur lors du chargement de la capacité de récupération:", e)
-        }
-      }
-    }
-
-    // Charger au démarrage
-    loadRecoveryCapacity()
-
-    // Écouter les changements dans localStorage
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'recoveryCapacity' || e.key === 'strawEnabled' || e.key === 'strawSettings') {
-        loadRecoveryCapacity()
-      }
-    }
-
-    // Écouter les changements dans localStorage
-    window.addEventListener('storage', handleStorageChange)
-
-    // Vérifier périodiquement les changements
-    const intervalId = setInterval(loadRecoveryCapacity, 100) // Vérification plus fréquente
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      clearInterval(intervalId)
-    }
-  }, [isStrawEnabled])
-
-  // Charger le score environnemental depuis localStorage
-  useEffect(() => {
-    const loadEnvironmentScore = () => {
-      const savedScore = localStorage.getItem('environmentScore')
-      if (savedScore) {
-        try {
-          const score = parseInt(savedScore)
-          setEnvironmentScore(score)
-      } catch (e) {
-          console.error("Erreur lors du chargement du score environnemental:", e)
-        }
-      }
-    }
-
-    // Charger au démarrage
-    loadEnvironmentScore()
-
-    // Écouter les changements dans localStorage
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'environmentScore' || e.key === 'bubbleSettings') {
-        loadEnvironmentScore()
-      }
-    }
-
-    window.addEventListener('storage', handleStorageChange)
+    if (typeof window === 'undefined') return;
     
-    // Vérifier périodiquement les changements
-    const intervalId = setInterval(loadEnvironmentScore, 100)
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      clearInterval(intervalId)
+    const savedCapacity = localStorage.getItem('recoveryCapacity')
+    if (savedCapacity) {
+      try {
+        setAbsorptionRate(Number(savedCapacity))
+      } catch (e) {
+        console.error("Erreur lors du chargement de la capacité de récupération:", e)
+      }
     }
   }, [])
 
-  // Gérer la simulation du remplissage
+  // Charger le score environnemental depuis localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const savedScore = localStorage.getItem('environmentScore')
+    if (savedScore) {
+      try {
+        setEnvironmentScore(Number(savedScore))
+      } catch (e) {
+        console.error("Erreur lors du chargement du score environnemental:", e)
+      }
+    }
+  }, [])
+
+  // Mettre à jour les variables de simulation
   useEffect(() => {
     if (isPaused) return;
-
+    
     const updateInterval = setInterval(() => {
       const now = Date.now()
       const deltaTime = Math.min(now - lastUpdateTime, 100)
@@ -360,7 +321,7 @@ export default function Dashboard() {
     
     return () => clearInterval(updateInterval)
   }, [flowRate, lastUpdateTime, isPaused, glassWidth, absorptionRate, isStrawEnabled, simulationSpeed, environmentScore])
-
+  
   // Gérer l'exposition TMS basée sur le niveau de remplissage
   useEffect(() => {
     if (isPaused) return;
@@ -375,6 +336,49 @@ export default function Dashboard() {
 
     return () => clearInterval(updateInterval)
   }, [fillLevel, isPaused, simulationSpeed])
+
+  // Gérer le chronomètre de travail
+  useEffect(() => {
+    if (isPaused) return;
+    
+    const updateInterval = setInterval(() => {
+      const now = Date.now();
+      const elapsedRealSeconds = (now - workStartTime) / 1000;
+
+      // 120 secondes réelles = 8 heures simulées (480 minutes)
+      // 1 seconde réelle = 4 minutes simulées
+      const simulatedMinutes = elapsedRealSeconds * 4 * simulationSpeed;
+
+      // Limiter à 8h00 maximum (480 minutes)
+      setWorkTime(Math.min(simulatedMinutes, 480));
+    }, 50); // Mise à jour fréquente pour une animation fluide
+  
+    return () => clearInterval(updateInterval);
+  }, [isPaused, workStartTime, simulationSpeed]);
+
+  // Ajuster le temps de démarrage quand la vitesse change pour éviter les sauts
+  useEffect(() => {
+    if (isPaused) {
+      setLastSimulationSpeed(simulationSpeed);
+      return;
+    }
+    
+    // Ne rien faire lors de l'initialisation
+    if (lastSimulationSpeed === simulationSpeed) return;
+    
+    // Calculer le temps écoulé réel actuel
+    const now = Date.now();
+    const currentElapsedRealSeconds = (now - workStartTime) / 1000;
+
+    // Calculer le temps simulé actuel (avec l'ancienne vitesse)
+    const currentSimulatedMinutes = currentElapsedRealSeconds * 4 * lastSimulationSpeed;
+
+    // Ajuster le temps de démarrage pour maintenir le même temps simulé avec la nouvelle vitesse
+    const newStartTime = now - (currentSimulatedMinutes / (4 * simulationSpeed)) * 1000;
+
+    setWorkStartTime(newStartTime);
+    setLastSimulationSpeed(simulationSpeed);
+  }, [simulationSpeed, isPaused]);
 
   // Fonction pour obtenir la largeur du filet d'eau en fonction du débit
   const getWaterStreamWidth = () => {
@@ -398,10 +402,12 @@ export default function Dashboard() {
   const handleFlowRateChange = (rate: number) => {
     setFlowRate(rate);
     // Sauvegarder le débit dans le localStorage pour persistance
-    localStorage.setItem('flowRate', rate.toString());
-    
-    // Déclencher un événement de stockage pour notifier les autres composants
-    window.dispatchEvent(new Event('storage'));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('flowRate', rate.toString());
+      
+      // Déclencher un événement de stockage pour notifier les autres composants
+      window.dispatchEvent(new Event('storage'));
+    }
   }
 
   // Fonction pour réinitialiser le niveau du verre
@@ -409,11 +415,27 @@ export default function Dashboard() {
     setFillLevel(0)
     setFlowRate(0)
     setAbsorptionRate(0)
+    setWorkTime(0)
+    setWorkStartTime(Date.now())
   }
 
-  // Fonction pour mettre en pause/reprendre l'animation
+  // Gérer la mise en pause/reprise de la simulation
   const handlePauseToggle = () => {
+    if (isPaused) {
+      // On reprend, on ajuste le temps de démarrage pour ne pas avoir de saut
+      const now = Date.now();
+      // Prendre en compte la vitesse de simulation dans le calcul du temps de démarrage
+      setWorkStartTime(now - (workTime / (4 * simulationSpeed)) * 1000);
+    }
     setIsPaused(!isPaused)
+  }
+  
+  // Fonction pour formater le temps de travail (HH:MM)
+  const formatWorkTime = () => {
+    const totalMinutes = Math.floor(workTime);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   }
 
   return (
@@ -458,6 +480,21 @@ export default function Dashboard() {
                 <span className="text-sm font-medium text-blue-400 min-w-[40px]">
                   {simulationSpeed.toFixed(1)}x
                 </span>
+              </div>
+            </div>
+            
+            {/* Chronomètre de travail */}
+            <div className="inline-flex items-center gap-3 p-3 rounded-lg bg-amber-900/20 border border-amber-800/30 backdrop-blur-sm">
+              <Clock className="w-5 h-5 text-amber-400" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-amber-400">Temps de travail</span>
+                <div className="flex items-baseline">
+                  <span className="text-2xl font-bold text-amber-300">{formatWorkTime()}</span>
+                </div>
+                <div className="flex text-xs text-amber-400/80 mt-0.5">
+                  <span className="mr-[14px]">heures</span>
+                  <span className="ml-2">minutes</span>
+                </div>
               </div>
             </div>
           </div>
@@ -699,6 +736,15 @@ export default function Dashboard() {
                     <div className="flex items-center gap-3">
                       <Droplet className="w-6 h-6 text-blue-400" />
                       <h3 className="text-xl font-semibold text-blue-400">Robinet</h3>
+                      
+                      {/* Indicateur d'impact environnemental (à côté du titre) */}
+                      {environmentScore > 0 && (
+                        <div className="flex items-center ml-3">
+                          <div className="text-x px-2 py-0.5 rounded bg-purple-950/30 border border-purple-800/30 text-purple-400">
+                            <span>+{Math.round(environmentScore * 0.3)}% impact Bulle</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <p className="text-base text-gray-400 leading-relaxed mt-3">
                       Représente les contraintes imposées aux tissus (charge, fréquence, posture, état émotionnel).
@@ -722,18 +768,8 @@ export default function Dashboard() {
                         <span className="text-sm text-blue-400">Débit actuel</span>
                       </div>
                       
-                      {/* Indicateur d'impact environnemental (entre le titre et la barre) */}
-                      {environmentScore > 0 && (
-                        <div className="flex flex-col items-center mb-1">
-                          <div className="text-xs px-2 py-0.5 rounded bg-purple-950/30 border border-purple-800/30 text-purple-400">
-                            <span>+{Math.round(environmentScore * 0.3)}%</span>
-                          </div>
-                          <span className="text-[9px] text-purple-400">Impact environnemental</span>
-                        </div>
-                      )}
-                      
                       {/* Conteneur pour la barre et la valeur */}
-                      <div className="relative flex items-center mt-1">
+                      <div className="relative flex items-center mt-2">
                         {/* Barre de progression centrée */}
                         <div className="relative h-[160px] w-2">
                           <div className={cn(
@@ -744,8 +780,8 @@ export default function Dashboard() {
                             flowRate < 66 ? "from-blue-400 to-blue-500" :
                             "from-blue-500 to-blue-600"
                           )} style={{ height: `${flowRate}%` }} />
-                        </div>
-                        
+                </div>
+                
                         {/* Valeur à droite */}
                         <div 
                           className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-blue-900/50 border border-blue-400/10 backdrop-blur-sm transition-all duration-300"
@@ -757,8 +793,97 @@ export default function Dashboard() {
                           <span className="text-sm font-medium text-blue-400">
                             {flowRate}%
                           </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                </div>
+              </div>
+
+              {/* Paille */}
+              <div className="space-y-3 p-6 rounded-lg bg-green-950/20 hover:bg-green-950/30 transition-colors border-2 border-green-900/30">
+                <div className="flex h-[200px]">
+                  {/* Contenu principal avec largeur fixe */}
+                  <div className="w-[300px] flex flex-col">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <RectangleHorizontal className="w-6 h-6 text-green-400" />
+                        <h3 className="text-xl font-semibold text-green-400">Paille</h3>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={cn(
+                          "text-base font-medium transition-colors",
+                          isStrawEnabled 
+                            ? "text-green-400" 
+                            : "text-gray-500"
+                        )}>
+                          {isStrawEnabled ? "Activée" : "Désactivée"}
+                        </span>
+                        <Switch
+                          checked={isStrawEnabled}
+                          onCheckedChange={handleStrawToggle}
+                          className={cn(
+                            "transition-all duration-200",
+                            isStrawEnabled 
+                              ? "bg-green-400/30 hover:bg-green-400/40" 
+                              : "bg-gray-800 hover:bg-gray-700"
+                          )}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-base text-gray-400 leading-relaxed mt-3">
+                      Représente la capacité de récupération (étirements, échauffements, pauses, relaxation, sommeil).
+                    </p>
+                    <div className="flex-grow" />
+                    <button 
+                      onClick={() => setActiveModal('straw')}
+                      className="group relative w-fit mt-4 px-3 py-1.5 text-base text-green-400 hover:text-green-300 transition-colors"
+                    >
+                      <Settings className="w-5 h-5 inline-block mr-2" />
+                      Configurer les paramètres
+                      <span className="absolute left-0 -bottom-px h-px w-full origin-left scale-x-0 bg-green-400 transition-transform duration-200 ease-out group-hover:scale-x-100" />
+                    </button>
+                  </div>
+                  
+                  {/* Séparateur et barre de progression */}
+                  <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l border-green-400/20">
+                    <div className="relative h-full w-full flex flex-col items-center">
+                      {/* Label supérieur avec espacement fixe */}
+                      <div className="h-[40px] flex items-center justify-center -mt-2 pt-0">
+                        <span className="text-sm text-green-400">Récupération</span>
+                      </div>
+                      
+                      {/* Conteneur pour la barre et la valeur */}
+                      <div className="relative flex items-center mt-2">
+                        {/* Barre de progression centrée */}
+                        <div className="relative h-[160px] w-2">
+                          <div className={cn(
+                            "absolute bottom-0 w-full transition-all duration-300",
+                            "bg-gradient-to-t",
+                            absorptionRate === 0 ? "from-green-200 to-green-300" :
+                            absorptionRate < 33 ? "from-green-300 to-green-400" :
+                            absorptionRate < 66 ? "from-green-400 to-green-500" :
+                            "from-green-500 to-green-600"
+                          )} style={{ height: `${absorptionRate}%` }} />
+                        </div>
+                        
+                        {/* Valeur à droite */}
+                        <div 
+                          className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-green-900/50 border border-green-400/10 backdrop-blur-sm transition-all duration-300"
+                          style={{
+                            bottom: `${absorptionRate}%`,
+                            transform: 'translateY(50%)'
+                          }}
+                        >
+                          <span className={cn(
+                            "text-sm font-medium",
+                            isStrawEnabled ? "text-green-400" : "text-gray-500"
+                          )}>
+                            {absorptionRate}%
+                          </span>
+                        </div>
+                      </div>
+                  </div>
                 </div>
               </div>
             </div>
