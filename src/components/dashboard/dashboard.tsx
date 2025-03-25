@@ -538,8 +538,8 @@ export default function Dashboard() {
       <ModelDescription />
 
       {/* Dashboard principal */}
-      <div className="w-full max-w-[100%] mx-auto">
-        {/* Conteneur principal avec padding adaptatif */}
+      <div className="w-full max-w-[1400px] mx-auto">
+        {/* Conteneur principal avec marges adaptatives */}
         <div className="bg-black backdrop-blur-md border border-gray-800/50 rounded-xl p-4 md:p-8 mx-auto">
           {/* Contrôles de simulation avec flex wrap */}
           <div className="flex flex-wrap items-center gap-4 mb-4 ml-0 md:ml-4">
@@ -594,8 +594,8 @@ export default function Dashboard() {
           </div>
 
           {/* Section supérieure - Risques unifiés avec adaptation mobile */}
-          <div className="flex justify-center mb-8">
-            <div className="w-full md:w-[650px] relative">
+          <div className="flex justify-center md:justify-center mb-8">
+            <div className="w-full md:w-[750px] relative">
               <div className="p-6 rounded-xl bg-gradient-to-br from-gray-900/70 via-gray-900/50 to-gray-900/70 border border-gray-800/50 backdrop-blur-md">
                 <div className="grid grid-cols-2 gap-6">
                   {/* Risque d'accident */}
@@ -749,7 +749,7 @@ export default function Dashboard() {
           </div>
 
           {/* Grille principale responsive */}
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(500px,_1fr)_1fr] gap-8 mt-8 md:-mt-32">
+          <div className="grid grid-cols-1 lg:grid-cols-[600px_1fr] gap-8 mt-8 md:-mt-8">
           {/* Panneau de gauche - Informations et contrôles */}
             <div className="space-y-8 p-4 md:p-6 rounded-xl bg-gradient-to-br from-gray-900/70 via-gray-900/50 to-gray-900/70 border border-gray-800/50 backdrop-blur-sm shadow-lg">
               <div className="flex items-center justify-between pb-4 border-b border-gray-800/50">
@@ -1048,7 +1048,7 @@ export default function Dashboard() {
             
             {/* Panneau central - Visualisation avec adaptation mobile */}
             <div className="relative flex items-center justify-center h-full">
-              <div className="relative w-full max-w-[600px] transform scale-90 md:scale-100">
+              <div className="relative w-full max-w-[900px] transform scale-100">
                 {/* Ensemble unifié bulle + composants */}
                 <div className="relative flex items-center justify-center mt-[100px] md:mt-[200px]">
                   {/* Bulle environnementale */}
@@ -1193,7 +1193,7 @@ export default function Dashboard() {
       `}</style>
 
       {/* Panneau des coûts repositionné de manière responsive */}
-      <div className="relative w-full lg:w-[400px] mt-8">
+      <div className="relative w-full lg:w-[400px] mt-8 mx-auto">
         <div className="p-6 rounded-xl bg-gradient-to-br from-slate-800/90 via-slate-800/80 to-slate-900/90 border border-slate-700/50 backdrop-blur-sm shadow-xl">
           <CostPanel
             bodyParts={[
