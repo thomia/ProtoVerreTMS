@@ -18,7 +18,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { InfoCircledIcon } from "@radix-ui/react-icons"
 import { CheckCircle2, AlertCircle, Circle } from "lucide-react"
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { getLocalStorage, setLocalStorage, emitStorageEvent } from '@/lib/localStorage'
 
 // Types pour les postures
 interface PostureScores {
@@ -350,20 +351,32 @@ export default function TapSettingsForm() {
     }
   })
 
+  // État pour le score d'agitation environnementale
+  const [environmentScore, setEnvironmentScore] = React.useState(0)
+
   // Charger les paramètres au démarrage
   useEffect(() => {
-    const savedConstraints = localStorage.getItem('tapConstraints')
+    // Charger les contraintes depuis localStorage
+    const savedConstraints = getLocalStorage('tapConstraints')
     if (savedConstraints) {
       try {
         const parsed = JSON.parse(savedConstraints)
+        
+        // Mettre à jour les états en une seule opération pour éviter les re-renders multiples
         if (parsed.physicalParams) setPhysicalParams(parsed.physicalParams)
         if (parsed.postureScores) setPostureScores(parsed.postureScores)
         if (parsed.postureAdjustments) setPostureAdjustments(parsed.postureAdjustments)
         if (parsed.mentalWorkload) setMentalWorkload(parsed.mentalWorkload)
         if (parsed.psychosocialRisks) setPsychosocialRisks(parsed.psychosocialRisks)
       } catch (e) {
-        console.error("Erreur lors du chargement des paramètres:", e)
+        console.error("Erreur lors du chargement des contraintes du robinet:", e)
       }
+    }
+    
+    // Récupération du score d'agitation depuis localStorage
+    const savedEnvironmentScore = getLocalStorage('environmentScore');
+    if (savedEnvironmentScore && !isNaN(Number(savedEnvironmentScore))) {
+      setEnvironmentScore(Number(savedEnvironmentScore));
     }
   }, [])
 
@@ -559,13 +572,41 @@ export default function TapSettingsForm() {
     return weightedScore;
   }
 
-  // Fonction de sauvegarde
+  // Fonction utilitaire pour sauvegarder les paramètres et le débit
+  const saveSettings = (params: any, flowRate: number) => {
+    // Sauvegarder les paramètres
+    setLocalStorage('tapConstraints', JSON.stringify(params));
+    
+    // S'assurer que le débit est un nombre valide
+    if (typeof flowRate === 'number' && !isNaN(flowRate)) {
+      const roundedFlowRate = Math.max(0, Math.min(100, Math.round(flowRate)));
+      
+      // Sauvegarder le débit calculé
+      setLocalStorage('flowRate', roundedFlowRate.toString());
+      console.log("Débit sauvegardé dans localStorage:", roundedFlowRate);
+      
+      // Émettre un événement personnalisé pour notifier le tableau de bord
+      if (typeof window !== 'undefined') {
+        const event = new CustomEvent('tapFlowUpdated', {
+          detail: { flowRate: roundedFlowRate }
+        });
+        window.dispatchEvent(event);
+        console.log("Événement tapFlowUpdated émis avec le débit:", roundedFlowRate);
+        
+        // Émettre l'événement storage une seule fois
+        emitStorageEvent();
+      }
+    } else {
+      console.error("Erreur: débit invalide calculé", flowRate);
+    }
+  };
+
   const handleSubmit = () => {
     // Calculer le débit
     const flowRate = calculateTapFlow()
     console.log("Calcul du débit dans handleSubmit:", flowRate)
-    
-    // Sauvegarder les paramètres
+
+    // Préparer l'objet des paramètres
     const params = {
       physicalParams,
       postureScores,
@@ -573,33 +614,9 @@ export default function TapSettingsForm() {
       mentalWorkload,
       psychosocialRisks
     }
-    
-    localStorage.setItem('tapConstraints', JSON.stringify(params))
-    
-    // S'assurer que le débit est un nombre valide
-    if (typeof flowRate === 'number' && !isNaN(flowRate)) {
-      const roundedFlowRate = Math.max(0, Math.min(100, Math.round(flowRate)))
-      
-      // Sauvegarder le débit calculé
-      localStorage.setItem('flowRate', roundedFlowRate.toString())
-      console.log("Débit sauvegardé dans localStorage:", roundedFlowRate)
-      
-      // Émettre un événement personnalisé pour notifier le tableau de bord
-      const event = new CustomEvent('tapFlowUpdated', {
-        detail: { flowRate: roundedFlowRate }
-      })
-      window.dispatchEvent(event)
-      console.log("Événement tapFlowUpdated émis avec le débit:", roundedFlowRate)
-      
-      // Forcer une mise à jour du stockage
-      window.dispatchEvent(new Event('storage'))
-      
-      // Vérifier que le débit a bien été sauvegardé
-      const savedFlowRate = localStorage.getItem('flowRate')
-      console.log("Vérification du débit sauvegardé:", savedFlowRate)
-    } else {
-      console.error("Erreur: débit invalide calculé", flowRate)
-    }
+
+    // Sauvegarder les paramètres et le débit
+    saveSettings(params, flowRate);
   }
 
   return (
