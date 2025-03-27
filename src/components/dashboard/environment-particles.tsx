@@ -19,7 +19,7 @@ interface EnvironmentParticlesProps {
 export function EnvironmentParticles({ score, isPaused = false }: EnvironmentParticlesProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const particlesRef = useRef<Particle[]>([])
-  const animationFrameRef = useRef<number>()
+  const animationFrameRef = useRef<number | undefined>(undefined)
 
   // Calculer le nombre de particules en fonction du score
   const getParticleCount = (score: number) => {
