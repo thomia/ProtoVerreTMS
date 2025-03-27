@@ -1,51 +1,99 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 export interface GlassComponentProps {
   width?: number; // Largeur du verre en pourcentage (100% par défaut)
   height?: number; // Hauteur du verre en pixels (300px par défaut)
-  fillLevel: number; // Niveau de remplissage (0-100)
-  absorptionRate: number; // Taux d'absorption (0-100)
+  fillLevel?: number; // Niveau de remplissage (0-100)
+  absorptionRate?: number; // Taux d'absorption (0-100)
   hideColorLegend?: boolean; // Option pour masquer la légende des couleurs
 }
 
 export default function GlassComponent({ 
   width = 100, 
   height = 300,
-  fillLevel, 
-  absorptionRate,
+  fillLevel = 0, 
+  absorptionRate = 0,
   hideColorLegend = false
 }: GlassComponentProps) {
+  // État côté client uniquement
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // Définir les configurations des bulles de manière statique
+  const bubbleConfigs = useMemo(() => [
+    { size: 12, left: 25, bottom: 30, delay: 0.5, duration: 2.5 },
+    { size: 8, left: 45, bottom: 50, delay: 1.2, duration: 3.2 },
+    { size: 14, left: 65, bottom: 20, delay: 0.8, duration: 4.0 },
+    { size: 10, left: 85, bottom: 60, delay: 2.0, duration: 3.0 },
+    { size: 9, left: 15, bottom: 70, delay: 1.5, duration: 2.8 },
+    { size: 13, left: 35, bottom: 40, delay: 0.2, duration: 3.5 },
+    { size: 7, left: 55, bottom: 10, delay: 1.8, duration: 2.2 },
+    { size: 11, left: 75, bottom: 80, delay: 0.7, duration: 3.8 }
+  ], []);
+
+  // Indiquer que le composant est monté côté client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Validation de sécurité pour les valeurs
+  const safeWidth = Math.max(0, Math.min(100, width));
+  const safeHeight = Math.max(0, Math.min(500, height));
+  const safeFillLevel = Math.max(0, Math.min(100, fillLevel));
+  const safeAbsorptionRate = Math.max(0, Math.min(100, absorptionRate));
+
   // Calculer la largeur réelle du verre en pixels (entre 70px et 260px pour accentuer les différences et augmenter de 1,3x)
-  const glassWidthPx = 70 + (width / 100) * 190;
+  const glassWidthPx = 70 + (safeWidth / 100) * 190;
   
   // Obtenir la couleur du niveau de remplissage
   const getFillColor = () => {
-    if (fillLevel >= 90) return "from-purple-400/70 to-purple-600/70";
-    if (fillLevel >= 80) return "from-red-400/70 to-red-600/70";
-    if (fillLevel >= 60) return "from-yellow-400/70 to-yellow-600/70";
+    if (safeFillLevel >= 90) return "from-purple-400/70 to-purple-600/70";
+    if (safeFillLevel >= 80) return "from-red-400/70 to-red-600/70";
+    if (safeFillLevel >= 60) return "from-yellow-400/70 to-yellow-600/70";
     return "from-green-400/70 to-green-600/70";
   };
 
   // Calculer les dimensions des éléments en fonction de la taille du verre
-  const bubbleSize = (size: number) => Math.max(5, (height / 300) * size);
-  const fontSize = (size: number) => Math.max(8, (height / 300) * size);
+  const bubbleSize = (size: number) => Math.max(5, (safeHeight / 300) * size);
+  const fontSize = (size: number) => Math.max(8, (safeHeight / 300) * size);
 
   // Calculer la capacité en pourcentage (20% de largeur = capacité minimale, 90% = capacité maximale)
-  const capacityPercentage = Math.round(((width - 20) / 70) * 100);
+  const capacityPercentage = Math.round(((safeWidth - 20) / 70) * 100);
 
   // Effet de console pour déboguer
   useEffect(() => {
-    console.log("GlassComponent - width:", width, "glassWidthPx:", glassWidthPx, "capacityPercentage:", capacityPercentage);
-  }, [width, glassWidthPx, capacityPercentage]);
+    if (isMounted) {
+      console.log("GlassComponent - width:", safeWidth, "glassWidthPx:", glassWidthPx, "capacityPercentage:", capacityPercentage);
+    }
+  }, [safeWidth, glassWidthPx, capacityPercentage, isMounted]);
+
+  // Rendu conditionnel pour le SSR
+  if (!isMounted) {
+    // Version simplifiée pour le rendu serveur (sans animations ni valeurs aléatoires)
+    return (
+      <div className="relative">
+        <div 
+          className="relative mx-auto bg-blue-900/10 rounded-b-xl border-2 border-blue-400/30 overflow-hidden backdrop-blur-sm"
+          style={{ 
+            width: `${glassWidthPx}px`, 
+            height: `${safeHeight}px`
+          }}
+        >
+          <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-green-400/70 to-green-600/70" 
+               style={{ height: `${safeFillLevel}%` }}>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative" style={{ 
       // Variables CSS pour les dimensions relatives
-      '--glass-height': `${height}px`,
+      '--glass-height': `${safeHeight}px`,
       '--glass-width': `${glassWidthPx}px`,
       '--font-size-sm': `${fontSize(8)}px`,
       '--font-size-md': `${fontSize(10)}px`,
@@ -71,7 +119,7 @@ export default function GlassComponent({
           <motion.div 
             className={`absolute bottom-0 left-0 w-full bg-gradient-to-t ${getFillColor()}`}
             initial={{ height: '0%' }}
-            animate={{ height: `${fillLevel}%` }}
+            animate={{ height: `${safeFillLevel}%` }}
             transition={{ duration: 0.5, ease: "linear" }}
             style={{
               transformOrigin: 'bottom',
@@ -102,25 +150,25 @@ export default function GlassComponent({
               </div>
             </div>
 
-            {/* Bulles animées */}
-            {[...Array(8)].map((_, i) => (
+            {/* Bulles animées avec valeurs statiques pour éviter les problèmes d'hydratation */}
+            {bubbleConfigs.map((config, i) => (
               <motion.div
                 key={i}
                 className="absolute rounded-full bg-white/40"
                 style={{
-                  width: `${bubbleSize(Math.random() * 10 + 5)}px`,
-                  height: `${bubbleSize(Math.random() * 10 + 5)}px`,
-                  left: `${Math.random() * 80 + 10}%`,
-                  bottom: `${Math.random() * 80}%`,
+                  width: `${bubbleSize(config.size)}px`,
+                  height: `${bubbleSize(config.size)}px`,
+                  left: `${config.left}%`,
+                  bottom: `${config.bottom}%`,
                 }}
                 animate={{
-                  y: [0, -50 * (height / 300) - Math.random() * 50 * (height / 300)],
+                  y: [0, -50 * (safeHeight / 300)],
                   opacity: [0, 0.7, 0],
                 }}
                 transition={{
-                  duration: 2 + Math.random() * 3,
+                  duration: config.duration,
                   repeat: Infinity,
-                  delay: Math.random() * 5,
+                  delay: config.delay,
                   ease: "easeInOut"
                 }}
               />
@@ -155,28 +203,6 @@ export default function GlassComponent({
             </div>
           </div>
         </div>
-        
-        {/* Légende des couleurs (conditionnelle) */}
-        {!hideColorLegend && (
-          <div className="absolute top-2 right-2 flex flex-col gap-1 bg-black/30 p-1 rounded">
-            <div className="flex items-center gap-1">
-              <div className="rounded-full bg-green-500/70" style={{ width: 'var(--font-size-sm)', height: 'var(--font-size-sm)' }}></div>
-              <span className="text-white" style={{ fontSize: 'var(--font-size-sm)' }}>0-60%</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="rounded-full bg-yellow-500/70" style={{ width: 'var(--font-size-sm)', height: 'var(--font-size-sm)' }}></div>
-              <span className="text-white" style={{ fontSize: 'var(--font-size-sm)' }}>60-80%</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="rounded-full bg-red-500/70" style={{ width: 'var(--font-size-sm)', height: 'var(--font-size-sm)' }}></div>
-              <span className="text-white" style={{ fontSize: 'var(--font-size-sm)' }}>80-90%</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="rounded-full bg-purple-500/70" style={{ width: 'var(--font-size-sm)', height: 'var(--font-size-sm)' }}></div>
-              <span className="text-white" style={{ fontSize: 'var(--font-size-sm)' }}>90-100%</span>
-            </div>
-          </div>
-        )}
       </motion.div>
     </div>
   )

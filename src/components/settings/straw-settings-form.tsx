@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import BaseSettingsForm, { InfoTooltip, getColorClass } from './base-settings-form'
 import { Check, Dumbbell, Activity, Moon, Stars, Clock, Sparkles } from 'lucide-react'
+import { getLocalStorage, setLocalStorage, emitStorageEvent } from '@/lib/localStorage'
 
 // Définitions des facteurs de récupération
 const recoveryFactorsDefinitions = {
@@ -78,13 +79,69 @@ export default function StrawSettingsForm() {
 
   // Fonction de sauvegarde
   const handleSave = () => {
+    // Sauvegarder les paramètres
     const recoveryCapacity = calculateRecoveryCapacity()
-    localStorage.setItem('recoveryCapacity', recoveryCapacity.toString())
-    localStorage.setItem('strawActiveBreaks', JSON.stringify(activeBreaks))
-    localStorage.setItem('strawStretching', JSON.stringify(stretching))
-    localStorage.setItem('strawRelaxation', JSON.stringify(relaxation))
-    localStorage.setItem('strawSleep', JSON.stringify(sleep))
+    
+    setLocalStorage('recoveryCapacity', recoveryCapacity.toString())
+    setLocalStorage('strawActiveBreaks', JSON.stringify(activeBreaks))
+    setLocalStorage('strawStretching', JSON.stringify(stretching))
+    setLocalStorage('strawRelaxation', JSON.stringify(relaxation))
+    setLocalStorage('strawSleep', JSON.stringify(sleep))
+    
+    // Émettre un événement de stockage pour notifier les autres composants
+    emitStorageEvent()
+    
+    // Émettre un événement personnalisé pour la mise à jour du composant paille
+    if (typeof window !== 'undefined') {
+      const event = new CustomEvent('strawUpdateEvent', {
+        detail: { recoveryCapacity }
+      })
+      window.dispatchEvent(event)
+    }
   }
+
+  // Charger les paramètres sauvegardés
+  useEffect(() => {
+    // Récupérer les pauses actives
+    const savedActiveBreaks = getLocalStorage('strawActiveBreaks')
+    if (savedActiveBreaks) {
+      try {
+        setActiveBreaks(JSON.parse(savedActiveBreaks))
+      } catch (e) {
+        console.error("Erreur lors du chargement des pauses actives:", e)
+      }
+    }
+
+    // Récupérer les étirements
+    const savedStretching = getLocalStorage('strawStretching')
+    if (savedStretching) {
+      try {
+        setStretching(JSON.parse(savedStretching))
+      } catch (e) {
+        console.error("Erreur lors du chargement des étirements:", e)
+      }
+    }
+
+    // Récupérer la relaxation
+    const savedRelaxation = getLocalStorage('strawRelaxation')
+    if (savedRelaxation) {
+      try {
+        setRelaxation(JSON.parse(savedRelaxation))
+      } catch (e) {
+        console.error("Erreur lors du chargement de la relaxation:", e)
+      }
+    }
+
+    // Récupérer le sommeil
+    const savedSleep = getLocalStorage('strawSleep')
+    if (savedSleep) {
+      try {
+        setSleep(JSON.parse(savedSleep))
+      } catch (e) {
+        console.error("Erreur lors du chargement du sommeil:", e)
+      }
+    }
+  }, [])
 
   return (
     <BaseSettingsForm

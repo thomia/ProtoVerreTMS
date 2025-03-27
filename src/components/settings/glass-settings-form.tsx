@@ -1,9 +1,13 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import * as React from 'react'
+import { useCallback, useEffect, useState, useMemo } from 'react'
 import BaseSettingsForm from '@/components/settings/base-settings-form'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { getLocalStorage, setLocalStorage, emitStorageEvent } from '@/lib/localStorage'
+import { Checkbox } from "@/components/ui/checkbox"
+import { cn } from '@/lib/utils'
 
 // Définitions des facteurs individuels
 const individualFactorsDefinitions = {
@@ -66,49 +70,18 @@ interface IndividualParams {
 }
 
 export default function GlassSettingsForm() {
-  const [individualParams, setIndividualParams] = useState<IndividualParams>({
-    age: 30,
-    physicalActivity: 3,
-    nutrition: 3,
-    sleepDuration: 7
-  });
+  // États pour les paramètres individuels
+  const [age, setAge] = useState(30)
+  const [physicalActivity, setPhysicalActivity] = useState(50)
+  const [nutrition, setNutrition] = useState(50)
+  const [sleepDuration, setSleepDuration] = useState(7)
+  const [stress, setStress] = useState(50)
+  const [absorptionCapacity, setAbsorptionCapacity] = useState(50)
+  const [isSaved, setIsSaved] = useState(false)
+  const [formSubmitted, setFormSubmitted] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
 
-  const individualFactors = [
-    {
-      id: 'age',
-      label: 'Âge',
-      min: 18,
-      max: 65,
-      unit: 'ans',
-      value: individualParams.age
-    },
-    {
-      id: 'physicalActivity',
-      label: 'Activité sportive',
-      min: 0,
-      max: 7,
-      unit: 'fois/semaine',
-      value: individualParams.physicalActivity
-    },
-    {
-      id: 'nutrition',
-      label: 'Alimentation',
-      min: 1,
-      max: 5,
-      unit: '/5',
-      value: individualParams.nutrition
-    },
-    {
-      id: 'sleepDuration',
-      label: 'Sommeil',
-      min: 5,
-      max: 9,
-      unit: 'h',
-      value: individualParams.sleepDuration
-    }
-  ];
-
-  // État pour les pathologies
+  // État pour les antécédents médicaux
   const [medicalHistory, setMedicalHistory] = useState<MedicalHistory>({
     neckProblems: false,
     backProblems: false,
@@ -118,35 +91,215 @@ export default function GlassSettingsForm() {
     previousTMS: false
   })
 
-  // Calculer la capacité d'absorption
-  const calculateAbsorptionCapacity = () => {
-    // Normalisation de l'âge (18-65 ans -> 0-100)
-    const ageScore = Math.max(0, Math.min(100, ((65 - individualParams.age) / 47) * 100))
-    
-    // Normalisation de la condition physique (0-7 -> 0-100)
-    const physicalScore = (individualParams.physicalActivity / 7) * 100
-    
-    // Normalisation de l'alimentation (1-5 -> 0-100)
-    const nutritionScore = ((individualParams.nutrition - 1) / 4) * 100
-    
-    // Normalisation du sommeil (5-9h -> 0-100)
-    const sleepScore = ((individualParams.sleepDuration - 5) / 4) * 100
-    
-    // Impact des pathologies (chaque pathologie réduit de 10%)
-    const pathologyCount = Object.values(medicalHistory).filter(Boolean).length
-    const pathologyImpact = Math.max(0, 100 - (pathologyCount * 10))
-    
-    // Calcul pondéré de la capacité d'absorption
-    const weightedScore = (
-      (ageScore * 0.25) +          // 25% pour l'âge
-      (physicalScore * 0.25) +     // 25% pour l'activité sportive
-      (nutritionScore * 0.25) +    // 25% pour l'alimentation
-      (sleepScore * 0.25)          // 25% pour le sommeil
-    )
+  // Définir l'état de sauvegarde automatique
+  const [autoSave, setAutoSave] = useState(true)
 
-    // Application de l'impact des pathologies
-    return Math.round(weightedScore * (pathologyImpact / 100))
-  }
+  // Chargement des valeurs depuis localStorage au montage du composant
+  useEffect(() => {
+    // Récupérer les paramètres sauvegardés
+    const savedSettings = getLocalStorage('glassSettings')
+    
+    if (savedSettings) {
+      try {
+        const settings = JSON.parse(savedSettings)
+        
+        // Paramètres individuels
+        if (settings.age) setAge(settings.age)
+        if (settings.physicalActivity) setPhysicalActivity(settings.physicalActivity)
+        if (settings.nutrition) setNutrition(settings.nutrition)
+        if (settings.sleepDuration) setSleepDuration(settings.sleepDuration)
+        if (settings.stress) setStress(settings.stress)
+        
+        // Antécédents médicaux
+        if (settings.medicalHistory) {
+          setMedicalHistory(settings.medicalHistory)
+        }
+        
+        // Si la capacité d'absorption est déjà définie, l'utiliser
+        if (settings.absorptionCapacity) {
+          setAbsorptionCapacity(settings.absorptionCapacity)
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des paramètres:", error)
+      }
+    }
+    
+    setIsInitialized(true)
+  }, [])
+
+  // Fonction pour calculer la capacité d'absorption (mémorisée)
+  const calculateCapacity = useCallback(() => {
+    // Calculer la capacité d'absorption en fonction des paramètres
+    const baseCapacity = 50;
+    
+    // Facteur d'âge (diminue avec l'âge)
+    const ageFactor = age <= 30 ? 20 : 
+                      age <= 40 ? 15 :
+                      age <= 50 ? 10 :
+                      age <= 60 ? 5 : 0;
+    
+    // Facteur d'activité physique (0-100%)
+    const activityFactor = physicalActivity * 0.1;
+    
+    // Facteur de nutrition (0-100%)
+    const nutritionFactor = nutrition * 0.1;
+    
+    // Facteur de sommeil (optimal = 7-8h)
+    const sleepFactor = sleepDuration >= 7 && sleepDuration <= 8 ? 10 :
+                       sleepDuration >= 6 && sleepDuration <= 9 ? 5 : 0;
+    
+    // Facteur de stress (négatif)
+    const stressFactor = -stress * 0.1;
+    
+    // Facteur d'antécédents médicaux (négatif)
+    let medicalFactor = 0;
+    Object.values(medicalHistory).forEach(condition => {
+      if (condition) medicalFactor -= 5;
+    });
+    
+    // Calculer la capacité totale
+    let capacity = baseCapacity + ageFactor + activityFactor + nutritionFactor + sleepFactor + stressFactor + medicalFactor;
+    
+    // Limiter la capacité entre 10% et 100%
+    capacity = Math.max(10, Math.min(100, capacity));
+    
+    return Math.round(capacity);
+  }, [age, physicalActivity, nutrition, sleepDuration, stress, medicalHistory]);
+
+  // Mémoriser la capacité calculée
+  const calculatedCapacity = useMemo(() => calculateCapacity(), [calculateCapacity]);
+
+  // Sauvegarder la capacité calculée
+  const saveCapacity = useCallback((capacity: number) => {
+    // Mettre à jour l'état
+    setAbsorptionCapacity(capacity);
+    
+    // Sauvegarder les paramètres
+    const settings = {
+      age,
+      physicalActivity,
+      nutrition,
+      sleepDuration,
+      stress,
+      medicalHistory,
+      absorptionCapacity: capacity
+    };
+    
+    console.log('Sauvegarde de la capacité:', capacity);
+    
+    // Sauvegarder dans localStorage
+    setLocalStorage('glassSettings', JSON.stringify(settings));
+    setLocalStorage('glassCapacity', capacity.toString());
+    
+    // Émettre un événement pour notifier les autres composants
+    try {
+      // Émission de l'événement personnalisé
+      const event = new CustomEvent('glassCapacityUpdated', {
+        detail: { capacity },
+        bubbles: true,
+        cancelable: true
+      });
+      document.dispatchEvent(event);
+      window.dispatchEvent(event);
+      
+      console.log('Événement émis:', event);
+    } catch (error) {
+      console.error('Erreur lors de l\'émission de l\'événement:', error);
+    }
+    
+    // Émettre un événement storage
+    emitStorageEvent();
+    
+    return capacity;
+  }, [age, physicalActivity, nutrition, sleepDuration, stress, medicalHistory]);
+
+  // Calculer et sauvegarder la capacité quand nécessaire
+  useEffect(() => {
+    if (!isInitialized) return;
+    
+    // Ne calculer et mettre à jour que lorsque formSubmitted est true (après la première soumission)
+    // ou lorsque autoSave est activé
+    if (!formSubmitted && !autoSave) return;
+    
+    // Utiliser un debounce pour éviter les mises à jour trop fréquentes
+    const debounceTimer = setTimeout(() => {
+      const capacity = calculateCapacity();
+      if (capacity !== absorptionCapacity) {
+        saveCapacity(capacity);
+      }
+    }, 300); // 300ms de délai
+    
+    return () => clearTimeout(debounceTimer);
+  }, [calculatedCapacity, formSubmitted, autoSave, isInitialized, calculateCapacity, saveCapacity, absorptionCapacity]);
+
+  // Gérer la soumission du formulaire (mémorisée)
+  const handleSubmit = useCallback(() => {
+    setFormSubmitted(true);
+    const capacity = calculateCapacity();
+    saveCapacity(capacity);
+    
+    setIsSaved(true);
+    setTimeout(() => {
+      setIsSaved(false);
+    }, 2000);
+  }, [calculateCapacity, saveCapacity]);
+
+  // Mettre à jour les facteurs individuels
+  const updateIndividualFactor = useCallback((factorId: string, value: number) => {
+    // Utiliser un setTimeout pour éviter les mises à jour trop fréquentes
+    setTimeout(() => {
+      if (factorId === 'age') setAge(value);
+      else if (factorId === 'physicalActivity') setPhysicalActivity(value);
+      else if (factorId === 'nutrition') setNutrition(value);
+      else if (factorId === 'sleepDuration') setSleepDuration(value);
+    }, 0);
+  }, []);
+
+  // Gérer les changements d'antécédents médicaux (mémorisée)
+  const handleMedicalHistoryChange = useCallback((key: MedicalHistoryKey, checked: boolean) => {
+    // Utiliser un setTimeout pour éviter les mises à jour trop fréquentes
+    setTimeout(() => {
+      setMedicalHistory(prev => ({
+        ...prev,
+        [key]: checked
+      }));
+    }, 0);
+  }, []);
+
+  const individualFactors = [
+    {
+      id: 'age',
+      label: 'Âge',
+      min: 18,
+      max: 65,
+      unit: 'ans',
+      value: age
+    },
+    {
+      id: 'physicalActivity',
+      label: 'Activité sportive',
+      min: 0,
+      max: 7,
+      unit: 'fois/semaine',
+      value: physicalActivity
+    },
+    {
+      id: 'nutrition',
+      label: 'Alimentation',
+      min: 1,
+      max: 5,
+      unit: '/5',
+      value: nutrition
+    },
+    {
+      id: 'sleepDuration',
+      label: 'Sommeil',
+      min: 5,
+      max: 9,
+      unit: 'h',
+      value: sleepDuration
+    }
+  ];
 
   // Description de la capacité d'absorption
   const getAbsorptionDescription = (value: number) => {
@@ -156,47 +309,13 @@ export default function GlassSettingsForm() {
     return "Excellente capacité d'absorption"
   }
 
-  // Fonction de sauvegarde
-  const handleSave = () => {
-    const absorptionCapacity = calculateAbsorptionCapacity()
-    localStorage.setItem('glassSettings', JSON.stringify({
-      absorptionCapacity,
-      individualParams,
-      medicalHistory
-    }))
-    localStorage.setItem('glassCapacity', absorptionCapacity.toString())
-    
-    // Émettre un événement personnalisé pour notifier le tableau de bord
-    const event = new CustomEvent('glassCapacityUpdated', { 
-      detail: { capacity: absorptionCapacity }
-    })
-    window.dispatchEvent(event)
-  }
-
-  // Charger les paramètres sauvegardés
-  useEffect(() => {
-    const savedSettings = localStorage.getItem('glassSettings')
-    if (savedSettings) {
-      const { individualParams: savedParams, medicalHistory: savedHistory } = JSON.parse(savedSettings)
-      setIndividualParams(savedParams)
-      setMedicalHistory(savedHistory)
-    }
-  }, [])
-
-  const handleMedicalHistoryChange = (key: MedicalHistoryKey) => {
-    setMedicalHistory(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-  };
-
   return (
     <BaseSettingsForm
       title="Paramètres du Verre"
       description="Chaque individu présente des caractéristiques physiques et des habitudes de vie qui lui sont propres. Ces facteurs individuels doivent impérativement être pris en compte lorsqu'il s'agit d'évaluer le risque TMS ou d'anticiper la probabilité d'accident de travail."
-      currentValue={calculateAbsorptionCapacity()}
+      currentValue={calculatedCapacity}
       getValueDescription={getAbsorptionDescription}
-      onSubmit={handleSave}
+      onSubmit={handleSubmit}
       scoreType="glass"
     >
       <div className="space-y-8">
@@ -212,17 +331,14 @@ export default function GlassSettingsForm() {
                 <span className="text-lg font-medium text-gray-200 bg-gray-700/50 px-3 py-1.5 rounded-md">
                   {factor.value}{factor.unit}
                 </span>
-          </div>
+              </div>
               <div className="relative pt-1">
-            <input
-              type="range"
+                <input
+                  type="range"
                   min={factor.min}
                   max={factor.max}
                   value={factor.value}
-                  onChange={(e) => setIndividualParams(prev => ({
-                    ...prev,
-                    [factor.id]: parseInt(e.target.value)
-                  }))}
+                  onChange={(e) => updateIndividualFactor(factor.id, parseInt(e.target.value))}
                   className="w-full h-2.5 bg-gray-600/50 rounded-lg appearance-none cursor-pointer accent-blue-500
                     [&::-webkit-slider-thumb]:w-5 
                     [&::-webkit-slider-thumb]:h-5 
@@ -237,13 +353,13 @@ export default function GlassSettingsForm() {
                 <div className="flex justify-between mt-2 text-base text-gray-400">
                   <span>{factor.min}{factor.unit}</span>
                   <span>{factor.max}{factor.unit}</span>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
           ))}
-      </div>
-      
-      {/* Antécédents médicaux */}
+        </div>
+        
+        {/* Antécédents médicaux */}
         <div className="space-y-4">
           <h3 className="text-xl font-medium text-gray-200 mb-2">Antécédents médicaux</h3>
           <div className="grid grid-cols-2 gap-4">
@@ -255,7 +371,7 @@ export default function GlassSettingsForm() {
                   type="button"
                   onClick={(e) => {
                     e.preventDefault();
-                    handleMedicalHistoryChange(pathology.id as MedicalHistoryKey);
+                    handleMedicalHistoryChange(pathology.id as MedicalHistoryKey, !isSelected);
                   }}
                   className={`w-full text-left transition-all duration-200 px-4 py-3 rounded-lg group
                     ${isSelected 
@@ -271,7 +387,7 @@ export default function GlassSettingsForm() {
                       <p className={`text-base ${isSelected ? 'text-blue-300/80' : 'text-gray-500'}`}>
                         {pathology.description}
                       </p>
-            </div>
+                    </div>
                     <div className={`ml-3 rounded-full p-1.5 
                       ${isSelected 
                         ? 'bg-blue-500 text-white' 
@@ -287,8 +403,8 @@ export default function GlassSettingsForm() {
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-            </div>
-          </div>
+                    </div>
+                  </div>
                 </button>
               );
             })}

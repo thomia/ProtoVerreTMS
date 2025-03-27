@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Slider } from "@/components/ui/slider"
 import { cn } from '@/lib/utils'
 import { Switch } from "@/components/ui/switch"
+import { getLocalStorage, setLocalStorage } from '@/lib/localStorage'
 
 interface StrawComponentProps {
   absorptionRate: number;
@@ -19,36 +20,46 @@ export default function StrawComponent({
 }: StrawComponentProps) {
   const [isEnabled, setIsEnabled] = useState(true)
 
-  // Charger le taux d'absorption sauvegardé au démarrage
+  // Charger les valeurs initiales de localStorage
   useEffect(() => {
-    const savedRate = localStorage.getItem('absorptionRate');
+    // Charger le taux d'absorption
+    const savedRate = getLocalStorage('absorptionRate')
     if (savedRate) {
-      try {
-        const parsed = parseInt(savedRate);
-        setAbsorptionRate(parsed);
-      } catch (e) {
-        console.error("Erreur lors du chargement du taux d'absorption:", e);
+      const rate = parseInt(savedRate)
+      if (!isNaN(rate)) {
+        setAbsorptionRate(rate)
       }
     }
-  }, [setAbsorptionRate]);
-  
-  // Sauvegarder le taux d'absorption lorsqu'il change
-  useEffect(() => {
-    localStorage.setItem('absorptionRate', absorptionRate.toString());
-  }, [absorptionRate]);
 
-  // Charger l'état d'activation sauvegardé au démarrage
-  useEffect(() => {
-    const savedEnabled = localStorage.getItem('strawEnabled');
-    if (savedEnabled !== null) {
-      setIsEnabled(savedEnabled === 'true');
+    // Écouter les événements personnalisés
+    const handleStrawUpdate = (e: CustomEvent<{recoveryCapacity: number}>) => {
+      if (e.detail && typeof e.detail.recoveryCapacity === 'number') {
+        setAbsorptionRate(e.detail.recoveryCapacity)
+        setLocalStorage('absorptionRate', e.detail.recoveryCapacity.toString())
+      }
     }
-  }, []);
 
-  // Sauvegarder l'état d'activation lorsqu'il change
-  useEffect(() => {
-    localStorage.setItem('strawEnabled', isEnabled.toString());
-  }, [isEnabled]);
+    // Vérifier si la paille est activée
+    const savedEnabled = getLocalStorage('strawEnabled')
+    if (savedEnabled !== null) {
+      setIsEnabled(savedEnabled === 'true')
+    }
+
+    // Ajouter l'écouteur d'événement
+    window.addEventListener('strawUpdateEvent', handleStrawUpdate as EventListener)
+    
+    // Nettoyage
+    return () => {
+      window.removeEventListener('strawUpdateEvent', handleStrawUpdate as EventListener)
+    }
+  }, [setAbsorptionRate])
+
+  // Gérer le changement d'état
+  const handleToggle = () => {
+    const newState = !isInsideGlass
+    setIsEnabled(newState)
+    setLocalStorage('strawEnabled', newState.toString())
+  }
   
   // Obtenir la couleur en fonction du taux d'absorption
   const getAbsorptionColor = () => {
@@ -223,7 +234,7 @@ export default function StrawComponent({
               <span className="text-xs text-gray-300">État:</span>
               <Switch
                 checked={isEnabled}
-                onCheckedChange={setIsEnabled}
+                onCheckedChange={handleToggle}
                 className="data-[state=checked]:bg-green-500"
               />
             </div>

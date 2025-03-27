@@ -1,0 +1,137 @@
+# .cursorrules
+
+## Personality (Always)
+- Réponds comme un développeur ultra senior : sois technique, précis, et pédagogue.
+- Explique les concepts complexes en termes simples avant de proposer des solutions.
+- Fournis des exemples concrets liés au contexte du projet.
+- Sois concis, mais inclue des détails techniques lorsque nécessaire.
+
+## Tech Stack (Always)
+- **Front-end** :  
+  - Next.js App Router (dernière version stable, vérifier la compatibilité avec les autres dépendances).  
+  - React (dernière version stable, compatible avec Next.js).  
+  - React-DOM (dernière version stable, compatible avec React).  
+  - TypeScript (dernière version stable, compatible avec Next.js).  
+  - Lucid React (dernière version stable, pour les composants Radix UI).  
+  - Class Variance Authority (dernière version stable).  
+  - Clsx (dernière version stable).  
+  - Tailwind CSS (dernière version stable, compatible avec Next.js).  
+  - Tailwind Merge (dernière version stable).  
+  - Tailwind CSS Animate (dernière version stable).  
+  - Framer Motion (dernière version stable).  
+- **Back-end** : Node.js (dernière version LTS, compatible avec Next.js, via les API routes).  
+- **Base de données** : Supabase (client `@supabase/supabase-js`, dernière version stable, à confirmer si installé).  
+- **Authentification** : À implémenter (par exemple, NextAuth.js, dernière version stable compatible avec Next.js, à confirmer).  
+- **Déploiement** : Vercel (dernière version stable de l’CLI, compatible avec Next.js).  
+- **Conventions** : Suivre la documentation officielle de la dernière version stable de Next.js pour le fetching de données, le rendu, et le routage.
+
+## File Structure (Always)
+- `public/` : Fichiers statiques (images, favicon).  
+- `src/app/` : Routes Next.js (App Router).  
+- `src/components/` : Composants réutilisables.  
+- `src/hooks/` : Hooks personnalisés.  
+- `src/lib/` : Utilitaires et logique métier.  
+- `src/services/` : Logique de fetching ou API.  
+- `src/types/` : Définitions TypeScript.  
+- `src/ui/` : Composants UI (Lucid React).  
+- `instructions/` : Fichiers Markdown spécialisés (roadmap, documentation).  
+- **Fichiers à ignorer** : `next.config.js`, `tsconfig.json`, `tailwind.config.js`, `postcss.config.js`, `.env` (protégés via `.cursorignore`).
+
+## Environment Variables (Always)
+- Variables utilisées (à confirmer) :  
+  - `NEXT_PUBLIC_API_URL` : URL de l’API publique.  
+  - `DATABASE_URL` : URL de connexion à la base de données.  
+  - `AUTH_SECRET` : Clé secrète pour l’authentification.  
+  - `NEXT_PUBLIC_SUPABASE_URL` : URL publique de Supabase.  
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY` : Clé anonyme de Supabase.  
+- Protégées via `.cursorignore`.
+
+## General Principles (Always)
+- Écrire du code clair et concis avec des noms explicites pour les variables, fonctions, et fichiers.
+- Modulariser le code en petits composants réutilisables pour éviter la duplication.
+- Documenter régulièrement l’avancement dans des fichiers Markdown (par exemple, `instructions/roadmap.md`).
+- Rester factuel dans les résumés et la documentation, sans hypothèses inutiles.
+- Demander des précisions ou du contexte notamment pour la correction de bug ou si tu sais que ça te permettra d’être plus pertinent et efficace dans tes réponses.
+- Décomposer une demande générale ou qui demande beaucoup de correction en plusieurs petites étapes.
+
+## Development Practices (Always)
+- Utiliser TypeScript pour tout le code ; préférer les interfaces aux types et éviter les enums (utiliser des maps).
+- Favoriser les composants serveur (SSR/SSG) ; minimiser `'use client'`, `'useEffect'`, et `'setState'`.
+- Optimiser les performances :  
+  - Réduire les reflows (par exemple, simplifier les animations).  
+  - Utiliser le lazy loading pour les images et composants non critiques.  
+  - Optimiser les Web Vitals (LCP, CLS, FID).
+- Éviter la duplication en réutilisant les composants et utilitaires existants.
+
+## UI and Styling (Auto Attached)
+- Adopter une approche mobile-first : concevoir pour les petits écrans (par exemple, `w-full`, `text-sm`), puis ajuster pour les écrans plus grands (par exemple, `sm:w-1/2`, `md:text-base`).
+- Utiliser des styles responsive : éviter les tailles fixes (par exemple, `w-96`) et préférer des classes relatives (par exemple, `w-full max-w-[384px]`).
+- Simplifier les interactions sur mobile : s’assurer que les éléments interactifs sont assez grands (minimum 44x44 pixels pour les zones cliquables).
+- Prioriser une interface intuitive : utiliser des couleurs contrastées et des transitions fluides.
+**Déclencheur** : Mots-clés comme "page", "composant", "style", "design", ou fichiers dans `src/app/` ou `src/components/`.
+
+## Performance Optimization (Auto Attached)
+- Optimiser pour mobile :  
+  - Réduire les animations lourdes sur les petits écrans (par exemple, désactiver ou simplifier les animations Framer Motion).  
+  - Minimiser les requêtes réseau avec SSR/SSG.  
+- Utiliser des images optimisées : format WebP, lazy loading, données de taille pour éviter les décalages (CLS).
+**Déclencheur** : Mots-clés comme "performance", "mobile", "animation", "image", ou fichiers impliquant des animations.
+
+## Project Management (Manual)
+- **Maintenir une roadmap** :  
+  - Documenter l’état actuel, les priorités, et les prochaines étapes dans `instructions/roadmap.md`.  
+  - Mettre à jour après chaque session ou changement significatif, avec une date.  
+  - Utiliser un langage simple et factuel.  
+- **Synthèse de session** :  
+  - À la fin de chaque session, résumer les tâches réalisées, les erreurs rencontrées, et les solutions appliquées.  
+  - Mettre en avant les leçons apprises pour éviter de répéter les erreurs.  
+  - Ajouter le résumé à `instructions/roadmap.md` avec la date de la session.  
+  - Demander des précisions si des informations manquent.
+**Activation** : Mention explicite comme "@projectrules.mdc" ou mots-clés comme "roadmap", "synthèse", "session".
+
+## Testing and Deployment (Agent Requested)
+- Tester sur mobile : vérifier chaque page sur un émulateur ou un vrai appareil pour l’accessibilité et les performances.
+- Tester localement avant de déployer : s’assurer que les modifications fonctionnent avant de pousser sur Vercel.
+- Utiliser des messages de commit clairs (par exemple, "feat: add dashboard page", "fix: resolve mobile layout issue").
+**Déclencheur** : Mots-clés comme "test", "déploiement", "commit", "push", ou actions liées à Git/Vercel.
+
+## Code Documentation (Always)
+- Ajouter des commentaires pour les parties non évidentes ; viser 20-40 % de commentaires (1 ligne pour 3-4 lignes de code).
+- Indiquer le nom et l’emplacement du fichier en haut de chaque fichier (par exemple, `// app/dashboard/page.tsx`).
+
+## Processes
+
+### Résolution d’erreurs (Auto Attached)
+1. Expliquer l’erreur en termes simples avec un exemple lié au projet.
+2. Analyser la cause potentielle en trois paragraphes, sans sauter aux conclusions.
+3. Proposer une solution claire avec des commentaires expliquant chaque étape.
+**Déclencheur** : Mots-clés comme "erreur", "bug", "problème", ou logs d’erreur.
+
+### Ajout d’une nouvelle fonctionnalité (Agent Requested)
+1. Brainstormer les idées et identifier le MVP (20 % d’efforts pour 80 % des résultats).
+2. Décomposer en étapes nécessaires, sans inclure d’étapes superflues.
+3. Implémenter, tester localement, et pousser sur GitHub avant de passer à l’étape suivante DEMANDER L AUTORISATION AVANT DE PUSH .
+**Déclencheur** : Mots-clés comme "ajouter", "nouvelle fonctionnalité", "implémenter".
+
+### Création d’une nouvelle page (Auto Attached)
+1. Créer une nouvelle route dans `app/`.
+2. Ajouter un composant principal avec des sous-composants si nécessaire.
+3. Concevoir avec une approche mobile-first (par exemple, `w-full`, `flex-col`, puis `sm:flex-row`).
+4. Tester sur un émulateur mobile ou un vrai appareil.
+5. Optimiser les Web Vitals et pousser sur GitHub.
+**Déclencheur** : Mots-clés comme "page", "route", ou fichiers dans `src/app/`.
+
+## Important Instructions (Always)
+- Minimiser `'use client'` ; favoriser les composants serveur.
+- Optimiser les Web Vitals (LCP, CLS, FID).
+- Ne jamais supprimer les commentaires dans le code.
+- Suivre la documentation de Next.js 14.1.0.
+- Décomposer les tâches complexes en étapes simples.
+- Mettre à jour `instructions/roadmap.md` après chaque session.
+
+## Future Improvements (Manual)
+- Planifier une mise à jour vers Next.js 15 une fois les nouvelles fonctionnalités (version pro, landing page) déployées et stables.
+- Implémenter l’authentification (par exemple, avec NextAuth.js) pour la version pro.
+- Ajouter des fonctionnalités de collaboration (gestion d’équipe).
+- Structurer le code pour faciliter l’ajout de nouvelles fonctionnalités (par exemple, export de données, simulations avancées).
+**Activation** : Mention explicite comme "@projectrules.mdc" ou mots-clés comme "améliorations", "futur", "plan".

@@ -1,29 +1,35 @@
 "use client"
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import TapComponent from './tap-component'
 import GlassComponent from './glass-component'
 import StrawComponent from './straw-component'
 import React from 'react'
-import ParameterModals from './parameter-modals'
-import { Settings, Droplet, Wind, GlassWater, RectangleHorizontal, Cloud, ActivitySquare, Activity, Lightbulb, AlertTriangle, AlertCircle, HelpCircle, ExternalLink, BookOpen, Scale, FileText, Stethoscope, AlertOctagon, InfoIcon } from 'lucide-react'
+import { ParameterModals } from './parameter-modals'
+import { Settings, Droplet, Wind, GlassWater, RectangleHorizontal, Cloud, ActivitySquare, Activity, Lightbulb, AlertTriangle, AlertCircle, HelpCircle, ExternalLink, BookOpen, Scale, FileText, Stethoscope, AlertOctagon, InfoIcon, Clock, RefreshCw, Play, Pause } from 'lucide-react'
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+import { getLocalStorage, setLocalStorage, emitStorageEvent } from '@/lib/localStorage'
 import { EnvironmentParticles } from './environment-particles'
 import { ModelDescription } from '../ui/model-description'
 import { AnimatedTitle } from '../ui/animated-title'
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Slider } from "@/components/ui/slider"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { CostPanel } from "./cost-panel"
-import { Slider } from "@/components/ui/slider"
 import { FastForward } from 'lucide-react'
 
 export default function Dashboard() {
+  // État pour garantir que le composant est monté (côté client uniquement)
+  const [isMounted, setIsMounted] = useState(false)
   const [flowRate, setFlowRate] = useState(0)
   const [fillLevel, setFillLevel] = useState(0)
   const [absorptionRate, setAbsorptionRate] = useState(0)
   const [glassWidth, setGlassWidth] = useState(20)
   const [glassWidthPx, setGlassWidthPx] = useState(200)
+  const [glassCapacity, setGlassCapacity] = useState(0)
   const [lastUpdateTime, setLastUpdateTime] = useState(Date.now())
   const [environmentScore, setEnvironmentScore] = useState(0)
   const [accidentRisk, setAccidentRisk] = useState(0)
@@ -75,10 +81,94 @@ export default function Dashboard() {
   const glassRef = React.useRef<HTMLDivElement>(null)
   const lastFlowRateRef = React.useRef<number>(0)
 
+  // États pour le chronomètre de travail (8h)
+  const [workTime, setWorkTime] = useState(0) // temps écoulé en minutes simulées
+  const [workStartTime, setWorkStartTime] = useState(Date.now()) // moment de démarrage du chrono
+  const [lastSimulationSpeed, setLastSimulationSpeed] = useState(1) // pour suivre les changements de vitesse
+
+  // Utilisation de useCallback pour éviter les recréations de fonctions à chaque rendu
+  const handleOpenModal = useCallback((modalType: 'tap' | 'glass' | 'straw' | 'bubble') => {
+    setActiveModal(modalType)
+  }, [])
+  
+  const handleCloseModal = useCallback(() => {
+    setActiveModal(null)
+  }, [])
+
+  // Effet pour marquer le composant comme monté
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  // Charger les paramètres initiaux
+  useEffect(() => {
+    if (!isMounted) return;
+
+    // Charger les paramètres stockés
+    const savedFlowRate = getLocalStorage('flowRate');
+    const savedFillLevel = getLocalStorage('fillLevel');
+    const savedGlassCapacity = getLocalStorage('glassCapacity');
+    const savedEnvironmentScore = getLocalStorage('environmentScore');
+
+    if (savedFlowRate) {
+      try {
+        setFlowRate(Number(savedFlowRate));
+        lastFlowRateRef.current = Number(savedFlowRate);
+      } catch (e) {
+        console.error("Erreur lors du chargement du débit:", e);
+      }
+    }
+
+    if (savedFillLevel) {
+      try {
+        setFillLevel(Number(savedFillLevel));
+      } catch (e) {
+        console.error("Erreur lors du chargement du niveau de remplissage:", e);
+      }
+    }
+
+    if (savedGlassCapacity) {
+      try {
+        setGlassCapacity(Number(savedGlassCapacity));
+      } catch (e) {
+        console.error("Erreur lors du chargement de la capacité du verre:", e);
+      }
+    }
+
+    if (savedEnvironmentScore) {
+      try {
+        setEnvironmentScore(Number(savedEnvironmentScore));
+      } catch (e) {
+        console.error("Erreur lors du chargement du score environnemental:", e);
+      }
+    }
+
+    // Écouter l'événement de mise à jour de la capacité du verre
+    const handleGlassCapacityUpdate = (e: CustomEvent<{ capacity: number }>) => {
+      if (e.detail && typeof e.detail.capacity === 'number') {
+        setGlassCapacity(e.detail.capacity);
+      }
+    };
+
+    window.addEventListener('glassCapacityUpdated', handleGlassCapacityUpdate as EventListener);
+    window.addEventListener('environmentScoreUpdated', ((e: CustomEvent<{ score: number }>) => {
+      if (e.detail && typeof e.detail.score === 'number') {
+        setEnvironmentScore(e.detail.score);
+      }
+    }) as EventListener);
+
+    return () => {
+      window.removeEventListener('glassCapacityUpdated', handleGlassCapacityUpdate as EventListener);
+      window.removeEventListener('environmentScoreUpdated', (() => {}) as EventListener);
+    };
+  }, [isMounted]);
+
   // Charger les paramètres de posture depuis localStorage
   useEffect(() => {
+    if (!isMounted) return;
+    
     const loadPostureSettings = () => {
-      const savedConstraints = localStorage.getItem('tapConstraints')
+      const savedConstraints = getLocalStorage('tapConstraints')
       if (savedConstraints) {
         try {
           const parsed = JSON.parse(savedConstraints)
@@ -94,55 +184,93 @@ export default function Dashboard() {
     loadPostureSettings()
     
     // Écouter les changements dans localStorage
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'tapConstraints') {
-        loadPostureSettings()
-      }
+    const handleStorageChange = () => {
+      loadPostureSettings()
     }
     
     window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
-  }, [])
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+    }
+  }, [isMounted])
 
   // Charger les antécédents médicaux depuis localStorage
   useEffect(() => {
-    const loadMedicalHistory = () => {
-      const savedGlassSettings = localStorage.getItem('glassSettings')
-      if (savedGlassSettings) {
+    if (!isMounted) return;
+    
+    const savedGlassSettings = getLocalStorage('glassSettings')
+    if (savedGlassSettings) {
+      try {
+        const settings = JSON.parse(savedGlassSettings)
+        if (settings.medicalHistory) {
+          setMedicalHistory(settings.medicalHistory)
+        }
+      } catch (e) {
+        console.error("Erreur lors du chargement des antécédents médicaux:", e)
+      }
+    }
+    
+    // Écouter les changements dans localStorage
+    const handleStorageChange = () => {
+      const savedSettings = getLocalStorage('glassSettings')
+      if (savedSettings) {
         try {
-          const parsed = JSON.parse(savedGlassSettings)
-          if (parsed.medicalHistory) setMedicalHistory(parsed.medicalHistory)
+          const settings = JSON.parse(savedSettings)
+          if (settings.medicalHistory) {
+            setMedicalHistory(settings.medicalHistory)
+          }
         } catch (e) {
-          console.error("Erreur lors du chargement des antécédents médicaux:", e)
+          console.error("Erreur lors de la mise à jour des antécédents médicaux:", e)
         }
       }
     }
     
-    // Charger au démarrage
-    loadMedicalHistory()
-    
-    // Écouter les changements dans localStorage
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'glassSettings') {
-        loadMedicalHistory()
-      }
-    }
-    
     window.addEventListener('storage', handleStorageChange)
     return () => window.removeEventListener('storage', handleStorageChange)
-  }, [])
+  }, [isMounted])
 
   // Charger le niveau de remplissage depuis localStorage
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const savedFillLevel = localStorage.getItem('fillLevel')
     if (savedFillLevel) {
-      setFillLevel(parseInt(savedFillLevel, 10))
+      try {
+        setFillLevel(Number(savedFillLevel))
+      } catch (e) {
+        console.error("Erreur lors du chargement du niveau de remplissage:", e)
+      }
     }
   }, [])
 
   // Charger le débit depuis localStorage et réagir aux changements
   useEffect(() => {
-    const loadFlowRate = () => {
+    if (typeof window === 'undefined') return;
+    
+      const savedFlowRate = localStorage.getItem('flowRate')
+      if (savedFlowRate) {
+        try {
+        setFlowRate(Number(savedFlowRate))
+        lastFlowRateRef.current = Number(savedFlowRate)
+        } catch (e) {
+          console.error("Erreur lors du chargement du débit:", e)
+      }
+    }
+    
+    // Écouter l'événement personnalisé pour les mises à jour du débit
+    const handleTapUpdate = (e: CustomEvent<{ flowRate: number }>) => {
+      const newFlowRate = e.detail.flowRate
+      if (!isNaN(newFlowRate)) {
+        setFlowRate(newFlowRate)
+        lastFlowRateRef.current = newFlowRate
+      }
+    }
+    
+    window.addEventListener('tapFlowUpdated', handleTapUpdate as EventListener)
+    
+    // Vérifier périodiquement les changements dans localStorage
+    const intervalId = setInterval(() => {
       const savedFlowRate = localStorage.getItem('flowRate')
       if (savedFlowRate) {
         try {
@@ -155,184 +283,107 @@ export default function Dashboard() {
           console.error("Erreur lors du chargement du débit:", e)
         }
       }
-    }
-    
-    // Charger le débit au démarrage
-    loadFlowRate()
-    
-    // Écouter les changements dans localStorage
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'flowRate' || e.key === 'tapConstraints') {
-        loadFlowRate()
-      }
-    }
-
-    // Écouter l'événement personnalisé pour les mises à jour du débit
-    const handleTapUpdate = (e: CustomEvent<{ flowRate: number }>) => {
-      const newFlowRate = e.detail.flowRate
-      if (!isNaN(newFlowRate)) {
-        setFlowRate(newFlowRate)
-        lastFlowRateRef.current = newFlowRate
-      }
-    }
-    
-    window.addEventListener('storage', handleStorageChange)
-    window.addEventListener('tapFlowUpdated', handleTapUpdate as EventListener)
-    
-    // Vérifier périodiquement les changements dans localStorage
-    const intervalId = setInterval(loadFlowRate, 100)
+    }, 100)
     
     return () => {
-      window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener('tapFlowUpdated', handleTapUpdate as EventListener)
       clearInterval(intervalId)
     }
   }, [])
 
-  // Charger les facteurs personnels depuis localStorage
+  // Mettre à jour la largeur du verre en fonction de la capacité
   useEffect(() => {
-    const loadGlassCapacity = () => {
-      const savedCapacity = localStorage.getItem('glassCapacity')
-      if (savedCapacity) {
-        try {
-          const capacity = parseInt(savedCapacity)
-          // La largeur du verre est proportionnelle à la capacité d'absorption
-          // 10% de capacité = 20% de largeur
-          // 100% de capacité = 90% de largeur
-          const newWidth = 20 + (capacity / 100) * 70
-          console.log("Chargement de la capacité:", {
-            capacité: capacity,
-            nouvelleLargeur: newWidth,
-            ancienneLargeur: glassWidth
-          })
-          if (newWidth !== glassWidth) {
-            setGlassWidth(newWidth)
-          }
-        } catch (e) {
-          console.error("Erreur lors du chargement de la capacité d'absorption:", e)
+    // La largeur du verre est proportionnelle à la capacité d'absorption
+    // 10% de capacité = 20% de largeur
+    // 100% de capacité = 90% de largeur
+    const newWidth = 20 + (glassCapacity / 100) * 70;
+    
+    console.log("Mise à jour de la largeur du verre:", {
+      capacité: glassCapacity,
+      nouvelleLargeur: newWidth,
+      ancienneLargeur: glassWidth
+    });
+    
+    setGlassWidth(newWidth);
+  }, [glassCapacity]);
+
+  // Charger la capacité du verre depuis localStorage
+  useEffect(() => {
+    if (!isMounted) return;
+    
+    const savedCapacity = getLocalStorage('glassCapacity');
+    if (savedCapacity) {
+      try {
+        const capacity = parseInt(savedCapacity);
+        if (!isNaN(capacity) && capacity !== glassCapacity) {
+          console.log("Chargement de la capacité du verre depuis localStorage:", capacity);
+          setGlassCapacity(capacity);
         }
+      } catch (e) {
+        console.error("Erreur lors du chargement de la capacité d'absorption:", e);
       }
     }
     
-    // Charger au démarrage
-    loadGlassCapacity()
-    
-    // Écouter les changements dans localStorage
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'glassCapacity' || e.key === 'glassSettings') {
-        loadGlassCapacity()
+    // Écouter les changements de capacité via les événements personnalisés
+    const handleCapacityUpdate = (e: CustomEvent<{ capacity: number }>) => {
+      if (e.detail && typeof e.detail.capacity === 'number') {
+        console.log("Événement de mise à jour de capacité reçu:", e.detail.capacity);
+        setGlassCapacity(e.detail.capacity);
       }
-    }
+    };
     
-    window.addEventListener('storage', handleStorageChange)
-    
-    // Vérifier périodiquement les changements
-    const intervalId = setInterval(loadGlassCapacity, 100)
-    
-    // Écouter l'événement personnalisé pour les mises à jour des paramètres du verre
-    const handleGlassUpdate = (e: CustomEvent) => {
-      console.log("Événement glassCapacityUpdated reçu:", e.detail)
-      loadGlassCapacity()
-    }
-    window.addEventListener('glassCapacityUpdated', handleGlassUpdate as EventListener)
+    // Écouter à la fois sur window et document pour plus de robustesse
+    window.addEventListener('glassCapacityUpdated', handleCapacityUpdate as EventListener);
+    document.addEventListener('glassCapacityUpdated', handleCapacityUpdate as EventListener);
     
     return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      window.removeEventListener('glassCapacityUpdated', handleGlassUpdate as EventListener)
-      clearInterval(intervalId)
-    }
-  }, [glassWidth])
+      window.removeEventListener('glassCapacityUpdated', handleCapacityUpdate as EventListener);
+      document.removeEventListener('glassCapacityUpdated', handleCapacityUpdate as EventListener);
+    };
+  }, [isMounted, glassCapacity]);
 
   // Charger l'état d'activation de la paille au démarrage
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const savedEnabled = localStorage.getItem('strawEnabled')
     if (savedEnabled !== null) {
-      setIsStrawEnabled(savedEnabled === 'true')
+      try {
+        setIsStrawEnabled(savedEnabled === 'true')
+      } catch (e) {
+        console.error("Erreur lors du chargement de l'état d'activation de la paille:", e)
+      }
     }
   }, [])
 
-  // Sauvegarder l'état d'activation de la paille
-  useEffect(() => {
-    localStorage.setItem('strawEnabled', isStrawEnabled.toString())
-  }, [isStrawEnabled])
+  // Gérer le changement d'état de la paille
+  const handleStrawToggle = () => {
+    const newState = !isStrawEnabled
+    setIsStrawEnabled(newState)
+    
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('strawEnabled', newState.toString())
+    }
+  }
 
   // Charger la capacité de récupération depuis localStorage
   useEffect(() => {
-    const loadRecoveryCapacity = () => {
-      const savedCapacity = localStorage.getItem('recoveryCapacity')
-      if (savedCapacity) {
-        try {
-          const capacity = parseInt(savedCapacity)
-          // Si la paille est désactivée, forcer le taux à 10 (minimum)
-          // Sinon utiliser la capacité calculée dans les paramètres
-          setAbsorptionRate(isStrawEnabled ? capacity : 10)
-        } catch (e) {
-          console.error("Erreur lors du chargement de la capacité de récupération:", e)
-        }
-      }
-    }
-
-    // Charger au démarrage
-    loadRecoveryCapacity()
-
-    // Écouter les changements dans localStorage
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'recoveryCapacity' || e.key === 'strawEnabled' || e.key === 'strawSettings') {
-        loadRecoveryCapacity()
-      }
-    }
-
-    // Écouter les changements dans localStorage
-    window.addEventListener('storage', handleStorageChange)
-
-    // Vérifier périodiquement les changements
-    const intervalId = setInterval(loadRecoveryCapacity, 100) // Vérification plus fréquente
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      clearInterval(intervalId)
-    }
-  }, [isStrawEnabled])
-
-  // Charger le score environnemental depuis localStorage
-  useEffect(() => {
-    const loadEnvironmentScore = () => {
-      const savedScore = localStorage.getItem('environmentScore')
-      if (savedScore) {
-        try {
-          const score = parseInt(savedScore)
-          setEnvironmentScore(score)
-      } catch (e) {
-          console.error("Erreur lors du chargement du score environnemental:", e)
-        }
-      }
-    }
-
-    // Charger au démarrage
-    loadEnvironmentScore()
-
-    // Écouter les changements dans localStorage
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'environmentScore' || e.key === 'bubbleSettings') {
-        loadEnvironmentScore()
-      }
-    }
-
-    window.addEventListener('storage', handleStorageChange)
+    if (typeof window === 'undefined') return;
     
-    // Vérifier périodiquement les changements
-    const intervalId = setInterval(loadEnvironmentScore, 100)
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      clearInterval(intervalId)
+    const savedCapacity = localStorage.getItem('recoveryCapacity')
+    if (savedCapacity) {
+      try {
+        setAbsorptionRate(Number(savedCapacity))
+      } catch (e) {
+        console.error("Erreur lors du chargement de la capacité de récupération:", e)
+      }
     }
   }, [])
 
-  // Gérer la simulation du remplissage
+  // Mettre à jour les variables de simulation
   useEffect(() => {
     if (isPaused) return;
-
+    
     const updateInterval = setInterval(() => {
       const now = Date.now()
       const deltaTime = Math.min(now - lastUpdateTime, 100)
@@ -360,7 +411,7 @@ export default function Dashboard() {
     
     return () => clearInterval(updateInterval)
   }, [flowRate, lastUpdateTime, isPaused, glassWidth, absorptionRate, isStrawEnabled, simulationSpeed, environmentScore])
-
+  
   // Gérer l'exposition TMS basée sur le niveau de remplissage
   useEffect(() => {
     if (isPaused) return;
@@ -376,106 +427,229 @@ export default function Dashboard() {
     return () => clearInterval(updateInterval)
   }, [fillLevel, isPaused, simulationSpeed])
 
+  // Gérer le chronomètre de travail
+  useEffect(() => {
+    if (isPaused) return;
+    
+    const updateInterval = setInterval(() => {
+      const now = Date.now();
+      const elapsedRealSeconds = (now - workStartTime) / 1000;
+
+      // 120 secondes réelles = 8 heures simulées (480 minutes)
+      // 1 seconde réelle = 4 minutes simulées
+      const simulatedMinutes = elapsedRealSeconds * 4 * simulationSpeed;
+
+      // Limiter à 8h00 maximum (480 minutes)
+      setWorkTime(Math.min(simulatedMinutes, 480));
+    }, 50); // Mise à jour fréquente pour une animation fluide
+  
+    return () => clearInterval(updateInterval);
+  }, [isPaused, workStartTime, simulationSpeed]);
+
+  // Ajuster le temps de démarrage quand la vitesse change pour éviter les sauts
+  useEffect(() => {
+    if (isPaused) {
+      setLastSimulationSpeed(simulationSpeed);
+      return;
+    }
+    
+    // Ne rien faire lors de l'initialisation
+    if (lastSimulationSpeed === simulationSpeed) return;
+    
+    // Calculer le temps écoulé réel actuel
+    const now = Date.now();
+    const currentElapsedRealSeconds = (now - workStartTime) / 1000;
+
+    // Calculer le temps simulé actuel (avec l'ancienne vitesse)
+    const currentSimulatedMinutes = currentElapsedRealSeconds * 4 * lastSimulationSpeed;
+
+    // Ajuster le temps de démarrage pour maintenir le même temps simulé avec la nouvelle vitesse
+    const newStartTime = now - (currentSimulatedMinutes / (4 * simulationSpeed)) * 1000;
+
+    setWorkStartTime(newStartTime);
+    setLastSimulationSpeed(simulationSpeed);
+  }, [simulationSpeed, isPaused, lastSimulationSpeed, workStartTime]);
+
   // Fonction pour obtenir la largeur du filet d'eau en fonction du débit
-  const getWaterStreamWidth = () => {
+  const getWaterStreamWidth = useCallback(() => {
     // Calculer le facteur d'agitation
     const agitationFactor = environmentScore > 0 ? 1 + (environmentScore * 0.003) : 1.0;
     // Appliquer au débit
     const adjustedFlowRate = flowRate * agitationFactor;
     return 2 + (adjustedFlowRate / 100) * 8 // Entre 2px et 10px
-  }
+  }, [flowRate, environmentScore]);
 
   // Fonction pour obtenir l'opacité du filet d'eau en fonction du débit
-  const getWaterStreamOpacity = () => {
+  const getWaterStreamOpacity = useCallback(() => {
     // Calculer le facteur d'agitation
     const agitationFactor = environmentScore > 0 ? 1 + (environmentScore * 0.003) : 1.0;
     // Appliquer au débit
     const adjustedFlowRate = flowRate * agitationFactor;
     return 0.3 + (adjustedFlowRate / 100) * 0.7 // Entre 0.3 et 1.0
-  }
+  }, [flowRate, environmentScore]);
 
   // Gérer le changement de débit du robinet
-  const handleFlowRateChange = (rate: number) => {
+  const handleFlowRateChange = useCallback((rate: number) => {
     setFlowRate(rate);
     // Sauvegarder le débit dans le localStorage pour persistance
-    localStorage.setItem('flowRate', rate.toString());
-    
+    setLocalStorage('flowRate', rate.toString());
     // Déclencher un événement de stockage pour notifier les autres composants
-    window.dispatchEvent(new Event('storage'));
-  }
+    emitStorageEvent();
+  }, []);
 
   // Fonction pour réinitialiser le niveau du verre
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setFillLevel(0)
     setFlowRate(0)
     setAbsorptionRate(0)
-  }
+    setWorkTime(0)
+    setWorkStartTime(Date.now())
+  }, []);
 
-  // Fonction pour mettre en pause/reprendre l'animation
-  const handlePauseToggle = () => {
+  // Gérer la mise en pause/reprise de la simulation
+  const handlePauseToggle = useCallback(() => {
+    if (isPaused) {
+      // On reprend, on ajuste le temps de démarrage pour ne pas avoir de saut
+      const now = Date.now();
+      // Prendre en compte la vitesse de simulation dans le calcul du temps de démarrage
+      setWorkStartTime(now - (workTime / (4 * simulationSpeed)) * 1000);
+    }
     setIsPaused(!isPaused)
-  }
+  }, [isPaused, workTime, simulationSpeed]);
+  
+  // Fonction pour formater le temps de travail (HH:MM)
+  const formatWorkTime = useCallback(() => {
+    const totalMinutes = Math.floor(workTime);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  }, [workTime]);
+
+  // Gestion du changement de vitesse de simulation
+  const handleSimulationSpeedChange = useCallback((values: number[]) => {
+    const newSpeed = values[0];
+    // Éviter de déclencher des mises à jour si la valeur n'a pas changé
+    if (newSpeed !== simulationSpeed) {
+      setSimulationSpeed(newSpeed);
+    }
+  }, [simulationSpeed]);
 
   return (
-    <div className="space-y-6">
+    <div className="relative min-h-screen bg-black w-full">
       {/* En-tête avec description et titre animé */}
       <ModelDescription />
 
       {/* Dashboard principal */}
-      <div className="w-full max-w-[100%] mx-auto">
-        {/* Conteneur principal avec padding adaptatif */}
-        <div className="bg-black backdrop-blur-md border border-gray-800/50 rounded-xl p-4 md:p-8 mx-0 md:-mx-24">
-          {/* Contrôles de simulation avec flex wrap */}
-          <div className="flex flex-wrap items-center gap-4 mb-4 ml-0 md:ml-4">
-            <button
-              onClick={handleReset}
-              className="px-3 py-2 rounded-lg bg-gray-900/50 border border-gray-800/30 backdrop-blur-sm text-gray-400 hover:text-gray-300 transition-colors"
-            >
-              Réinitialiser
-            </button>
-            <button
-              onClick={handlePauseToggle}
-              className={cn(
-                "px-3 py-2 rounded-lg border backdrop-blur-sm transition-colors",
-                isPaused 
-                  ? "bg-blue-500/20 border-blue-500/30 text-blue-400 hover:bg-blue-500/30" 
-                  : "bg-gray-900/50 border-gray-800/30 text-gray-400 hover:text-gray-300"
-              )}
-            >
-              {isPaused ? "Reprendre" : "Pause"}
-            </button>
-            <div className="inline-flex items-center gap-4 p-3 rounded-lg bg-gray-900/50 border border-gray-800/30 backdrop-blur-sm">
-              <FastForward className="w-5 h-5 text-blue-400" />
-              <div className="flex items-center gap-4">
-                <Slider
-                  value={[simulationSpeed]}
-                  onValueChange={(value) => setSimulationSpeed(value[0])}
-                  min={1}
-                  max={10}
-                  step={0.5}
-                  className="w-[120px]"
-                />
-                <span className="text-sm font-medium text-blue-400 min-w-[40px]">
-                  {simulationSpeed.toFixed(1)}x
-                </span>
-              </div>
-            </div>
+      <div className="w-full">
+        {/* Conteneur principal avec marges adaptatives */}
+        <div className="bg-black/40 backdrop-blur-md border-4 border-gray-800/30 rounded-xl p-4 md:p-8 w-full">
+          {/* Contrôles de simulation */}
+          <div className="w-[750px] mb-10">
+            <Card className="relative overflow-hidden bg-gradient-to-br from-slate-950/90 to-slate-900/80 border-slate-800/40">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5" />
+              
+              <CardContent className="relative space-y-4 p-8">
+                {/* Boutons de contrôle */}
+                <div className="flex items-center gap-4">
+                  <Button
+                    onClick={handleReset}
+                    size="lg"
+                    className="relative flex-1 bg-gradient-to-br from-blue-600/20 to-blue-700/20 text-blue-400 border-blue-500/30 hover:border-blue-400/40 hover:bg-blue-600/30 hover:text-blue-300 shadow-lg shadow-blue-900/20 transition-all duration-300"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-transparent animate-shimmer" />
+                    <RefreshCw className="h-5 w-5 mr-2" />
+                    Réinitialiser
+                  </Button>
+                  <Button
+                    onClick={handlePauseToggle}
+                    size="lg"
+                    className="relative flex-1 bg-gradient-to-br from-blue-600/20 to-blue-700/20 text-blue-400 border-blue-500/30 hover:border-blue-400/40 hover:bg-blue-600/30 hover:text-blue-300 shadow-lg shadow-blue-900/20 transition-all duration-300"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-transparent animate-shimmer" />
+                    {isPaused ? <Play className="h-5 w-5 mr-2" /> : <Pause className="h-5 w-5 mr-2" />}
+                    {isPaused ? 'Reprendre' : 'Pause'}
+                  </Button>
+                </div>
+
+                {/* Contrôle de vitesse */}
+                <div className="flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600/20 to-blue-700/20 border border-blue-500/30">
+                    <div className="text-lg text-blue-400">⚡</div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Slider
+                        value={[simulationSpeed]}
+                        onValueChange={(value: number[]) => setSimulationSpeed(value[0])}
+                        min={1}
+                        max={10}
+                        step={0.5}
+                        className="py-4 [&>[role=slider]]:h-5 [&>[role=slider]]:w-5 [&>[role=slider]]:border-2 [&>[role=slider]]:border-blue-500 [&>[role=slider]]:bg-gradient-to-br [&>[role=slider]]:from-blue-400 [&>[role=slider]]:to-blue-500 [&>[role=slider]]:shadow-lg [&>[role=slider]]:shadow-blue-900/20 [&>[role=track]]:h-2 [&>[role=track]]:bg-gradient-to-r [&>[role=track]]:from-blue-600/20 [&>[role=track]]:to-blue-700/20"
+                      />
+                      <div className="absolute left-1/2 mt-1 -translate-x-1/2 text-center">
+                        <span className="text-sm font-medium text-blue-400">{simulationSpeed.toFixed(1)}x</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chronomètre */}
+                <div className="flex items-center gap-6 rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-900/20 to-amber-800/10 p-4">
+                  <div className="rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-600/20 to-amber-700/20 p-2">
+                    <Clock className="h-5 w-5 text-amber-400" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-amber-400">Temps de travail</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold text-amber-300">{formatWorkTime()}</span>
+                    </div>
+                    <div className="flex text-xs text-amber-400/80">
+                      <span className="mr-[18px]">heures</span>
+                      <span className="ml-3">minutes</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
+          {/* Style global pour toutes les animations */}
+          <style jsx global>{`
+            @keyframes shimmer {
+              0% { transform: translateX(-100%); }
+              100% { transform: translateX(100%); }
+            }
+            .animate-shimmer {
+              animation: shimmer 2s infinite;
+            }
+            @keyframes waterDrop {
+              0% { transform: translateY(-100%); }
+              100% { transform: translateY(100%); }
+            }
+            @keyframes bubblePulse {
+              0%, 100% { transform: scale(0.65); }
+              50% { transform: scale(0.75); }
+            }
+            @keyframes shine {
+              0% { transform: translateX(-100%); }
+              100% { transform: translateX(100%); }
+            }
+          `}</style>
+
           {/* Section supérieure - Risques unifiés avec adaptation mobile */}
-          <div className="flex justify-center md:justify-end mb-8 mr-0 md:mr-[100px]">
-            <div className="w-full md:w-[650px] relative">
-              <div className="p-6 rounded-xl bg-gradient-to-br from-gray-900/70 via-gray-900/50 to-gray-900/70 border border-gray-800/50 backdrop-blur-md">
+          <div className="absolute top-10 right-20 flex justify-end mb-10 pr-12">
+            <div className="w-full md:w-[800px] relative">
+              <div className="p-6 rounded-xl bg-gradient-to-br from-gray-900/70 via-gray-900/50 to-gray-900/70 border-2 border-gray-800/50 backdrop-blur-md">
                 <div className="grid grid-cols-2 gap-6">
                   {/* Risque d'accident */}
                   <div className="relative group">
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-xl blur-md group-hover:blur-lg transition-all duration-500" />
-                    <div className="relative h-[80px] p-4 rounded-xl backdrop-blur-[2px] overflow-hidden">
+                    <div className="relative h-[100px] p-4 rounded-xl backdrop-blur-[2px] overflow-hidden">
                       {/* Bordure de progression */}
-                      <div className="absolute inset-0 rounded-xl border-[4px] border-gray-800/50" />
+                      <div className="absolute inset-0 rounded-xl border-2 border-gray-800/50" />
                       <div 
                         className={cn(
-                          "absolute inset-0 rounded-xl border-[4px] transition-all duration-500",
+                          "absolute inset-0 rounded-xl border-2 transition-all duration-500",
                           fillLevel >= 80 ? "border-red-500" :
                           fillLevel >= 60 ? "border-orange-500" :
                           "border-green-500"
@@ -501,12 +675,12 @@ export default function Dashboard() {
                   {/* Exposition TMS */}
                   <div className="relative group">
                     <div className="absolute inset-0 bg-gradient-to-br from-teal-500/20 to-cyan-500/20 rounded-xl blur-md group-hover:blur-lg transition-all duration-500" />
-                    <div className="relative h-[80px] p-4 rounded-xl backdrop-blur-[2px] overflow-hidden">
+                    <div className="relative h-[100px] p-4 rounded-xl backdrop-blur-[2px] overflow-hidden">
                       {/* Bordure de progression */}
-                      <div className="absolute inset-0 rounded-xl border-[4px] border-gray-800/50" />
+                      <div className="absolute inset-0 rounded-xl border-2 border-gray-800/50" />
                       <div 
                         className={cn(
-                          "absolute inset-0 rounded-xl border-[4px] transition-all duration-500",
+                          "absolute inset-0 rounded-xl border-2 transition-all duration-500",
                           tmsExposureLevel >= 80 ? "border-red-500" :
                           tmsExposureLevel >= 60 ? "border-orange-500" :
                           "border-green-500"
@@ -533,7 +707,7 @@ export default function Dashboard() {
 
               {/* Liste des recommandations */}
               <div className="absolute top-[calc(100%+1rem)] left-0 right-0 z-30">
-                <div className="p-4 rounded-xl bg-black/40 border border-gray-800/50 backdrop-blur-sm">
+                <div className="p-4 rounded-xl bg-black/40 border-2 border-gray-800/50 backdrop-blur-sm">
                   <div className="flex items-center gap-2 mb-4">
                     <Lightbulb className="w-5 h-5 text-amber-400" />
                     <h3 className="text-sm font-medium text-amber-400">Recommandations</h3>
@@ -618,10 +792,10 @@ export default function Dashboard() {
           </div>
 
           {/* Grille principale responsive */}
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(550px,_600px)_1fr] gap-8 mt-8 md:-mt-32">
+          <div className="grid grid-cols-1 lg:grid-cols-[750px_1fr] gap-8 mt-8 md:mt-0">
           {/* Panneau de gauche - Informations et contrôles */}
-            <div className="space-y-8 p-4 md:p-6 rounded-xl bg-gradient-to-br from-gray-900/70 via-gray-900/50 to-gray-900/70 border border-gray-800/50 backdrop-blur-sm shadow-lg">
-              <div className="flex items-center justify-between pb-4 border-b border-gray-800/50">
+            <div className="space-y-8 p-4 md:p-6 rounded-xl bg-gradient-to-br from-gray-900/70 via-gray-900/50 to-gray-900/70 border-4 border-gray-800/50 backdrop-blur-sm shadow-lg">
+              <div className="flex items-center justify-between pb-4 border-b-2 border-gray-800/50">
                 <div className="flex items-center gap-3">
                   <Settings className="w-6 h-6 text-gray-400" />
                   <h2 className="text-2xl font-bold text-white">Composants du modèle</h2>
@@ -629,20 +803,20 @@ export default function Dashboard() {
               </div>
 
               {/* Verre */}
-              <div className="space-y-3 p-6 rounded-lg bg-gray-900/30 hover:bg-gray-900/40 transition-colors border-2 border-gray-800/40">
+              <div className="space-y-3 p-6 rounded-lg bg-gray-900/30 hover:bg-gray-900/40 transition-colors border-4 border-gray-700/60">
                 <div className="flex h-[200px]">
                   {/* Contenu principal avec largeur fixe */}
-                  <div className="w-[300px] flex flex-col">
+                  <div className="w-[400px] flex flex-col">
                     <div className="flex items-center gap-3">
                       <GlassWater className="w-6 h-6 text-gray-400" />
                       <h3 className="text-xl font-semibold text-gray-300">Verre</h3>
-                  </div>
+                    </div>
                     <p className="text-base text-gray-400 leading-relaxed mt-3">
                       Représente la capacité d'absorption des contraintes (facteurs individuels).
                     </p>
                     <div className="flex-grow" />
                     <button 
-                      onClick={() => setActiveModal('glass')}
+                      onClick={() => handleOpenModal('glass')}
                       className="group relative w-fit mt-4 px-3 py-1.5 text-base text-gray-400 hover:text-gray-300 transition-colors"
                     >
                       <Settings className="w-5 h-5 inline-block mr-2" />
@@ -652,7 +826,7 @@ export default function Dashboard() {
                   </div>
                   
                   {/* Séparateur et barre de progression */}
-                  <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l border-gray-400/20">
+                  <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l-2 border-gray-400/20">
                     <div className="relative h-full w-full flex flex-col items-center">
                       {/* Label supérieur avec espacement fixe */}
                       <div className="h-[40px] flex items-center justify-center -mt-2 pt-0">
@@ -675,7 +849,7 @@ export default function Dashboard() {
                 
                         {/* Valeur à droite */}
                         <div 
-                          className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-gray-900/50 border border-gray-400/10 backdrop-blur-sm transition-all duration-300"
+                          className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-gray-900/50 border-2 border-gray-400/10 backdrop-blur-sm transition-all duration-300"
                           style={{
                             bottom: `${Math.round(((glassWidth - 20) / 70) * 100)}%`,
                             transform: 'translateY(50%)'
@@ -692,20 +866,29 @@ export default function Dashboard() {
               </div>
 
               {/* Robinet */}
-              <div className="space-y-3 p-6 rounded-lg bg-blue-950/20 hover:bg-blue-950/30 transition-colors border-2 border-blue-900/30">
+              <div className="space-y-3 p-6 rounded-lg bg-blue-950/20 hover:bg-blue-950/30 transition-colors border-4 border-blue-900/60">
                 <div className="flex h-[200px]">
                   {/* Contenu principal avec largeur fixe */}
-                  <div className="w-[300px] flex flex-col">
+                  <div className="w-[400px] flex flex-col">
                     <div className="flex items-center gap-3">
                       <Droplet className="w-6 h-6 text-blue-400" />
                       <h3 className="text-xl font-semibold text-blue-400">Robinet</h3>
+                      
+                      {/* Indicateur d'impact environnemental (à côté du titre) */}
+                      {environmentScore > 0 && (
+                        <div className="flex items-center ml-3">
+                          <div className="text-x px-2 py-0.5 rounded bg-purple-950/30 border-2 border-purple-800/30 text-purple-400">
+                            <span>+{Math.round(environmentScore * 0.3)}% impact Bulle</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <p className="text-base text-gray-400 leading-relaxed mt-3">
                       Représente les contraintes imposées aux tissus (charge, fréquence, posture, état émotionnel).
                     </p>
                     <div className="flex-grow" />
                     <button 
-                      onClick={() => setActiveModal('tap')}
+                      onClick={() => handleOpenModal('tap')}
                       className="group relative w-fit mt-4 px-3 py-1.5 text-base text-blue-400 hover:text-blue-300 transition-colors"
                     >
                       <Settings className="w-5 h-5 inline-block mr-2" />
@@ -715,25 +898,15 @@ export default function Dashboard() {
                   </div>
                   
                   {/* Séparateur et barre de progression */}
-                  <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l border-blue-400/20">
+                  <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l-2 border-blue-400/20">
                     <div className="relative h-full w-full flex flex-col items-center">
                       {/* Label supérieur avec espacement fixe */}
-                      <div className="h-[40px] flex flex-col items-center justify-center -mt-2 pt-0">
+                      <div className="h-[40px] flex items-center justify-center -mt-2 pt-0">
                         <span className="text-sm text-blue-400">Débit actuel</span>
                       </div>
                       
-                      {/* Indicateur d'impact environnemental (entre le titre et la barre) */}
-                      {environmentScore > 0 && (
-                        <div className="flex flex-col items-center mb-1">
-                          <div className="text-xs px-2 py-0.5 rounded bg-purple-950/30 border border-purple-800/30 text-purple-400">
-                            <span>+{Math.round(environmentScore * 0.3)}%</span>
-                          </div>
-                          <span className="text-[9px] text-purple-400">Impact environnemental</span>
-                        </div>
-                      )}
-                      
                       {/* Conteneur pour la barre et la valeur */}
-                      <div className="relative flex items-center mt-1">
+                      <div className="relative flex items-center mt-2">
                         {/* Barre de progression centrée */}
                         <div className="relative h-[160px] w-2">
                           <div className={cn(
@@ -744,11 +917,11 @@ export default function Dashboard() {
                             flowRate < 66 ? "from-blue-400 to-blue-500" :
                             "from-blue-500 to-blue-600"
                           )} style={{ height: `${flowRate}%` }} />
-                        </div>
-                        
+                </div>
+                
                         {/* Valeur à droite */}
                         <div 
-                          className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-blue-900/50 border border-blue-400/10 backdrop-blur-sm transition-all duration-300"
+                          className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-blue-900/50 border-2 border-blue-400/10 backdrop-blur-sm transition-all duration-300"
                           style={{
                             bottom: `${flowRate}%`,
                             transform: 'translateY(50%)'
@@ -757,17 +930,106 @@ export default function Dashboard() {
                           <span className="text-sm font-medium text-blue-400">
                             {flowRate}%
                           </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                </div>
+              </div>
+
+              {/* Paille */}
+              <div className="space-y-3 p-6 rounded-lg bg-green-950/20 hover:bg-green-950/30 transition-colors border-4 border-green-900/60">
+                <div className="flex h-[200px]">
+                  {/* Contenu principal avec largeur fixe */}
+                  <div className="w-[400px] flex flex-col">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <RectangleHorizontal className="w-6 h-6 text-green-400" />
+                        <h3 className="text-xl font-semibold text-green-400">Paille</h3>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={cn(
+                          "text-base font-medium transition-colors",
+                          isStrawEnabled 
+                            ? "text-green-400" 
+                            : "text-gray-500"
+                        )}>
+                          {isStrawEnabled ? "Activée" : "Désactivée"}
+                        </span>
+                        <Switch
+                          checked={isStrawEnabled}
+                          onCheckedChange={handleStrawToggle}
+                          className={cn(
+                            "transition-all duration-200",
+                            isStrawEnabled 
+                              ? "bg-green-400/30 hover:bg-green-400/40" 
+                              : "bg-gray-800 hover:bg-gray-700"
+                          )}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-base text-gray-400 leading-relaxed mt-3">
+                      Représente la capacité de récupération (étirements, échauffements, pauses, relaxation, sommeil).
+                    </p>
+                    <div className="flex-grow" />
+                    <button 
+                      onClick={() => handleOpenModal('straw')}
+                      className="group relative w-fit mt-4 px-3 py-1.5 text-base text-green-400 hover:text-green-300 transition-colors"
+                    >
+                      <Settings className="w-5 h-5 inline-block mr-2" />
+                      Configurer les paramètres
+                      <span className="absolute left-0 -bottom-px h-px w-full origin-left scale-x-0 bg-green-400 transition-transform duration-200 ease-out group-hover:scale-x-100" />
+                    </button>
+                  </div>
+                  
+                  {/* Séparateur et barre de progression */}
+                  <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l-2 border-green-400/20">
+                    <div className="relative h-full w-full flex flex-col items-center">
+                      {/* Label supérieur avec espacement fixe */}
+                      <div className="h-[40px] flex items-center justify-center -mt-2 pt-0">
+                        <span className="text-sm text-green-400">Récupération</span>
+                      </div>
+                      
+                      {/* Conteneur pour la barre et la valeur */}
+                      <div className="relative flex items-center mt-2">
+                        {/* Barre de progression centrée */}
+                        <div className="relative h-[160px] w-2">
+                          <div className={cn(
+                            "absolute bottom-0 w-full transition-all duration-300",
+                            "bg-gradient-to-t",
+                            absorptionRate === 0 ? "from-green-200 to-green-300" :
+                            absorptionRate < 33 ? "from-green-300 to-green-400" :
+                            absorptionRate < 66 ? "from-green-400 to-green-500" :
+                            "from-green-500 to-green-600"
+                          )} style={{ height: `${absorptionRate}%` }} />
+                        </div>
+                        
+                        {/* Valeur à droite */}
+                        <div 
+                          className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-green-900/50 border-2 border-green-400/10 backdrop-blur-sm transition-all duration-300"
+                          style={{
+                            bottom: `${absorptionRate}%`,
+                            transform: 'translateY(50%)'
+                          }}
+                        >
+                          <span className={cn(
+                            "text-sm font-medium",
+                            isStrawEnabled ? "text-green-400" : "text-gray-500"
+                          )}>
+                            {absorptionRate}%
+                          </span>
+                        </div>
+                      </div>
+                  </div>
                 </div>
               </div>
             </div>
             
               {/* Bulle */}
-              <div className="space-y-3 p-6 rounded-lg bg-purple-950/20 hover:bg-purple-950/30 transition-colors border-2 border-purple-900/30">
+              <div className="space-y-3 p-6 rounded-lg bg-purple-950/20 hover:bg-purple-950/30 transition-colors border-4 border-purple-900/60">
                 <div className="flex h-[200px]">
                   {/* Contenu principal avec largeur fixe */}
-                  <div className="w-[300px] flex flex-col">
+                  <div className="w-[400px] flex flex-col">
                     <div className="flex items-center gap-3">
                       <Cloud className="w-6 h-6 text-purple-400" />
                       <h3 className="text-xl font-semibold text-purple-400">Bulle</h3>
@@ -777,7 +1039,7 @@ export default function Dashboard() {
                     </p>
                     <div className="flex-grow" />
                     <button
-                      onClick={() => setActiveModal('bubble')}
+                      onClick={() => handleOpenModal('bubble')}
                       className="group relative w-fit mt-4 px-3 py-1.5 text-base text-purple-400 hover:text-purple-300 transition-colors"
                     >
                       <Settings className="w-5 h-5 inline-block mr-2" />
@@ -787,7 +1049,7 @@ export default function Dashboard() {
                   </div>
                   
                   {/* Séparateur et barre de progression */}
-                  <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l border-purple-400/20">
+                  <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l-2 border-purple-400/20">
                     <div className="relative h-full w-full flex flex-col items-center">
                       {/* Label supérieur avec espacement fixe */}
                       <div className="h-[40px] flex items-center justify-center -mt-2 pt-0">
@@ -810,7 +1072,7 @@ export default function Dashboard() {
                         
                         {/* Valeur à droite */}
                         <div 
-                          className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-purple-900/50 border border-purple-400/10 backdrop-blur-sm transition-all duration-300"
+                          className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-purple-900/50 border-2 border-purple-400/10 backdrop-blur-sm transition-all duration-300"
                           style={{
                             bottom: `${environmentScore}%`,
                             transform: 'translateY(50%)'
@@ -828,24 +1090,25 @@ export default function Dashboard() {
             </div>
             
             {/* Panneau central - Visualisation avec adaptation mobile */}
-            <div className="relative flex items-center justify-center lg:justify-end h-full">
-              <div className="relative w-full md:w-[700px] transform scale-90 md:scale-110">
+            <div className="relative flex items-center justify-center h-full">
+              <div className="relative w-full max-w-[1800px] mx-auto transform scale-125">
                 {/* Ensemble unifié bulle + composants */}
-                <div className="relative flex items-center justify-center md:translate-x-16 mt-[100px] md:mt-[200px]">
+                <div className="relative flex items-center justify-center mt-[50px] md:mt-[100px]">
                   {/* Bulle environnementale */}
-                  <div className="absolute inset-[-80px] z-0">
+                  <div className="absolute inset-0 w-[1200px] h-[1200px] z-0" style={{ left: '50%', transform: 'translateX(-50%) translateY(-30%)' }}>
                     <div 
-                      className="relative w-[70%] h-full rounded-[50%] bg-gradient-to-br from-purple-500/3 to-purple-700/5 backdrop-blur-[2px] border border-purple-400/10" 
+                      className="relative w-full h-full rounded-full" 
                       style={{
-                        aspectRatio: '0.8',
-                        transform: 'scale(1.1)',
+                        aspectRatio: '1',
                         animation: 'bubblePulse 8s ease-in-out infinite',
                         boxShadow: `
-                          inset 0 0 40px rgba(168, 85, 247, 0.05),
-                          0 0 20px rgba(168, 85, 247, 0.05),
-                          inset 0 0 15px rgba(168, 85, 247, 0.1),
-                          0 0 8px rgba(168, 85, 247, 0.08)
-                        `
+                          inset 0 0 40px rgba(168, 85, 247, 0.03),
+                          0 0 20px rgba(168, 85, 247, 0.03),
+                          inset 0 0 10px rgba(168, 85, 247, 0.05),
+                          0 0 10px rgba(168, 85, 247, 0.04)
+                        `,
+                        // Contour plus épais
+                        border: '3px solid rgba(168, 85, 247, 0.4)'
                       }}
                     >
                       <EnvironmentParticles score={environmentScore} isPaused={isPaused} />
@@ -853,16 +1116,20 @@ export default function Dashboard() {
           </div>
           
                   {/* Ensemble verre-robinet-paille centré dans la bulle */}
-                  <div className="relative z-10 -translate-x-32">
+                  <div className="relative z-5">
               {/* Robinet et son filet d'eau */}
-                    <div className="flex justify-center mb-4">
+                    <div className="flex justify-center mb-10">
                       <div className="relative">
-                <TapComponent onFlowRateChange={handleFlowRateChange} hideDebitLabel={true} />
+                <TapComponent 
+                  flowRate={flowRate}
+                  onFlowRateChange={handleFlowRateChange} 
+                  hideDebitLabel={true} 
+                />
                 {/* Flux d'eau continu */}
                 <div 
                           className="absolute top-[60px] left-[-4px] z-10"
                   style={{
-                    height: '140px',
+                    height: '180px',
                     width: `${getWaterStreamWidth()}px`,
                     background: `linear-gradient(180deg, 
                       rgba(59, 130, 246, ${getWaterStreamOpacity()}) 0%,
@@ -896,7 +1163,6 @@ export default function Dashboard() {
                     fillLevel={fillLevel} 
                     absorptionRate={absorptionRate}
                           width={glassWidth}
-                    hideColorLegend={true}
                   />
                   
                         {/* Affichage de la capacité */}
@@ -916,8 +1182,8 @@ export default function Dashboard() {
               </div>
 
                     {/* Légende des couleurs */}
-                    <div className="relative z-20 mt-8">
-                      <div className="p-3 rounded-lg bg-gray-950/30 border border-gray-800/20 w-full backdrop-blur-[1px]">
+                    <div className="relative z20 mt-64">
+                      <div className="p-3 rounded-lg bg-gray-950/30 border-2 border-gray-800/20 w-full backdrop-blur-[1px]">
                         <h3 className="text-base font-medium text-gray-300 mb-2">Légende des couleurs</h3>
                         <div className="grid grid-cols-2 gap-2">
                           <div className="flex items-center gap-2">
@@ -943,6 +1209,7 @@ export default function Dashboard() {
               </div>
               </div>
             </div>
+            
           </div>
         </div>
       </div>
@@ -950,63 +1217,8 @@ export default function Dashboard() {
       {/* Modales de paramètres */}
       <ParameterModals 
         activeModal={activeModal}
-        onClose={() => setActiveModal(null)}
+        onCloseModal={handleCloseModal}
       />
-
-      {/* Ajuster l'animation pour un effet plus subtil */}
-      <style jsx>{`
-        @keyframes waterDrop {
-          0% { transform: translateY(-100%); }
-          100% { transform: translateY(100%); }
-        }
-        @keyframes bubblePulse {
-          0%, 100% { transform: scale(1.1); }
-          50% { transform: scale(1.15); }
-        }
-        @keyframes shine {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-      `}</style>
-
-      {/* Panneau des coûts repositionné de manière responsive */}
-      <div className="relative lg:absolute lg:right-[-600px] lg:top-[600px] w-full lg:w-[400px] mt-8 lg:mt-0">
-        <div className="p-6 rounded-xl bg-gradient-to-br from-slate-800/90 via-slate-800/80 to-slate-900/90 border border-slate-700/50 backdrop-blur-sm shadow-xl">
-          <CostPanel
-            bodyParts={[
-              { 
-                name: "Cou", 
-                angle: postureScores.neck, 
-                risk: postureScores.neck + (postureAdjustments.neckRotation ? 1 : 0) + (postureAdjustments.neckInclination ? 1 : 0) >= 4 ? "high" : 
-                       postureScores.neck + (postureAdjustments.neckRotation ? 1 : 0) + (postureAdjustments.neckInclination ? 1 : 0) >= 2 ? "medium" : "low",
-                hasHistory: medicalHistory.neckProblems
-              },
-              { 
-                name: "Épaules", 
-                angle: postureScores.shoulder,
-                risk: postureScores.shoulder + (postureAdjustments.shoulderRaised ? 1 : 0) + (postureAdjustments.shoulderAbduction ? 1 : 0) - (postureAdjustments.shoulderSupport ? 1 : 0) >= 4 ? "high" :
-                       postureScores.shoulder + (postureAdjustments.shoulderRaised ? 1 : 0) + (postureAdjustments.shoulderAbduction ? 1 : 0) - (postureAdjustments.shoulderSupport ? 1 : 0) >= 2 ? "medium" : "low",
-                hasHistory: medicalHistory.shoulderProblems
-              },
-              { 
-                name: "Poignets", 
-                angle: postureScores.wrist,
-                risk: postureScores.wrist + (postureAdjustments.wristDeviation ? 1 : 0) + (postureAdjustments.wristPartialRotation ? 1 : 0) + (postureAdjustments.wristFullRotation ? 2 : 0) >= 4 ? "high" :
-                       postureScores.wrist + (postureAdjustments.wristDeviation ? 1 : 0) + (postureAdjustments.wristPartialRotation ? 1 : 0) + (postureAdjustments.wristFullRotation ? 2 : 0) >= 2 ? "medium" : "low",
-                hasHistory: medicalHistory.wristProblems
-              },
-              { 
-                name: "Dos", 
-                angle: postureScores.trunk,
-                risk: postureScores.trunk >= 3 ? "high" : postureScores.trunk >= 2 ? "medium" : "low",
-                hasHistory: medicalHistory.backProblems
-              }
-            ]}
-            accidentRisk={accidentRisk}
-            tmsRisk={tmsRisk}
-          />
-        </div>
-      </div>
     </div>
   )
 } 
