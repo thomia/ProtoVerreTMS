@@ -203,28 +203,6 @@ export default function GlassComponent({
             </div>
           </div>
         </div>
-        
-        {/* Légende des couleurs (conditionnelle) */}
-        {!hideColorLegend && (
-          <div className="absolute top-2 right-2 flex flex-col gap-1 bg-black/30 p-1 rounded">
-            <div className="flex items-center gap-1">
-              <div className="rounded-full bg-green-500/70" style={{ width: 'var(--font-size-sm)', height: 'var(--font-size-sm)' }}></div>
-              <span className="text-white" style={{ fontSize: 'var(--font-size-sm)' }}>0-60%</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="rounded-full bg-yellow-500/70" style={{ width: 'var(--font-size-sm)', height: 'var(--font-size-sm)' }}></div>
-              <span className="text-white" style={{ fontSize: 'var(--font-size-sm)' }}>60-80%</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="rounded-full bg-red-500/70" style={{ width: 'var(--font-size-sm)', height: 'var(--font-size-sm)' }}></div>
-              <span className="text-white" style={{ fontSize: 'var(--font-size-sm)' }}>80-90%</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="rounded-full bg-purple-500/70" style={{ width: 'var(--font-size-sm)', height: 'var(--font-size-sm)' }}></div>
-              <span className="text-white" style={{ fontSize: 'var(--font-size-sm)' }}>90-100%</span>
-            </div>
-          </div>
-        )}
       </motion.div>
     </div>
   )

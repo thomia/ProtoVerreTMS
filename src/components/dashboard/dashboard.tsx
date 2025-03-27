@@ -1097,16 +1097,18 @@ export default function Dashboard() {
                   {/* Bulle environnementale */}
                   <div className="absolute inset-0 w-[1200px] h-[1200px] z-0" style={{ left: '50%', transform: 'translateX(-50%) translateY(-30%)' }}>
                     <div 
-                      className="relative w-full h-full rounded-full bg-gradient-to-br from-purple-500/2 to-purple-700/3 backdrop-blur-[1px] border border-purple-400/5" 
+                      className="relative w-full h-full rounded-full" 
                       style={{
                         aspectRatio: '1',
                         animation: 'bubblePulse 8s ease-in-out infinite',
                         boxShadow: `
-                          inset 0 0 30px rgba(168, 85, 247, 0.03),
-                          0 0 15px rgba(168, 85, 247, 0.03),
+                          inset 0 0 40px rgba(168, 85, 247, 0.03),
+                          0 0 20px rgba(168, 85, 247, 0.03),
                           inset 0 0 10px rgba(168, 85, 247, 0.05),
-                          0 0 5px rgba(168, 85, 247, 0.04)
-                        `
+                          0 0 10px rgba(168, 85, 247, 0.04)
+                        `,
+                        // Contour plus épais
+                        border: '3px solid rgba(168, 85, 247, 0.4)'
                       }}
                     >
                       <EnvironmentParticles score={environmentScore} isPaused={isPaused} />
@@ -1161,7 +1163,6 @@ export default function Dashboard() {
                     fillLevel={fillLevel} 
                     absorptionRate={absorptionRate}
                           width={glassWidth}
-                    hideColorLegend={true}
                   />
                   
                         {/* Affichage de la capacité */}
@@ -1181,7 +1182,7 @@ export default function Dashboard() {
               </div>
 
                     {/* Légende des couleurs */}
-                    <div className="relative z-20 mt-8">
+                    <div className="relative z20 mt-64">
                       <div className="p-3 rounded-lg bg-gray-950/30 border-2 border-gray-800/20 w-full backdrop-blur-[1px]">
                         <h3 className="text-base font-medium text-gray-300 mb-2">Légende des couleurs</h3>
                         <div className="grid grid-cols-2 gap-2">

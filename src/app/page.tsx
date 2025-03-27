@@ -22,7 +22,7 @@ export default function Home() {
           </div>
           <div className="text-center">
             <p>Logiciel protégé - Reproduction interdite</p>
-            <p className="text-[10px] mt-1">Marque et design déposés - INPI - Tous droits de propriété intellectuelle réservés</p>
+            <p className="text-[10px] mt-1">Tous droits de propriété intellectuelle réservés</p>
           </div>
         </div>
       </footer>
