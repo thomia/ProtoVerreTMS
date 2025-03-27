@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import TapSettingsForm from '@/components/settings/tap-settings-form'
+import dynamic from 'next/dynamic'
+
+// Importation dynamique du composant avec désactivation du SSR
+const TapSettingsForm = dynamic(
+  () => import('@/components/settings/tap-settings-form'),
+  { ssr: false }
+)
 
 export default function TapSettingsPage() {
   const [isMounted, setIsMounted] = useState(false)
@@ -22,10 +28,10 @@ export default function TapSettingsPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-between p-6 md:p-24 bg-black text-white">
-      <div className="w-full max-w-5xl">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-center mb-2">Paramètres des contraintes</h1>
+    <div className="bg-black text-white">
+      <div className="w-full max-w-6xl mx-auto p-6">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-center mb-2">Paramètres des contraintes</h1>
           <Link 
             href="/" 
             className="text-blue-400 hover:text-blue-300 transition-colors flex items-center justify-center"
@@ -40,4 +46,4 @@ export default function TapSettingsPage() {
       </div>
     </div>
   )
-} 
+}

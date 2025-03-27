@@ -4,6 +4,9 @@ import * as React from 'react'
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import BaseSettingsForm from './base-settings-form'
 import { Label } from '@/components/ui/label'
+import { Slider } from "@/components/ui/slider"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   Accordion,
   AccordionContent,
@@ -18,12 +21,30 @@ import {
 } from "@/components/ui/tooltip"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { InfoCircledIcon } from "@radix-ui/react-icons"
-import { CheckCircle2, AlertCircle, Circle } from "lucide-react"
+import { 
+  CheckCircle2, 
+  AlertCircle, 
+  Circle, 
+  Brain,
+  Footprints,
+  Hand,
+  Heart,
+  HeartPulse,
+  Layers,
+  Lightbulb,
+  Repeat,
+  Save,
+  ShieldAlert,
+  Skull,
+  Timer,
+  Users,
+  Weight
+} from "lucide-react"
 import { getLocalStorage, setLocalStorage, emitStorageEvent } from '@/lib/localStorage'
 import { cn } from '@/lib/utils'
 
-// Types pour les postures
 type PostureScores = {
   neck: number;
   shoulder: number;
@@ -45,7 +66,6 @@ type PostureAdjustments = {
   wristFullRotation: boolean;
 }
 
-// Types pour les risques psychosociaux
 type PsychosocialRisks = {
   workAutonomy: {
     taskAutonomy: number;
@@ -68,7 +88,6 @@ type PsychosocialRisks = {
   };
 }
 
-// Définitions des facteurs de charge mentale (NASA TLX)
 const mentalWorkloadDefinitions = {
   mentalDemand: "Jusqu'à quel point les activités mentales et perceptives étaient requises pour faire la tâche (ex., réflexion, décision, calcul, mémoire, observation, recherche, etc.) ?",
   physicalDemand: "Jusqu'à quel point les activités physiques étaient requises pour faire la tâche (ex., pousser, tirer, tourner, contrôler, activer, etc.) ?",
@@ -78,7 +97,6 @@ const mentalWorkloadDefinitions = {
   frustration: "Jusqu'à quel point vous sentiez-vous non confiant, découragé, irrité, stressé et ennuyé vs confiant, avec plaisir, content, relaxe, satisfait de vous durant la tâche ?"
 }
 
-// Définitions des risques psychosociaux
 const psychosocialDefinitions = {
   workAutonomy: {
     title: "Faible autonomie au travail",
@@ -105,24 +123,21 @@ const psychosocialDefinitions = {
   }
 }
 
-// Définitions des paramètres physiques
 const physicalDefinitions = {
   weight: "Poids total manipulé en kg. Inclut le poids de l'objet et des contenants.",
   frequency: "Nombre de manipulations par heure de travail.",
   posture: "Position du corps lors de la manipulation : 0° = neutre, 90° = flexion maximale"
 }
 
-// Scores maximums par partie du corps
 const maxScores = {
   neck: 6,      // 4 + 1 + 1 (base + rotation + inclinaison)
   shoulder: 6,  // 4 + 1 + 1 - 1 (base + levée + abduction - appui)
   elbow: 3,     // 2 + 1 (base + opposé)
   wrist: 6,     // 3 + 1 + 1 + 2 (base + déviation + rotation partielle + rotation complète)
-  trunk: 4,     // 4 (base)
+  trunk: 6,     // 4 (base)
   legs: 2       // 2 (base)
 }
 
-// Options de réponse pour les risques psychosociaux
 const psychosocialOptions = [
   { value: 0, label: "Jamais/Non" },
   { value: 1, label: "Parfois/Plutôt non" },
@@ -130,7 +145,6 @@ const psychosocialOptions = [
   { value: 3, label: "Toujours/Oui" }
 ]
 
-// Définition des couleurs pour chaque catégorie de risques psychosociaux
 const psychosocialColors = {
   workAutonomy: {
     border: 'border-emerald-600/30',
@@ -166,30 +180,28 @@ const psychosocialColors = {
   }
 }
 
-// Direction des facteurs psychosociaux (positif ou négatif)
 const psychosocialDirections = {
   workAutonomy: {
-    taskAutonomy: true, // Positif: plus d'autonomie = moins de risque
-    temporalAutonomy: true, // Positif
-    skillsUse: true, // Positif
+    taskAutonomy: true, 
+    temporalAutonomy: true, 
+    skillsUse: true, 
   },
   socialRelations: {
-    colleagueSupport: true, // Positif
-    hierarchySupport: true, // Positif
-    professionalDisagreements: false, // Négatif: plus de désaccords = plus de risque
-    workRecognition: true, // Positif
+    colleagueSupport: true, 
+    hierarchySupport: true, 
+    professionalDisagreements: false, 
+    workRecognition: true, 
   },
   valueConflicts: {
-    preventedQuality: false, // Négatif
-    uselessWork: false, // Négatif
+    preventedQuality: false, 
+    uselessWork: false, 
   },
   jobInsecurity: {
-    socioeconomicInsecurity: false, // Négatif
-    changeManagement: false, // Négatif
+    socioeconomicInsecurity: false, 
+    changeManagement: false, 
   },
 };
 
-// Ajout des couleurs pour les sliders physiques
 const physicalSliderColors = {
   weight: {
     from: 'from-rose-600',
@@ -238,32 +250,31 @@ function InfoTooltip({ content }: { content: string }) {
   )
 }
 
-// Fonction pour obtenir la couleur du score
-function getScoreColor(score: number, maxScore: number, baseColor: string) {
+function getScoreColorByBase(score: number, maxScore: number, baseColor: string) {
   const percentage = score / maxScore
   
   switch(baseColor) {
-    case 'red': // Pour le cou
+    case 'red': 
       return percentage <= 0.33 ? 'text-rose-300' :
              percentage <= 0.66 ? 'text-rose-400' :
              'text-rose-500'
-    case 'blue': // Pour l'épaule
+    case 'blue': 
       return percentage <= 0.33 ? 'text-sky-300' :
              percentage <= 0.66 ? 'text-sky-400' :
              'text-sky-500'
-    case 'green': // Pour le coude
+    case 'green': 
       return percentage <= 0.33 ? 'text-emerald-300' :
              percentage <= 0.66 ? 'text-emerald-400' :
              'text-emerald-500'
-    case 'purple': // Pour le poignet
+    case 'purple': 
       return percentage <= 0.33 ? 'text-violet-300' :
              percentage <= 0.66 ? 'text-violet-400' :
              'text-violet-500'
-    case 'yellow': // Pour le tronc
+    case 'yellow': 
       return percentage <= 0.33 ? 'text-amber-300' :
              percentage <= 0.66 ? 'text-amber-400' :
              'text-amber-500'
-    case 'orange': // Pour les jambes
+    case 'orange': 
       return percentage <= 0.33 ? 'text-orange-300' :
              percentage <= 0.66 ? 'text-orange-400' :
              'text-orange-500'
@@ -287,1260 +298,1881 @@ function SecondaryMark({ mark, value, activeClass }: SecondaryMarkProps) {
   );
 }
 
+function getMentalWorkloadLabel(key: string): string {
+  const labels: Record<string, string> = {
+    mentalDemand: "•	Exigence mentale de la tâche",
+    physicalDemand: "•	Exigences physiques ",
+    temporalDemand: "•	Exigence temporelle",
+    performance: "•	Performance ",
+    effort: "•	Effort ",
+    frustration: "•	Frustration ",
+  }
+  return labels[key] || key
+}
+
+function getPsychosocialRiskLabel(key: string): string {
+  const labels: Record<string, string> = {
+    autonomyTask: "•	Autonomie décisionnelle",
+    autonomyTime: "•	Autonomie temporelle",
+    skillDevelopment: "•	Développement des compétences",
+    colleagueSupport: "•	Soutien des collègues",
+    managerSupport: "•	Soutien hiérarchique",
+    professionalDisagreements: "•	Désaccords professionnels",
+    workRecognition: "•	Reconnaissance du travail",
+    qualityPrevented: "•	  Qualité empêchée",
+    uselessWork: "•	Travail inutile",
+    socioeconomicInsecurity: "•	Insécurité socio-économique",
+    changeManagement: "•	Gestion du changement",
+  }
+  return labels[key] || key
+}
+
+function getPsychosocialRiskDescription(key: string): string {
+  const descriptions: Record<string, string> = {
+    // Faible autonomie au travail
+    taskAutonomy: "Les salariés ont-ils des marges de manœuvre dans la manière de réaliser leur travail dès lors que les objectifs sont atteints ?",
+    temporalAutonomy: "Les salariés peuvent-ils interrompre momentanément leur travail quand ils en ressentent le besoin ?",
+    skillsUse: "Les salariés peuvent-ils utiliser leurs compétences professionnelles et en développer de nouvelles ?",
+    
+    // Rapports sociaux au travail dégradés
+    colleagueSupport: "Existe-t-il des possibilités d'entraide entre les salariés, par exemple en cas de surcharge de travail ou de travail délicat ou compliqué ?",
+    hierarchySupport: "Les salariés reçoivent-ils un soutien de la part de l'encadrement ?",
+    professionalDisagreements: "Existe-t-il entre les salariés des causes de désaccord ayant pour origine l'organisation du travail (flou sur le rôle de chacun, inégalité de traitement, etc.) ?",
+    workRecognition: "Les salariés reçoivent-ils des marques de reconnaissance de leur travail de la part de l'entreprise ?",
+    
+    // Conflits de valeurs
+    preventedQuality: "Les salariés considèrent-ils qu'ils font un travail de qualité ?",
+    uselessWork: "Les salariés estiment-ils en général que leur travail est reconnu comme utile ?",
+    
+    // Insécurité de l'emploi et du travail
+    socioeconomicInsecurity: "Les salariés sont-ils confrontés à des incertitudes quant au maintien de leur activité dans les prochains mois ?",
+    changeManagement: "Les changements sont-ils suffisamment anticipés, accompagnés, et clairement expliqués aux salariés ?",
+  }
+  
+  return descriptions[key] || ""
+}
+
+function getMentalWorkloadDescription(key: string): string {
+  const descriptions: Record<string, string> = {
+    mentalDemand: "Jusqu'à quel point les activités mentales et perceptives étaient requises pour faire la tâche (ex., réflexion, décision, calcul, mémoire, observation, recherche, etc.) ?",
+    physicalDemand: "Jusqu'à quel point les activités physiques étaient requises pour faire la tâche (ex., pousser, tirer, tourner, contrôler, activer, etc.) ?",
+    temporalDemand: "Jusqu'à quel point avez-vous ressenti la pression du temps due au rythme ou à la vitesse à laquelle la tâche ou les éléments de tâche arrivent ?",
+    performance: "Jusqu'à quel point pensez-vous que vous réussissez à atteindre les buts de la tâche tels que définis par votre employeur ou par vous-mêmes ?",
+    effort: "Jusqu'à quel point avez-vous eu à travailler (mentalement ou physiquement) pour atteindre votre niveau de performance ?",
+    frustration: "Jusqu'à quel point vous sentiez-vous non confiant, découragé, irrité, stressé et ennuyé vs confiant, avec plaisir, content, relaxe, satisfait de vous durant la tâche ?"
+  }
+  
+  return descriptions[key] || ""
+}
+
+function getScoreColor(score: number, max: number): string {
+  const percentage = score / max
+  if (percentage < 0.25) return "text-cyan-400"
+  if (percentage < 0.5) return "text-teal-400"
+  if (percentage < 0.75) return "text-amber-400"
+  return "text-rose-400"
+}
+
+function getScoreBgColor(score: number, max: number): string {
+  const percentage = score / max
+  if (percentage < 0.25) return "bg-cyan-950/30"
+  if (percentage < 0.5) return "bg-teal-950/30"
+  if (percentage < 0.75) return "bg-amber-950/30"
+  return "bg-rose-950/30"
+}
+
+function getScoreBorderColor(score: number, max: number): string {
+  const percentage = score / max
+  if (percentage < 0.25) return "border-cyan-900"
+  if (percentage < 0.5) return "border-teal-900"
+  if (percentage < 0.75) return "border-amber-900"
+  return "border-rose-900"
+}
+
+// Fonction pour calculer les scores intermédiaires
+const getIntermediateScore = (score: number, maxScore: number) => {
+  return Math.round((score / maxScore) * 20);
+};
+
 export default function TapSettingsForm() {
-  // États pour les contraintes
-  const [load, setLoad] = useState(50)
-  const [frequency, setFrequency] = useState(50)
-  const [flowRate, setFlowRate] = useState(50)
+  const [load, setLoad] = useState(20)
+  const [frequency, setFrequency] = useState(10)
+  const [postureFrequency, setPostureFrequency] = useState(5)
   const [isSaved, setIsSaved] = useState(false)
   const [formSubmitted, setFormSubmitted] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
-  const [activeSection, setActiveSection] = useState<string>("charge")
+  const [activeTab, setActiveTab] = useState<string>("charge")
   
-  // État pour les risques psychosociaux
-  const [psychosocialRisks, setPsychosocialRisks] = useState<PsychosocialRisks>({
-    workAutonomy: {
-      taskAutonomy: 0,
-      temporalAutonomy: 0,
-      skillsUse: 0
-    },
-    socialRelations: {
-      colleagueSupport: 0,
-      hierarchySupport: 0,
-      professionalDisagreements: 0,
-      workRecognition: 0
-    },
-    valueConflicts: {
-      preventedQuality: 0,
-      uselessWork: 0
-    },
-    jobInsecurity: {
-      socioeconomicInsecurity: 0,
-      changeManagement: 0
-    }
+  const [psychosocialRisks, setPsychosocialRisks] = useState({
+    // Faible autonomie au travail
+    taskAutonomy: 0, // Autonomie dans la tâche
+    temporalAutonomy: 0, // Autonomie temporelle
+    skillsUse: 0, // Utilisation et développement des compétences
+    
+    // Rapports sociaux au travail dégradés
+    colleagueSupport: 0, // Soutien de la part des collègues
+    hierarchySupport: 0, // Soutien de la part des supérieurs hiérarchiques
+    professionalDisagreements: 0, // Désaccords professionnels
+    workRecognition: 0, // Reconnaissance dans le travail
+    
+    // Conflits de valeurs
+    preventedQuality: 0, // Qualité empêchée
+    uselessWork: 0, // Travail inutile
+    
+    // Insécurité de l'emploi et du travail
+    socioeconomicInsecurity: 0, // Insécurité socio-économique
+    changeManagement: 0, // Conduite du changement dans l'entreprise
   })
   
-  // État pour les scores de charge mentale
   const [mentalWorkload, setMentalWorkload] = useState({
-    mentalDemand: 0,
-    physicalDemand: 0,
-    temporalDemand: 0,
-    performance: 0,
-    effort: 0,
-    frustration: 0
+    mentalDemand: 10, // Exigence mentale de la tâche
+    physicalDemand: 10, // Exigences physiques
+    temporalDemand: 10, // Exigence temporelle
+    performance: 10, // Performance
+    effort: 10, // Effort
+    frustration: 10 // Frustration
   })
   
-  // Définir l'état de sauvegarde automatique
-  const [autoSave, setAutoSave] = useState(true)
-  
-  // États pour les scores de posture (ajustables par slider)
-  const [postureScores, setPostureScores] = useState({
-    neck: 1, // Score pour le cou (1-4)
-    shoulder: 1, // Score pour l'épaule (1-4)
-    elbow: 1, // Score pour le coude (1-4)
-    wrist: 1, // Score pour le poignet (1-4)
-    trunk: 1, // Score pour le tronc (1-4)
-    legs: 1 // Score pour les jambes (1-4)
+  // États pour suivre si chaque section a été enregistrée
+  const [savedSections, setSavedSections] = useState({
+    charge: false,
+    posture: false,
+    frequency: false,
+    mental: false,
+    psychosocial: false
   })
   
-  // États pour les ajustements de posture (boolean)
-  const [postureAdjustments, setPostureAdjustments] = useState({
-    neckRotation: false, // Rotation du cou
-    neckInclination: false, // Inclinaison latérale du cou
-    shoulderRaised: false, // Épaule surélevée
-    shoulderAbduction: false, // Abduction de l'épaule
-    shoulderSupport: false, // Support de l'épaule/bras
-    elbowOpposite: false, // Coude au-delà de la ligne médiane
-    wristDeviation: false, // Déviation latérale du poignet
-    wristPartialRotation: false, // Rotation partielle du poignet
-    wristFullRotation: false // Rotation complète du poignet
-  })
+  const [neckPosition, setNeckPosition] = useState("0-10")
+  const [neckRotation, setNeckRotation] = useState(false)
+  const [neckInclination, setNeckInclination] = useState(false)
 
-  // Fonction pour vérifier si une section est complète
-  const isSectionComplete = useCallback((section: string) => {
-    switch (section) {
-      case 'charge':
-        return load > 0
-      case 'postures':
-        return Object.values(postureScores).some(score => score > 0)
-      case 'frequences':
-        return frequency > 2
-      case 'mental-workload':
-        return calculateMentalWorkloadScore() > 0
-      default:
-        return false
-    }
-  }, [load, frequency, postureScores]);
+  const [shoulderPosition, setShoulderPosition] = useState("-20-20")
+  const [shoulderRaised, setShoulderRaised] = useState(false)
+  const [armAbduction, setArmAbduction] = useState(false)
+  const [armSupported, setArmSupported] = useState(false)
 
-  // Fonction pour obtenir le message d'état
-  const getSectionStatus = useCallback((section: string) => {
-    switch (section) {
-      case 'charge':
-        return load > 0 
-          ? "Poids unitaire défini" 
-          : "Quels est le poids unitaire de la plus grosse charge que j'ai à manipuler"
-      case 'postures':
-        return Object.values(postureScores).some(score => score > 0)
-          ? "Postures évaluées"
-          : "Évaluez au moins une posture"
-      case 'frequences':
-        return frequency > 2
-          ? "Fréquences définies"
-          : "Définissez les fréquences"
-      case 'mental-workload':
-        return calculateMentalWorkloadScore() > 0
-          ? "Charge mentale évaluée"
-          : "Évaluez la charge mentale"
-      default:
-        return ""
-    }
-  }, [load, frequency, postureScores]);
+  const [elbowPosition, setElbowPosition] = useState("0-60")
+  const [forearmCrossing, setForearmCrossing] = useState(false)
 
-  // Calcul du score total de charge mentale
-  const calculateMentalWorkloadScore = useCallback(() => {
-    return Object.values(mentalWorkload).reduce((acc, curr) => acc + curr, 0);
+  const [wristPosition, setWristPosition] = useState("0")
+  const [wristDeviation, setWristDeviation] = useState(false)
+  const [wristPronationPartial, setWristPronationPartial] = useState(false)
+  const [wristPronationComplete, setWristPronationComplete] = useState(false)
+
+  const [trunkPosition, setTrunkPosition] = useState("0")
+  const [trunkRotation, setTrunkRotation] = useState(false)
+  const [trunkLateralBending, setTrunkLateralBending] = useState(false)
+
+  const [legsPosition, setLegsPosition] = useState("balanced")
+  const [legsKneeling, setLegsKneeling] = useState(false)
+  const [legsWalking, setLegsWalking] = useState(false)
+
+  const [neckScore, setNeckScore] = useState(1)
+  const [shoulderScore, setShoulderScore] = useState(1)
+  const [elbowScore, setElbowScore] = useState(1)
+  const [wristScore, setWristScore] = useState(1)
+  const [trunkScore, setTrunkScore] = useState(1)
+  const [legsScore, setLegsScore] = useState(1)
+  const [mentalScore, setMentalScore] = useState(0)
+  const [psychosocialScore, setPsychosocialScore] = useState(0)
+  const [globalScore, setGlobalScore] = useState(0)
+
+  // État pour le feedback visuel d'enregistrement
+  const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
+
+  const calculateScores = useCallback(() => {
+    // Normalisation de chaque sous-thème sur 20 points
+    const normalizedLoad = (load / 55) * 20;
+    const normalizedPosture = ((neckScore + shoulderScore + elbowScore + wristScore + trunkScore + legsScore) / 31) * 20;
+    const normalizedFrequency = (frequency / 120) * 20;
+    const normalizedMental = (Object.values(mentalWorkload).reduce((acc, val) => acc + val, 0) / 120) * 20;
+    
+    // Calcul du score psychosocial (1 à 4 points par question)
+    const psychosocialTotal = Object.values(psychosocialRisks).reduce((acc, val) => acc + val, 0);
+    const normalizedPsychosocial = (psychosocialTotal / 44) * 20;
+
+    // Score final sur 100 points
+    const finalScore = Math.round(
+      normalizedLoad + 
+      normalizedPosture + 
+      normalizedFrequency + 
+      normalizedMental + 
+      normalizedPsychosocial
+    );
+
+    setGlobalScore(finalScore);
+  }, [load, neckScore, shoulderScore, elbowScore, wristScore, trunkScore, legsScore, frequency, mentalWorkload, psychosocialRisks]);
+
+  useEffect(() => {
+    let score = 0
+
+    // Correction des valeurs pour correspondre exactement aux valeurs des boutons radio
+    if (neckPosition === "0-10") score += 1
+    else if (neckPosition === "10-20") score += 2
+    else if (neckPosition === "20+") score += 3
+    else if (neckPosition === "extension") score += 4
+
+    if (neckRotation) score += 1
+    if (neckInclination) score += 1
+
+    setNeckScore(Math.min(score, 6))
+  }, [neckPosition, neckRotation, neckInclination])
+
+  useEffect(() => {
+    let score = 0
+
+    if (shoulderPosition === "-20-20") score += 1
+    else if (shoulderPosition === "20-45") score += 2
+    else if (shoulderPosition === "45-90") score += 3
+    else if (shoulderPosition === "90+") score += 4
+
+    if (shoulderRaised) score += 1
+    if (armAbduction) score += 1
+    if (armSupported) score -= 1
+
+    setShoulderScore(Math.min(Math.max(score, 0), 6))
+  }, [shoulderPosition, shoulderRaised, armAbduction, armSupported])
+
+  useEffect(() => {
+    let score = 0
+
+    if (elbowPosition === "0-60") score += 1
+    else if (elbowPosition === "60-100") score += 2
+    else if (elbowPosition === "100+") score += 2
+
+    if (forearmCrossing) score += 1
+
+    setElbowScore(Math.min(score, 3))
+  }, [elbowPosition, forearmCrossing])
+
+  useEffect(() => {
+    let score = 0
+
+    if (wristPosition === "0") score += 1
+    else if (wristPosition === "-15-15") score += 2
+    else if (wristPosition === "15+" || wristPosition === "-15-") score += 3
+
+    if (wristDeviation) score += 1
+    if (wristPronationPartial) score += 1
+    if (wristPronationComplete) score += 2
+
+    setWristScore(Math.min(score, 6))
+  }, [wristPosition, wristDeviation, wristPronationPartial, wristPronationComplete])
+
+  useEffect(() => {
+    let score = 0
+
+    if (trunkPosition === "0") score = 1
+    else if (trunkPosition === "0-20") score = 2
+    else if (trunkPosition === "20-60") score = 3
+    else if (trunkPosition === "60+") score = 4
+
+    if (trunkRotation) score += 1
+    if (trunkLateralBending) score += 1
+
+    setTrunkScore(Math.min(score, 6))
+  }, [trunkPosition, trunkRotation, trunkLateralBending])
+
+  useEffect(() => {
+    let score = 0
+
+    if (legsPosition === "balanced") score += 1
+    else if (legsPosition === "unbalanced") score += 2
+
+    if (legsKneeling) score += 1
+    if (legsWalking) score += 1
+
+    setLegsScore(score)
+  }, [legsPosition, legsKneeling, legsWalking])
+
+  useEffect(() => {
+    const score = (mentalWorkload.mentalDemand + mentalWorkload.physicalDemand + mentalWorkload.temporalDemand + 
+                  mentalWorkload.performance + mentalWorkload.effort + mentalWorkload.frustration) / 6
+    setMentalScore(score)
+  }, [mentalWorkload])
+
+  useEffect(() => {
+    let score = 0
+
+    Object.values(psychosocialRisks).forEach((value) => {
+      score += value
+    })
+
+    setPsychosocialScore((score / 110) * 10)
+  }, [psychosocialRisks])
+
+  useEffect(() => {
+    calculateScores();
+  }, [calculateScores]);
+
+  useEffect(() => {
+    const total = Object.values(mentalWorkload).reduce((acc, val) => acc + val, 0);
+    setMentalScore(Math.round((total / 120) * 20));
   }, [mentalWorkload]);
 
-  // Fonction pour mettre à jour les risques psychosociaux
-  const updatePsychosocialRisk = useCallback(
-    (category: keyof PsychosocialRisks, subCategory: string, value: number) => {
-      setPsychosocialRisks(prev => ({
-        ...prev,
-        [category]: {
-          ...prev[category],
-          [subCategory]: value
-        }
-      }));
-    },
-    []
-  );
-
-  // Fonction pour calculer le score des risques psychosociaux
-  const calculatePsychosocialScore = useCallback(() => {
-    let totalScore = 0;
-    let maxPossibleScore = 0;
-
-    Object.entries(psychosocialRisks).forEach(([category, values]) => {
-      Object.entries(values).forEach(([subCategory, value]) => {
-        const isPositive = psychosocialDirections[category as keyof typeof psychosocialDirections][subCategory as keyof typeof psychosocialDirections[keyof typeof psychosocialDirections]];
-        // Inverser la logique : pour les questions positives, on soustrait de 3 pour avoir un score de risque
-        // Pour les questions négatives, on garde la valeur telle quelle
-        const adjustedValue = isPositive ? (3 - (value as number)) : (value as number);
-        totalScore += adjustedValue;
-        maxPossibleScore += 3; // Le maximum possible pour chaque question est 3
-      });
-    });
-
-    // Le score final représente maintenant le niveau de risque
-    return maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0;
+  useEffect(() => {
+    const total = Object.values(psychosocialRisks).reduce((acc, val) => acc + val, 0);
+    setPsychosocialScore(Math.round((total / 44) * 20));
   }, [psychosocialRisks]);
 
-  // Chargement des paramètres depuis localStorage au montage du composant
-  useEffect(() => {
-    // Récupérer les contraintes sauvegardées
-    const savedConstraints = getLocalStorage('tapConstraints')
-    
-    if (savedConstraints) {
-      try {
-        const constraints = JSON.parse(savedConstraints)
-        
-        // Contraintes principales
-        if (constraints.load) setLoad(constraints.load)
-        if (constraints.frequency) setFrequency(constraints.frequency)
-        
-        // Scores de posture
-        if (constraints.postureScores) setPostureScores(constraints.postureScores)
-        
-        // Ajustements de posture
-        if (constraints.postureAdjustments) setPostureAdjustments(constraints.postureAdjustments)
-        
-        // Si le débit est déjà défini, l'utiliser
-        if (constraints.flowRate) {
-          setFlowRate(constraints.flowRate)
-        }
-      } catch (error) {
-        console.error("Erreur lors du chargement des contraintes:", error)
-      }
-    }
-    
-    // Récupérer le débit depuis localStorage si disponible
-    const savedFlowRate = getLocalStorage('flowRate')
-    if (savedFlowRate) {
-      try {
-        setFlowRate(Number(savedFlowRate))
-      } catch (e) {
-        console.error("Erreur lors du chargement du débit:", e)
-      }
-    }
-    
-    setIsInitialized(true)
-  }, [])
+  const handlePsychosocialChange = (key: string, value: number) => {
+    setPsychosocialRisks((prev) => ({
+      ...prev,
+      [key]: value,
+    }))
+  }
 
-  // Fonction pour calculer le débit en fonction des contraintes et de la posture
-  const calculateFlowRate = useCallback(() => {
-    // Calcul du score de posture
-    const postureScore = (
-      // Somme des scores de base
-      (postureScores.neck || 0) + 
-      (postureScores.shoulder || 0) + 
-      (postureScores.elbow || 0) + 
-      (postureScores.wrist || 0) + 
-      (postureScores.trunk || 0) + 
-      (postureScores.legs || 0)
-    ) / 24 * 100; // Conversion en pourcentage (score max = 24)
-    
-    // Ajustements de posture (chaque ajustement ajoute un pourcentage)
-    const adjustmentsScore = (
-      (postureAdjustments.neckRotation ? 5 : 0) +
-      (postureAdjustments.neckInclination ? 5 : 0) +
-      (postureAdjustments.shoulderRaised ? 5 : 0) +
-      (postureAdjustments.shoulderAbduction ? 5 : 0) +
-      (postureAdjustments.shoulderSupport ? -5 : 0) + // Cet ajustement réduit le score
-      (postureAdjustments.elbowOpposite ? 5 : 0) +
-      (postureAdjustments.wristDeviation ? 5 : 0) +
-      (postureAdjustments.wristPartialRotation ? 5 : 0) +
-      (postureAdjustments.wristFullRotation ? 10 : 0)
-    );
-    
-    // Calcul du débit (charge, fréquence et posture)
-    // La formule donne plus de poids à la charge (40%), puis à la fréquence (30%) et enfin à la posture (30%)
-    const calculatedFlowRate = Math.round(
-      (load * 0.4) +
-      (frequency * 0.3) +
-      ((postureScore + adjustmentsScore) * 0.3)
-    );
-    
-    // Limiter le débit entre 0 et 100
-    return Math.max(0, Math.min(100, calculatedFlowRate));
-  }, [load, frequency, postureScores, postureAdjustments]);
+  const getGlobalScoreText = (score: number) => {
+    if (score < 25) return "Risque global faible"
+    if (score < 50) return "Risque global modéré"
+    if (score < 75) return "Risque global élevé"
+    return "Risque global très élevé - Intervention recommandée"
+  }
 
-  // Mémoriser le débit calculé
-  const calculatedFlowRate = useMemo(() => calculateFlowRate(), [calculateFlowRate]);
-  
-  // Sauvegarder le débit calculé
-  const saveFlowRate = useCallback((newFlowRate: number) => {
-    // Mettre à jour l'état
-    setFlowRate(newFlowRate);
+  const handleSave = () => {
+    setIsSaved(true)
     
-    // Sauvegarder les contraintes et le débit
-    const constraints = {
+    // Afficher le feedback visuel
+    setSaveFeedback(activeTab);
+    setTimeout(() => {
+      setSaveFeedback(null);
+    }, 2000)
+    
+    // Marquer la section active comme enregistrée
+    setSavedSections(prev => ({
+      ...prev,
+      [activeTab]: true
+    }))
+    
+    const settings = {
       load,
       frequency,
-      postureScores,
-      postureAdjustments,
-      flowRate: newFlowRate
-    };
+      postureFrequency,
+      neckPosition,
+      neckRotation,
+      neckInclination,
+      shoulderPosition,
+      shoulderRaised,
+      armAbduction,
+      armSupported,
+      elbowPosition,
+      forearmCrossing,
+      wristPosition,
+      wristDeviation,
+      wristPronationPartial,
+      wristPronationComplete,
+      trunkPosition,
+      trunkRotation,
+      trunkLateralBending,
+      legsPosition,
+      legsKneeling,
+      legsWalking,
+      mentalWorkload,
+      psychosocialRisks,
+      globalScore
+    }
     
-    // Sauvegarder dans localStorage
-    setLocalStorage('tapConstraints', JSON.stringify(constraints));
-    setLocalStorage('flowRate', newFlowRate.toString());
+    setLocalStorage('tapSettings', JSON.stringify(settings))
+    setLocalStorage('flowRate', Math.round(globalScore).toString())
     
-    // Émettre un événement personnalisé pour notifier les autres composants
-    const event = new CustomEvent('tapFlowUpdated', {
-      detail: { flowRate: newFlowRate }
-    });
-    window.dispatchEvent(event);
-    
-    // Émettre un événement storage
-    emitStorageEvent();
-    
-    return newFlowRate;
-  }, [load, frequency, postureScores, postureAdjustments]);
-
-  // Calculer et sauvegarder le débit quand nécessaire
-  useEffect(() => {
-    if (!isInitialized) return;
-    
-    // Ne calculer et mettre à jour que lorsque formSubmitted est true (après la première soumission)
-    // ou lorsque autoSave est activé
-    if (!formSubmitted && !autoSave) return;
-    
-    // Utiliser un debounce pour éviter les mises à jour trop fréquentes
-    const debounceTimer = setTimeout(() => {
-      const newFlowRate = calculateFlowRate();
-      if (newFlowRate !== flowRate) {
-        saveFlowRate(newFlowRate);
-      }
-    }, 300); // 300ms de délai
-    
-    return () => clearTimeout(debounceTimer);
-  }, [calculatedFlowRate, formSubmitted, autoSave, isInitialized, calculateFlowRate, saveFlowRate, flowRate]);
-
-  // Gérer la soumission du formulaire
-  const handleSubmit = useCallback(() => {
-    setFormSubmitted(true);
-    const newFlowRate = calculateFlowRate();
-    saveFlowRate(newFlowRate);
-    
-    setIsSaved(true);
-    setTimeout(() => {
-      setIsSaved(false);
-    }, 2000);
-  }, [calculateFlowRate, saveFlowRate]);
-
-  // Mettre à jour un score de posture
-  const updatePostureScore = useCallback((key: keyof typeof postureScores, value: number) => {
-    // Utiliser un setTimeout pour éviter les mises à jour trop fréquentes
-    setTimeout(() => {
-      setPostureScores(prev => ({
-        ...prev,
-        [key]: value
-      }));
-    }, 0);
-  }, []);
-
-  // Mettre à jour un ajustement de posture
-  const updatePostureAdjustment = useCallback((key: keyof typeof postureAdjustments, checked: boolean) => {
-    // Utiliser un setTimeout pour éviter les mises à jour trop fréquentes  
-    setTimeout(() => {
-      setPostureAdjustments(prev => ({
-        ...prev,
-        [key]: checked
-      }));
-    }, 0);
-  }, []);
-
-  // Gérer les changements de charge
-  const handleLoadChange = useCallback((value: number) => {
-    // Utiliser un debounce pour éviter les mises à jour trop fréquentes
-    setTimeout(() => {
-      setLoad(value);
-    }, 0);
-  }, []);
-
-  // Gérer les changements de fréquence
-  const handleFrequencyChange = useCallback((value: number) => {
-    // Utiliser un debounce pour éviter les mises à jour trop fréquentes
-    setTimeout(() => {
-      setFrequency(value);
-    }, 0);
-  }, []);
+    emitStorageEvent()
+  }
 
   return (
-    <BaseSettingsForm
-      title="Paramètres du Robinet"
-      description="Le travail, avec l'ensemble de ses composantes, constitue le facteur clé dans l'analyse du risque de troubles musculo-squelettiques (TMS) et de probabilité d'accident de travail. Quels sont les déterminants physiques, psychologiques et organisationnels impliqués ? Examinez chaque aspect pour évaluer le niveau de contrainte : la charge manipulée (poids, fréquence), les postures adoptées, ainsi que l'état émotionnel (charge mentale, facteurs psychosociaux)."
-      currentValue={calculatedFlowRate}
-      getValueDescription={() => "Débit du robinet"}
-      onSubmit={handleSubmit}
-      scoreType="tap"
-    >
-      <div className="w-full">
-        <Accordion 
-          type="single" 
-          collapsible 
-          value={activeSection}
-          onValueChange={setActiveSection}
-          className="w-full space-y-2"
-        >
-          {/* Section Charge */}
-          <AccordionItem value="charge" className="border-b border-gray-800">
-            <AccordionTrigger className="text-xl font-semibold text-white hover:text-gray-300">
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-4">
-                  {isSectionComplete('charge') ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <AlertCircle className="h-5 w-5 text-yellow-500" />
-                  )}
-                  <span>Charge manipulée</span>
-                  <span className="text-sm font-normal text-gray-400 italic">Charge maximale admissible selon l'article R4541-9 du Code du travail</span>
-                </div>
+    <div className="bg-black text-white">
+      <div className="sticky top-0 z-20 bg-black border-b border-gray-800 shadow-lg">
+        <div className="container mx-auto p-4 flex flex-col md:flex-row items-center justify-between">
+          <h1 className="text-2xl font-bold mb-2 md:mb-0 text-white">Paramètres du Robinet</h1>
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-300">Débit actuel:</div>
+            <div className={`text-2xl font-bold ${getScoreColor(globalScore, 100)}`}>{globalScore.toFixed(0)}/100</div>
+            <div
+              className={`px-3 py-1 rounded-full text-sm ${getScoreBgColor(globalScore, 100)} ${getScoreBorderColor(globalScore, 100)} border`}
+            >
+              {getGlobalScoreText(globalScore)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto p-4" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
+        <Tabs defaultValue={activeTab} className="w-full" onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-5 mb-6 bg-gray-900 p-1 rounded-lg border border-gray-800">
+            <TabsTrigger
+              value="charge"
+              className="data-[state=active]:bg-gray-800 data-[state=active]:text-cyan-400 transition-all duration-200 text-white"
+            >
+              <div className="flex items-center">
+                <Weight className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Charge manipulée</span>
+                <span className="sm:hidden">Charge</span>
+                {savedSections.charge && <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" />}
               </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-6 p-4">
-                <div className="text-sm text-gray-400 mb-4">
-                  {getSectionStatus('charge') === "Poids unitaire défini" ? "" : getSectionStatus('charge')}
-                </div>
-                <div className={`group p-4 rounded-lg bg-gray-800/30 hover:bg-gray-800/40 transition-all duration-300 border-l-4 ${physicalSliderColors.weight.border}`}>
-                  <label className="block text-base font-medium text-white mb-10">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-3xl font-semibold ${physicalSliderColors.weight.text}`}>Poids manipulé</span>
-                        <InfoTooltip content={physicalDefinitions.weight} />
+            </TabsTrigger>
+            <TabsTrigger
+              value="posture"
+              className="data-[state=active]:bg-gray-800 data-[state=active]:text-cyan-400 transition-all duration-200 text-white"
+            >
+              <div className="flex items-center">
+                <Layers className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Positions de travail</span>
+                <span className="sm:hidden">Posture</span>
+                {savedSections.posture && <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" />}
+              </div>
+            </TabsTrigger>
+            <TabsTrigger
+              value="frequency"
+              className="data-[state=active]:bg-gray-800 data-[state=active]:text-cyan-400 transition-all duration-200 text-white"
+            >
+              <div className="flex items-center">
+                <Repeat className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Fréquence</span>
+                <span className="sm:hidden">Fréq.</span>
+                {savedSections.frequency && <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" />}
+              </div>
+            </TabsTrigger>
+            <TabsTrigger
+              value="mental"
+              className="data-[state=active]:bg-gray-800 data-[state=active]:text-cyan-400 transition-all duration-200 text-white"
+            >
+              <div className="flex items-center">
+                <Brain className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Charge Mentale</span>
+                <span className="sm:hidden">Mental</span>
+                {savedSections.mental && <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" />}
+              </div>
+            </TabsTrigger>
+            <TabsTrigger
+              value="psychosocial"
+              className="data-[state=active]:bg-gray-800 data-[state=active]:text-cyan-400 transition-all duration-200 text-white"
+            >
+              <div className="flex items-center">
+                <Users className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Risques Psychosociaux</span>
+                <span className="sm:hidden">RPS</span>
+                {savedSections.psychosocial && <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" />}
+              </div>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="charge">
+            <Card className="bg-gray-900 border-gray-800 mb-4">
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium mb-4">
+                      <div className="flex items-center">
+                        <Weight className="h-5 w-5 mr-2 text-cyan-400" />
+                        <span>Charge manipulée</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-3xl font-semibold text-gray-400">Charge:</span>
-                        <span className={`text-5xl font-mono font-bold ${physicalSliderColors.weight.text} bg-gray-800 px-4 py-2 rounded-md min-w-[6rem] text-center`}>
-                          {load.toString().padStart(2, '0')}
-          </span>
-                        <span className="text-3xl font-semibold text-gray-400">kg</span>
-        </div>
-      </div>
-          </label>
-
-                  <div className="relative mt-6">
-                    {/* Graduations principales */}
-                    <div className="absolute w-full flex justify-between px-1 -top-8">
-                      {[0, 15, 30, 45, 55].map((mark) => (
-                        <div key={mark} className="flex flex-col items-center">
-                          <span className={`text-3xl ${load >= mark ? physicalSliderColors.weight.text : 'text-gray-500'} mb-1`}>
-                            {mark}
-                          </span>
-                          <div className={`h-2 w-0.5 ${load >= mark ? physicalSliderColors.weight.active : physicalSliderColors.weight.inactive}`} />
+                    </h3>
+                    <div className="flex items-center">
+                      <div className="w-24 h-12 bg-black rounded-lg border border-gray-800 flex items-center justify-center">
+                        <span className="text-xl font-semibold text-gray-300">{getIntermediateScore(load, 55)}/20</span>
+                      </div>
+                      {savedSections.charge && (
+                        <div className="flex items-center text-green-500 text-sm ml-4">
+                          <CheckCircle2 className="h-4 w-4 mr-1" />
+                          <span>Section enregistrée</span>
                         </div>
-                      ))}
-                    </div>
-
-                    {/* Graduations secondaires */}
-                    <div className="absolute w-full flex justify-between px-1 -top-2">
-                      {Array.from({ length: 54 }, (_, i) => i + 1)
-                        .filter(mark => mark % 15 !== 0 && mark % 5 === 0)
-                        .map((mark) => (
-                          <SecondaryMark
-                            key={mark}
-                            mark={mark}
-                            value={load}
-                            activeClass={physicalSliderColors.weight.activeLight}
-                          />
-                        ))}
-          </div>
-
-                    {/* Barre de progression */}
-                    <div className="h-2 bg-gray-700 rounded-sm overflow-hidden">
-                      <div 
-                        className={`h-full bg-gradient-to-r ${physicalSliderColors.weight.from} ${physicalSliderColors.weight.to} transition-all duration-150`}
-                        style={{ width: `${(load / 55) * 100}%` }}
-                      />
-        </div>
-
-                    {/* Curseur personnalisé */}
-                    <div 
-                      className="absolute top-1/2 -translate-y-1/2 pointer-events-none"
-                      style={{ left: `calc(${(load / 55) * 100}% - 6px)` }}
-                    >
-                      <div className={`w-3 h-6 bg-white rounded-sm shadow-lg border ${physicalSliderColors.weight.border}`} />
-      </div>
-      
-                    {/* Input range masqué */}
-          <input
-            type="range"
-            min={0}
-                      max={55}
-                      value={load}
-                      onChange={(e) => handleLoadChange(Number(e.target.value))}
-                      className="absolute inset-0 w-full opacity-0 cursor-pointer"
-                    />
-          </div>
-
-                  {/* Description des valeurs */}
-                  <div className="flex justify-between text-xl text-gray-400 mt-6">
-                    <div className="flex flex-col items-start">
-                      <span className="text-gray-500">0-15 kg</span>
-        </div>
-                    <div className="flex flex-col items-center">
-                      <span className="text-gray-500">15-30 kg</span>
-      </div>
-                    <div className="flex flex-col items-end">
-                      <span className="text-gray-500">30-55 kg</span>
+                      )}
                     </div>
                   </div>
+                  <p className="text-sm text-gray-300 mb-4">
+                    Évaluez la charge manipulée en utilisant le curseur ci-dessous. La charge est notée de 0 à 55 kg.
+                  </p>
                 </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Section Postures */}
-          <AccordionItem value="postures" className="border-b border-gray-800">
-            <AccordionTrigger className="text-xl font-semibold text-white hover:text-gray-300">
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-4">
-                  {isSectionComplete('postures') ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <AlertCircle className="h-5 w-5 text-yellow-500" />
-                  )}
-                  <span>Évaluation des postures</span>
-                  <span className="text-sm font-normal text-gray-400 italic">Adaptation de la méthode RULA (Rapid Upper Limb Assessment) par McAtamney et Corlett, 1993</span>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-6 p-4">
-                <div className="text-sm text-gray-400 mb-4">
-                  {getSectionStatus('postures')}
-                </div>
-                <div className="space-y-3">
-                  {/* Cou */}
-                  <div className="space-y-4 p-4 rounded-lg bg-gray-800/50 border-l-4 border-rose-500">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-lg font-medium text-white">Cou</h4>
-                      <span className={`text-lg font-semibold ${getScoreColor(
-                        postureScores.neck + 
-                        (postureAdjustments.neckRotation ? 1 : 0) + 
-                        (postureAdjustments.neckInclination ? 1 : 0),
-                        maxScores.neck,
-                        'red'
-                      )}`}>
-                        Score: {postureScores.neck + 
-                          (postureAdjustments.neckRotation ? 1 : 0) + 
-                          (postureAdjustments.neckInclination ? 1 : 0)}
-                        /{maxScores.neck}
-                      </span>
+              </CardContent>
+            </Card>
+            <Card className="bg-gray-900 border-gray-800">
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <Label htmlFor="chargeWeight" className="text-white">
+                        Poids de la charge manipulée
+                      </Label>
+                      <span className="text-white">{load} kg</span>
                     </div>
+                    <Slider
+                      id="chargeWeight"
+                      value={[load]}
+                      onValueChange={(value) => setLoad(value[0])}
+                      min={0}
+                      max={55}
+                      step={1}
+                      className="cursor-pointer"
+                    />
+                    <div className="flex justify-between text-xs text-gray-300 mt-1">
+                      <span>0 kg</span>
+                      <span>55 kg</span>
+                    </div>
+                  </div>
 
-                    <RadioGroup
-                      value={String(postureScores.neck)}
-                      onValueChange={(value: string) => updatePostureScore('neck', Number(value))}
-                      className="grid grid-cols-2 gap-3"
+                  <div
+                    className={`p-4 rounded-lg mt-6 ${getScoreBgColor(load, 55)} border ${getScoreBorderColor(load, 55)}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Weight className={`h-5 w-5 ${getScoreColor(load, 55)}`} />
+                      <span className="font-medium text-white">Évaluation de la charge</span>
+                    </div>
+                    <p className="mt-2 text-sm text-white">
+                      {load < 15
+                        ? "Charge légère - Risque faible"
+                        : load < 30
+                          ? "Charge modérée - Risque modéré"
+                          : load < 45
+                            ? "Charge lourde - Risque élevé"
+                            : "Charge très lourde - Risque très élevé"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <Button 
+                    onClick={handleSave} 
+                    className={`${saveFeedback === 'charge' ? 'bg-green-600 hover:bg-green-700' : 'bg-cyan-600 hover:bg-cyan-700'} text-white transition-colors`}
+                  >
+                    {saveFeedback === 'charge' ? (
+                      <>
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Enregistré !
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Enregistrer
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="posture">
+            <Card className="bg-gray-900 border-gray-800 mb-4">
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium mb-4">
+                      <div className="flex items-center">
+                        <Layers className="h-5 w-5 mr-2 text-cyan-400" />
+                        <span>Position de travail</span>
+                      </div>
+                    </h3>
+                    <div className="flex items-center">
+                      <div className="w-24 h-12 bg-black rounded-lg border border-gray-800 flex items-center justify-center">
+                        <span className="text-xl font-semibold text-gray-300">{getIntermediateScore(
+                          neckScore + shoulderScore + elbowScore + wristScore + trunkScore + legsScore,
+                          30
+                        )}/20</span>
+                      </div>
+                      {savedSections.posture && (
+                        <div className="flex items-center text-green-500 text-sm ml-4">
+                          <CheckCircle2 className="h-4 w-4 mr-1" />
+                          <span>Section enregistrée</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-300 mb-4">
+                    Évaluez les positions de travail et les ajustements posturaux pour chaque partie du corps.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-colors">
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-medium mb-4 flex items-center justify-between">
+                    <span className="flex items-center">
+                      <Skull className="h-5 w-5 mr-2 text-cyan-400" />
+                      <span className="text-white font-bold">Cou</span>
+                    </span>
+                    <span
+                      className={`text-sm px-2 py-1 rounded ${getScoreBgColor(neckScore, 6)} border ${getScoreBorderColor(neckScore, 6)}`}
                     >
-                      <label className="flex items-center space-x-3 p-4 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="1" id="neck-1" className="h-6 w-6 group-hover:border-red-400" />
-                        <span className="text-lg font-medium text-white">0° à 10° (+1)</span>
-          </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="2" id="neck-2" className="h-5 w-5 group-hover:border-red-400" />
-                        <span className="text-white">10° à 20° (+2)</span>
-                      </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="3" id="neck-3" className="h-5 w-5 group-hover:border-red-400" />
-                        <span className="text-white">20° ou plus (+3)</span>
-                      </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="4" id="neck-4" className="h-5 w-5 group-hover:border-red-400" />
-                        <span className="text-white">Extension (+4)</span>
-                      </label>
+                      Score: <span className={getScoreColor(neckScore, 6)}>{neckScore}</span>/6
+                    </span>
+                  </h3>
+
+                  <div className="space-y-4">
+                    <RadioGroup value={neckPosition} onValueChange={setNeckPosition} className="space-y-2">
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="0-10" id="neck-0-10" className="border-cyan-500 text-cyan-500" />
+                        <Label htmlFor="neck-0-10" className="cursor-pointer w-full text-white">
+                          0 à 10 degrés (+1)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="10-20" id="neck-10-20" className="border-teal-500 text-teal-500" />
+                        <Label htmlFor="neck-10-20" className="cursor-pointer w-full text-white">
+                          10 à 20 degrés (+2)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="20+" id="neck-20+" className="border-amber-500 text-amber-500" />
+                        <Label htmlFor="neck-20+" className="cursor-pointer w-full text-white">
+                          20 degrés ou plus (+3)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem
+                          value="extension"
+                          id="neck-extension"
+                          className="border-rose-500 text-rose-500"
+                        />
+                        <Label htmlFor="neck-extension" className="cursor-pointer w-full text-white">
+                          Extension (+4)
+                        </Label>
+                      </div>
                     </RadioGroup>
 
-                    <div className="space-y-2 pt-4 mt-4 border-t border-gray-600">
-                      <h5 className="text-sm font-medium text-gray-400 mb-2">Ajustements supplémentaires</h5>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
+                    <div className="space-y-2 pt-2 border-t border-gray-800">
+                      <Label className="text-sm text-gray-300">Ajustements</Label>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
                         <Checkbox
                           id="neck-rotation"
-                          checked={postureAdjustments.neckRotation}
-                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('neckRotation', checked)}
-                          className="h-5 w-5 group-hover:border-red-400"
+                          checked={neckRotation}
+                          onCheckedChange={(checked) => setNeckRotation(checked === true)}
+                          className="border-cyan-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:text-gray-900"
                         />
-                        <span className="text-white">Rotation du cou (+1)</span>
-                      </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
+                        <Label htmlFor="neck-rotation" className="cursor-pointer w-full text-white">
+                          Le cou est en rotation (+1)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
                         <Checkbox
                           id="neck-inclination"
-                          checked={postureAdjustments.neckInclination}
-                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('neckInclination', checked)}
-                          className="h-5 w-5 group-hover:border-red-400"
+                          checked={neckInclination}
+                          onCheckedChange={(checked) => setNeckInclination(checked === true)}
+                          className="border-cyan-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:text-gray-900"
                         />
-                        <span className="text-white">Inclinaison du cou (+1)</span>
-                      </label>
-          </div>
-        </div>
+                        <Label htmlFor="neck-inclination" className="cursor-pointer w-full text-white">
+                          Le cou est en inclinaison (+1)
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-                  {/* Épaule */}
-                  <div className="space-y-4 p-4 rounded-lg bg-gray-800/50 border-l-4 border-sky-500">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-lg font-medium text-white">Épaule</h4>
-                      <span className={`text-lg font-semibold ${getScoreColor(
-                        postureScores.shoulder + 
-                        (postureAdjustments.shoulderRaised ? 1 : 0) + 
-                        (postureAdjustments.shoulderAbduction ? 1 : 0) + 
-                        (postureAdjustments.shoulderSupport ? -1 : 0),
-                        maxScores.shoulder,
-                        'blue'
-                      )}`}>
-                        Score: {postureScores.shoulder + 
-                          (postureAdjustments.shoulderRaised ? 1 : 0) + 
-                          (postureAdjustments.shoulderAbduction ? 1 : 0) + 
-                          (postureAdjustments.shoulderSupport ? -1 : 0)}
-                        /{maxScores.shoulder}
-            </span>
-      </div>
-      
-                    <RadioGroup
-                      value={String(postureScores.shoulder)}
-                      onValueChange={(value: string) => updatePostureScore('shoulder', Number(value))}
-                      className="grid grid-cols-2 gap-3"
+              <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-colors">
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-medium mb-4 flex items-center justify-between">
+                    <span className="flex items-center">
+                      <div className="relative h-5 w-5 mr-2 text-cyan-400">
+                        <div className="absolute top-0 left-1/2 w-1 h-3 bg-current rounded-full transform -translate-x-1/2"></div>
+                        <div className="absolute bottom-0 left-1/2 w-3 h-1 bg-current rounded-full transform -translate-x-1/2"></div>
+                      </div>
+                      <span className="text-white font-bold">Épaule</span>
+                    </span>
+                    <span
+                      className={`text-sm px-2 py-1 rounded ${getScoreBgColor(shoulderScore, 6)} border ${getScoreBorderColor(shoulderScore, 6)}`}
                     >
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="1" id="shoulder-1" className="h-5 w-5 group-hover:border-blue-400" />
-                        <span className="text-white">-20° à 20° (+1)</span>
-          </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="2" id="shoulder-2" className="h-5 w-5 group-hover:border-blue-400" />
-                        <span className="text-white">20° à 45° (+2)</span>
-                      </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="3" id="shoulder-3" className="h-5 w-5 group-hover:border-blue-400" />
-                        <span className="text-white">45° à 90° (+3)</span>
-                      </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="4" id="shoulder-4" className="h-5 w-5 group-hover:border-blue-400" />
-                        <span className="text-white">90° ou plus (+4)</span>
-                      </label>
+                      Score: <span className={getScoreColor(shoulderScore, 6)}>{shoulderScore}</span>/6
+                    </span>
+                  </h3>
+
+                  <div className="space-y-4">
+                    <RadioGroup value={shoulderPosition} onValueChange={setShoulderPosition} className="space-y-2">
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="-20-20" id="shoulder--20-20" className="border-cyan-500 text-cyan-500" />
+                        <Label htmlFor="shoulder--20-20" className="cursor-pointer w-full text-white">
+                          -20 à 20 degrés (+1)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="20-45" id="shoulder-20-45" className="border-teal-500 text-teal-500" />
+                        <Label htmlFor="shoulder-20-45" className="cursor-pointer w-full text-white">
+                          20 à 45 degrés (+2)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="45-90" id="shoulder-45-90" className="border-amber-500 text-amber-500" />
+                        <Label htmlFor="shoulder-45-90" className="cursor-pointer w-full text-white">
+                          45 à 90 degrés (+3)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="90+" id="shoulder-90+" className="border-rose-500 text-rose-500" />
+                        <Label htmlFor="shoulder-90+" className="cursor-pointer w-full text-white">
+                          90 degrés ou plus (+4)
+                        </Label>
+                      </div>
                     </RadioGroup>
 
-                    <div className="space-y-2 pt-4 mt-4 border-t border-gray-600">
-                      <h5 className="text-sm font-medium text-gray-400 mb-2">Ajustements supplémentaires</h5>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
+                    <div className="space-y-2 pt-2 border-t border-gray-800">
+                      <Label className="text-sm text-gray-300">Ajustements</Label>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
                         <Checkbox
                           id="shoulder-raised"
-                          checked={postureAdjustments.shoulderRaised}
-                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('shoulderRaised', checked)}
-                          className="h-5 w-5 group-hover:border-blue-400"
+                          checked={shoulderRaised}
+                          onCheckedChange={(checked) => setShoulderRaised(checked === true)}
+                          className="border-cyan-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:text-gray-900"
                         />
-                        <span className="text-white">Épaule levée (+1)</span>
-          </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
+                        <Label htmlFor="shoulder-raised" className="cursor-pointer w-full text-white">
+                          L'épaule est levée (+1)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
                         <Checkbox
-                          id="shoulder-abduction"
-                          checked={postureAdjustments.shoulderAbduction}
-                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('shoulderAbduction', checked)}
-                          className="h-5 w-5 group-hover:border-blue-400"
+                          id="arm-abduction"
+                          checked={armAbduction}
+                          onCheckedChange={(checked) => setArmAbduction(checked === true)}
+                          className="border-cyan-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:text-gray-900"
                         />
-                        <span className="text-white">Bras en abduction (+1)</span>
-                      </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
+                        <Label htmlFor="arm-abduction" className="cursor-pointer w-full text-white">
+                          Le bras est en abduction (+1)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
                         <Checkbox
-                          id="shoulder-support"
-                          checked={postureAdjustments.shoulderSupport}
-                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('shoulderSupport', checked)}
-                          className="h-5 w-5 group-hover:border-blue-400"
+                          id="arm-supported"
+                          checked={armSupported}
+                          onCheckedChange={(checked) => setArmSupported(checked === true)}
+                          className="border-cyan-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:text-gray-900"
                         />
-                        <span className="text-white">Bras en appui (-1)</span>
-                      </label>
-          </div>
+                        <Label htmlFor="arm-supported" className="cursor-pointer w-full text-white">
+                          Le bras est en appui sur un support (-1)
+                        </Label>
+                      </div>
+                    </div>
                   </div>
+                </CardContent>
+              </Card>
 
-                  {/* Coude */}
-                  <div className="space-y-4 p-4 rounded-lg bg-gray-800/50 border-l-4 border-emerald-500">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-lg font-medium text-white">Coude</h4>
-                      <span className={`text-lg font-semibold ${getScoreColor(
-                        postureScores.elbow + 
-                        (postureAdjustments.elbowOpposite ? 1 : 0),
-                        maxScores.elbow,
-                        'green'
-                      )}`}>
-                        Score: {postureScores.elbow + 
-                          (postureAdjustments.elbowOpposite ? 1 : 0)}
-                        /{maxScores.elbow}
-            </span>
-        </div>
-        
-                    <RadioGroup
-                      value={String(postureScores.elbow)}
-                      onValueChange={(value: string) => updatePostureScore('elbow', Number(value))}
-                      className="grid grid-cols-2 gap-3"
+              <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-colors">
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-medium mb-4 flex items-center justify-between">
+                    <span className="flex items-center">
+                      <div className="relative h-5 w-5 mr-2 text-cyan-400">
+                        <div className="absolute top-1 left-1 w-1 h-4 bg-current rounded-full"></div>
+                        <div className="absolute top-2 left-1/2 w-3 h-1 bg-current rounded-full transform rotate-45 -translate-x-1/4"></div>
+                      </div>
+                      <span className="text-white font-bold">Coude</span>
+                    </span>
+                    <span
+                      className={`text-sm px-2 py-1 rounded ${getScoreBgColor(elbowScore, 3)} border ${getScoreBorderColor(elbowScore, 3)}`}
                     >
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="1" id="elbow-1" className="h-5 w-5 group-hover:border-green-400" />
-                        <span className="text-white">60° à 100° (+1)</span>
-          </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="2" id="elbow-2" className="h-5 w-5 group-hover:border-green-400" />
-                        <span className="text-white">0° à 60° (+2)</span>
-                      </label>
+                      Score: <span className={getScoreColor(elbowScore, 3)}>{elbowScore}</span>/3
+                    </span>
+                  </h3>
+
+                  <div className="space-y-4">
+                    <RadioGroup value={elbowPosition} onValueChange={setElbowPosition} className="space-y-2">
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="0-60" id="elbow-0-60" className="border-cyan-500 text-cyan-500" />
+                        <Label htmlFor="elbow-0-60" className="cursor-pointer w-full text-white">
+                          0 à 60 degrés (+1)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="60-100" id="elbow-60-100" className="border-amber-500 text-amber-500" />
+                        <Label htmlFor="elbow-60-100" className="cursor-pointer w-full text-white">
+                          60 à 100 degrés (+2)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="100+" id="elbow-100+" className="border-rose-500 text-rose-500" />
+                        <Label htmlFor="elbow-100+" className="cursor-pointer w-full text-white">
+                          Plus de 100 degrés (+2)
+                        </Label>
+                      </div>
                     </RadioGroup>
 
-                    <div className="space-y-2 pt-4 mt-4 border-t border-gray-600">
-                      <h5 className="text-sm font-medium text-gray-400 mb-2">Ajustements supplémentaires</h5>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
+                    <div className="space-y-2 pt-2 border-t border-gray-800">
+                      <Label className="text-sm text-gray-300">Ajustements</Label>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
                         <Checkbox
-                          id="elbow-opposite"
-                          checked={postureAdjustments.elbowOpposite}
-                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('elbowOpposite', checked)}
-                          className="h-5 w-5 group-hover:border-green-400"
+                          id="forearm-crossing"
+                          checked={forearmCrossing}
+                          onCheckedChange={(checked) => setForearmCrossing(checked === true)}
+                          className="border-cyan-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:text-gray-900"
                         />
-                        <span className="text-white">Travail sur la moitié du corps opposé (+1)</span>
-                      </label>
-          </div>
+                        <Label htmlFor="forearm-crossing" className="cursor-pointer w-full text-white">
+                          L'avant-bras travaille en croisant la ligne médiane du corps (+1)
+                        </Label>
+                      </div>
+                    </div>
                   </div>
+                </CardContent>
+              </Card>
 
-                  {/* Poignet */}
-                  <div className="space-y-4 p-4 rounded-lg bg-gray-800/50 border-l-4 border-violet-500">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-lg font-medium text-white">Poignet</h4>
-                      <span className={`text-lg font-semibold ${getScoreColor(
-                        postureScores.wrist + 
-                        (postureAdjustments.wristDeviation ? 1 : 0) + 
-                        (postureAdjustments.wristPartialRotation ? 1 : 0) + 
-                        (postureAdjustments.wristFullRotation ? 2 : 0),
-                        maxScores.wrist,
-                        'purple'
-                      )}`}>
-                        Score: {postureScores.wrist + 
-                          (postureAdjustments.wristDeviation ? 1 : 0) + 
-                          (postureAdjustments.wristPartialRotation ? 1 : 0) + 
-                          (postureAdjustments.wristFullRotation ? 2 : 0)}
-                        /{maxScores.wrist}
-            </span>
-        </div>
-        
-                    <RadioGroup
-                      value={String(postureScores.wrist)}
-                      onValueChange={(value: string) => updatePostureScore('wrist', Number(value))}
-                      className="grid grid-cols-2 gap-3"
+              <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-colors">
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-medium mb-4 flex items-center justify-between">
+                    <span className="flex items-center">
+                      <div className="relative h-5 w-5 mr-2 text-cyan-400">
+                        <div className="absolute top-2 left-0 w-5 h-1 bg-current rounded-full"></div>
+                        <div className="absolute top-0 right-0 w-1 h-3 bg-current rounded-full"></div>
+                      </div>
+                      <span className="text-white font-bold">Poignet</span>
+                    </span>
+                    <span
+                      className={`text-sm px-2 py-1 rounded ${getScoreBgColor(wristScore, 6)} border ${getScoreBorderColor(wristScore, 6)}`}
                     >
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="1" id="wrist-1" className="h-5 w-5 group-hover:border-purple-400" />
-                        <span className="text-white">0° (+1)</span>
-          </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="2" id="wrist-2" className="h-5 w-5 group-hover:border-purple-400" />
-                        <span className="text-white">-15° à 15° (+2)</span>
-                      </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="3" id="wrist-3" className="h-5 w-5 group-hover:border-purple-400" />
-                        <span className="text-white">15° ou plus (+3)</span>
-                      </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="3" id="wrist-4" className="h-5 w-5 group-hover:border-purple-400" />
-                        <span className="text-white">-15° ou moins (+3)</span>
-                      </label>
+                      Score: <span className={getScoreColor(wristScore, 6)}>{wristScore}</span>/6
+                    </span>
+                  </h3>
+
+                  <div className="space-y-4">
+                    <RadioGroup value={wristPosition} onValueChange={setWristPosition} className="space-y-2">
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="0" id="wrist-0" className="border-cyan-500 text-cyan-500" />
+                        <Label htmlFor="wrist-0" className="cursor-pointer w-full text-white">
+                          0 degré (+1)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="-15-15" id="wrist-15" className="border-amber-500 text-amber-500" />
+                        <Label htmlFor="wrist-15" className="cursor-pointer w-full text-white">
+                          -15 à 15 degrés (+2)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="15+" id="wrist-15+" className="border-rose-500 text-rose-500" />
+                        <Label htmlFor="wrist-15+" className="cursor-pointer w-full text-white">
+                          15 degrés ou plus (+3)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="-15-" id="wrist-15-" className="border-rose-500 text-rose-500" />
+                        <Label htmlFor="wrist-15-" className="cursor-pointer w-full text-white">
+                          -15 degrés ou moins (+3)
+                        </Label>
+                      </div>
                     </RadioGroup>
 
-                    <div className="space-y-2 pt-4 mt-4 border-t border-gray-600">
-                      <h5 className="text-sm font-medium text-gray-400 mb-2">Ajustements supplémentaires</h5>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
+                    <div className="space-y-2 pt-2 border-t border-gray-800">
+                      <Label className="text-sm text-gray-300">Ajustements</Label>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
                         <Checkbox
                           id="wrist-deviation"
-                          checked={postureAdjustments.wristDeviation}
-                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('wristDeviation', checked)}
-                          className="h-5 w-5 group-hover:border-purple-400"
+                          checked={wristDeviation}
+                          onCheckedChange={(checked) => setWristDeviation(checked === true)}
+                          className="border-cyan-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:text-gray-900"
                         />
-                        <span className="text-white">Déviation radiale/ulnaire (+1)</span>
-                      </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
+                        <Label htmlFor="wrist-deviation" className="cursor-pointer w-full text-white">
+                          Le poignet est en adduction ou abduction (+1)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
                         <Checkbox
-                          id="wrist-partial-rotation"
-                          checked={postureAdjustments.wristPartialRotation}
-                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('wristPartialRotation', checked)}
-                          className="h-5 w-5 group-hover:border-purple-400"
+                          id="wrist-pronation-partial"
+                          checked={wristPronationPartial}
+                          onCheckedChange={(checked) => setWristPronationPartial(checked === true)}
+                          className="border-cyan-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:text-gray-900"
                         />
-                        <span className="text-white">Pronation/supination partielle (+1)</span>
-                      </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
+                        <Label htmlFor="wrist-pronation-partial" className="cursor-pointer w-full text-white">
+                          Le poignet est en pronation/supination partielle (+1)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
                         <Checkbox
-                          id="wrist-full-rotation"
-                          checked={postureAdjustments.wristFullRotation}
-                          onCheckedChange={(checked: boolean) => updatePostureAdjustment('wristFullRotation', checked)}
-                          className="h-5 w-5 group-hover:border-purple-400"
+                          id="wrist-pronation-complete"
+                          checked={wristPronationComplete}
+                          onCheckedChange={(checked) => setWristPronationComplete(checked === true)}
+                          className="border-rose-500 data-[state=checked]:bg-rose-500 data-[state=checked]:text-gray-900"
                         />
-                        <span className="text-white">Pronation/supination complète (+2)</span>
-                      </label>
-          </div>
-      </div>
-      
-                  {/* Tronc */}
-                  <div className="space-y-4 p-4 rounded-lg bg-gray-800/50 border-l-4 border-amber-500">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-lg font-medium text-white">Tronc</h4>
-                      <span className={`text-lg font-semibold ${getScoreColor(
-                        postureScores.trunk,
-                        maxScores.trunk,
-                        'yellow'
-                      )}`}>
-                        Score: {postureScores.trunk}/{maxScores.trunk}
-            </span>
-          </div>
-
-                    <RadioGroup
-                      value={String(postureScores.trunk)}
-                      onValueChange={(value: string) => updatePostureScore('trunk', Number(value))}
-                      className="grid grid-cols-2 gap-3"
-                    >
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="1" id="trunk-1" className="h-5 w-5 group-hover:border-yellow-400" />
-                        <span className="text-white">0° (+1)</span>
-                      </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="2" id="trunk-2" className="h-5 w-5 group-hover:border-yellow-400" />
-                        <span className="text-white">0° à 20° (+2)</span>
-                      </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="3" id="trunk-3" className="h-5 w-5 group-hover:border-yellow-400" />
-                        <span className="text-white">20° à 60° (+3)</span>
-                      </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="4" id="trunk-4" className="h-5 w-5 group-hover:border-yellow-400" />
-                        <span className="text-white">60° ou plus (+4)</span>
-                      </label>
-                    </RadioGroup>
-        </div>
-          
-                  {/* Jambes */}
-                  <div className="space-y-4 p-4 rounded-lg bg-gray-800/50 border-l-4 border-orange-500">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-lg font-medium text-white">Jambes</h4>
-                      <span className={`text-lg font-semibold ${getScoreColor(
-                        postureScores.legs,
-                        maxScores.legs,
-                        'orange'
-                      )}`}>
-                        Score: {postureScores.legs}/{maxScores.legs}
-                      </span>
-      </div>
-      
-                    <RadioGroup
-                      value={String(postureScores.legs)}
-                      onValueChange={(value: string) => updatePostureScore('legs', Number(value))}
-                      className="grid grid-cols-2 gap-3"
-                    >
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="1" id="legs-1" className="h-5 w-5 group-hover:border-orange-400" />
-                        <span className="text-white">Position assise (+1)</span>
-                      </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="2" id="legs-2" className="h-5 w-5 group-hover:border-orange-400" />
-                        <span className="text-white">Position à genou (+2)</span>
-                      </label>
-                      <label className="flex items-center space-x-3 p-3 rounded-md bg-gray-700/50 hover:bg-gray-700 cursor-pointer group">
-                        <RadioGroupItem value="2" id="legs-3" className="h-5 w-5 group-hover:border-orange-400" />
-                        <span className="text-white">Position debout (+2)</span>
-                      </label>
-                    </RadioGroup>
-        </div>
-      </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Section Fréquences */}
-          <AccordionItem value="frequences" className="border-b border-gray-800">
-            <AccordionTrigger className="text-xl font-semibold text-white hover:text-gray-300">
-              <div className="flex items-center gap-4">
-                {isSectionComplete('frequences') ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-yellow-500" />
-                )}
-                <span>Fréquences</span>
-        </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-6 p-4">
-                <div className="text-sm text-gray-400 mb-4">
-                  {getSectionStatus('frequences')}
-          </div>
-          
-                {/* Fréquence de manipulation */}
-                <div className={`group p-4 pb-16 rounded-lg bg-gray-800/30 hover:bg-gray-800/40 transition-all duration-300 border-l-4 ${physicalSliderColors.loadFrequency.border}`}>
-                  <div className="flex items-center justify-between mb-10">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-3xl font-semibold ${physicalSliderColors.loadFrequency.text}`}>Fréquence de manipulation</span>
-                      <InfoTooltip content="Combien de fois je manipule la/les charges par heure (Pousser, Tirer, Tourner, Maintenir, Porter, Jeter)" />
-            </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-3xl font-semibold text-gray-400">Fréquence:</span>
-                      <span className={`text-5xl font-mono font-bold ${physicalSliderColors.loadFrequency.text} bg-gray-800 px-4 py-2 rounded-md min-w-[6rem] text-center`}>
-                        {frequency.toString().padStart(2, '0')}
-                      </span>
-                      <span className="text-3xl font-semibold text-gray-400">/h</span>
-        </div>
-      </div>
-      
-                  <div className="relative mt-6">
-                    {/* Barre de progression */}
-                    <div className="h-2 bg-gray-700 rounded-sm overflow-hidden">
-                      <div 
-                        className={`h-full bg-gradient-to-r ${physicalSliderColors.loadFrequency.from} ${physicalSliderColors.loadFrequency.to} transition-all duration-150`}
-                        style={{ width: `${((frequency - 2) / 58) * 100}%` }}
-                      />
-            </div>
-
-                    {/* Curseur personnalisé */}
-                    <div 
-                      className="absolute top-1/2 -translate-y-1/2 pointer-events-none"
-                      style={{ left: `calc(${((frequency - 2) / 58) * 100}% - 6px)` }}
-                    >
-                      <div className={`w-3 h-6 bg-white rounded-sm shadow-lg border ${physicalSliderColors.loadFrequency.border}`} />
-          </div>
-          
-                    {/* Input range masqué */}
-            <input
-              type="range"
-                      min={2}
-              max={60}
-                      value={frequency}
-                      onChange={(e) => handleFrequencyChange(Number(e.target.value))}
-                      className="absolute inset-0 w-full opacity-0 cursor-pointer"
-                    />
-
-                    {/* Graduations principales */}
-                    <div className="absolute w-full flex justify-between px-1 top-4 mt-2">
-                      {[2, 15, 30, 45, 60].map((mark) => (
-                        <div key={mark} className="flex flex-col items-center">
-                          <div className={`h-2 w-0.5 ${frequency >= mark ? physicalSliderColors.loadFrequency.active : physicalSliderColors.loadFrequency.inactive}`} />
-                          <span className={`text-3xl mt-1 ${frequency >= mark ? physicalSliderColors.loadFrequency.text : 'text-gray-500'}`}>
-                            {mark}
-                          </span>
-            </div>
-                      ))}
-          </div>
-          
-                    {/* Graduations secondaires */}
-                    <div className="absolute w-full flex justify-between px-1 top-4">
-                      {Array.from({ length: 58 }, (_, i) => i + 3)
-                        .filter(mark => mark % 15 !== 0 && mark % 5 === 0)
-                        .map((mark) => (
-                          <SecondaryMark
-                            key={mark}
-                            mark={mark}
-                            value={frequency}
-                            activeClass={physicalSliderColors.loadFrequency.activeLight}
-                          />
-                        ))}
-            </div>
-          </div>
-                </div>
-
-                {/* Fréquence posture contraignante */}
-                <div className={`group p-4 pb-16 rounded-lg bg-gray-800/30 hover:bg-gray-800/40 transition-all duration-300 border-l-4 ${physicalSliderColors.postureFrequency.border}`}>
-                  <div className="flex items-center justify-between mb-10">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-3xl font-semibold ${physicalSliderColors.postureFrequency.text}`}>Fréquence posture contraignante</span>
-                      <InfoTooltip content="Combien de fois par heure je suis dans la posture la plus contraignante (équivalente ou presque à la posture évaluée ci-dessus)" />
+                        <Label htmlFor="wrist-pronation-complete" className="cursor-pointer w-full text-white">
+                          Le poignet est en pronation/supination complète (+2)
+                        </Label>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-3xl font-semibold text-gray-400">Fréquence:</span>
-                      <span className={`text-5xl font-mono font-bold ${physicalSliderColors.postureFrequency.text} bg-gray-800 px-4 py-2 rounded-md min-w-[6rem] text-center`}>
-                        {frequency.toString().padStart(2, '0')}
-                      </span>
-                      <span className="text-3xl font-semibold text-gray-400">/h</span>
-        </div>
-      </div>
-      
-                  <div className="relative mt-6">
-                    {/* Barre de progression */}
-                    <div className="h-2 bg-gray-700 rounded-sm overflow-hidden">
-                      <div 
-                        className={`h-full bg-gradient-to-r ${physicalSliderColors.postureFrequency.from} ${physicalSliderColors.postureFrequency.to} transition-all duration-150`}
-                        style={{ width: `${((frequency - 2) / 58) * 100}%` }}
-                      />
-            </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-                    {/* Curseur personnalisé */}
-                    <div 
-                      className="absolute top-1/2 -translate-y-1/2 pointer-events-none"
-                      style={{ left: `calc(${((frequency - 2) / 58) * 100}% - 6px)` }}
-                    >
-                      <div className={`w-3 h-6 bg-white rounded-sm shadow-lg border ${physicalSliderColors.postureFrequency.border}`} />
-          </div>
-          
-                    {/* Input range masqué */}
-            <input
-              type="range"
-                      min={2}
-                      max={60}
-                      value={frequency}
-                      onChange={(e) => handleFrequencyChange(Number(e.target.value))}
-                      className="absolute inset-0 w-full opacity-0 cursor-pointer"
-                    />
-
-                    {/* Graduations principales */}
-                    <div className="absolute w-full flex justify-between px-1 top-4 mt-2">
-                      {[2, 15, 30, 45, 60].map((mark) => (
-                        <div key={mark} className="flex flex-col items-center">
-                          <div className={`h-2 w-0.5 ${frequency >= mark ? physicalSliderColors.postureFrequency.active : physicalSliderColors.postureFrequency.inactive}`} />
-                          <span className={`text-3xl mt-1 ${frequency >= mark ? physicalSliderColors.postureFrequency.text : 'text-gray-500'}`}>
-                            {mark}
-                          </span>
-            </div>
-                      ))}
-          </div>
-          
-                    {/* Graduations secondaires */}
-                    <div className="absolute w-full flex justify-between px-1 top-4">
-                      {Array.from({ length: 58 }, (_, i) => i + 3)
-                        .filter(mark => mark % 15 !== 0 && mark % 5 === 0)
-                        .map((mark) => (
-                          <SecondaryMark
-                            key={mark}
-                            mark={mark}
-                            value={frequency}
-                            activeClass={physicalSliderColors.postureFrequency.activeLight}
-                          />
-                        ))}
-            </div>
-          </div>
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Section Charge Mentale */}
-          <AccordionItem value="mental" className="border-b border-gray-800">
-            <AccordionTrigger>
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-4">
-                  {calculateMentalWorkloadScore() > 0 ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <AlertCircle className="h-5 w-5 text-yellow-500" />
-                  )}
-                  <span className="text-xl font-semibold text-white hover:text-gray-300">Charge Mentale</span>
-                  <span className="text-sm font-normal text-gray-400 italic">Adaptation du questionnaire NASA-TLX (Task Load Index) par Hart et Staveland, 1988</span>
-            </div>
-          </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-6 p-4">
-                {/* Score Global */}
-                <div className="p-4 bg-gradient-to-r from-emerald-950/15 via-emerald-900/10 to-emerald-950/15 rounded-lg mb-6 border border-emerald-800/20">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-2xl font-medium text-white/90">Score Global de Charge Mentale</h4>
-                    <span className="text-3xl font-bold text-emerald-400/80">
-                      {calculateMentalWorkloadScore()}/120
+              <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-colors">
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-medium mb-4 flex items-center justify-between">
+                    <span className="flex items-center">
+                      <div className="relative h-5 w-5 mr-2 text-cyan-400">
+                        <div className="absolute top-0 left-1 w-1 h-5 bg-current rounded-full"></div>
+                        <div className="absolute top-0 right-1 w-1 h-5 bg-current rounded-full"></div>
+                      </div>
+                      <span className="text-white font-bold">Tronc</span>
                     </span>
-        </div>
-      </div>
-      
-                {/* Sliders */}
-                {Object.entries(mentalWorkload).map(([key, value]) => {
-                  const colors = {
-                    mentalDemand: {
-                      from: 'from-violet-600',
-                      to: 'to-violet-400',
-                      border: 'border-violet-500',
-                      text: 'text-violet-400',
-                      active: 'bg-violet-500',
-                      activeLight: 'bg-violet-500/30',
-                      inactive: 'bg-gray-600',
-                      bg: 'bg-violet-900/10'
-                    },
-                    physicalDemand: {
-                      from: 'from-blue-600',
-                      to: 'to-blue-400',
-                      border: 'border-blue-500',
-                      text: 'text-blue-400',
-                      active: 'bg-blue-500',
-                      activeLight: 'bg-blue-500/30',
-                      inactive: 'bg-gray-600',
-                      bg: 'bg-blue-900/10'
-                    },
-                    temporalDemand: {
-                      from: 'from-indigo-600',
-                      to: 'to-indigo-400',
-                      border: 'border-indigo-500',
-                      text: 'text-indigo-400',
-                      active: 'bg-indigo-500',
-                      activeLight: 'bg-indigo-500/30',
-                      inactive: 'bg-gray-600',
-                      bg: 'bg-indigo-900/10'
-                    },
-                    performance: {
-                      from: 'from-cyan-600',
-                      to: 'to-cyan-400',
-                      border: 'border-cyan-500',
-                      text: 'text-cyan-400',
-                      active: 'bg-cyan-500',
-                      activeLight: 'bg-cyan-500/30',
-                      inactive: 'bg-gray-600',
-                      bg: 'bg-cyan-900/10'
-                    },
-                    effort: {
-                      from: 'from-fuchsia-600',
-                      to: 'to-fuchsia-400',
-                      border: 'border-fuchsia-500',
-                      text: 'text-fuchsia-400',
-                      active: 'bg-fuchsia-500',
-                      activeLight: 'bg-fuchsia-500/30',
-                      inactive: 'bg-gray-600',
-                      bg: 'bg-fuchsia-900/10'
-                    },
-                    frustration: {
-                      from: 'from-purple-600',
-                      to: 'to-purple-400',
-                      border: 'border-purple-500',
-                      text: 'text-purple-400',
-                      active: 'bg-purple-500',
-                      activeLight: 'bg-purple-500/30',
-                      inactive: 'bg-gray-600',
-                      bg: 'bg-purple-900/10'
-                    }
-                  }
+                    <span
+                      className={`text-sm px-2 py-1 rounded ${getScoreBgColor(trunkScore, 6)} border ${getScoreBorderColor(trunkScore, 6)}`}
+                    >
+                      Score: <span className={getScoreColor(trunkScore, 6)}>{trunkScore}</span>/6
+                    </span>
+                  </h3>
 
-                  const itemColors = colors[key as keyof typeof colors]
+                  <div className="space-y-4">
+                    <RadioGroup value={trunkPosition} onValueChange={setTrunkPosition} className="space-y-2">
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="0" id="trunk-0" className="border-cyan-500 text-cyan-500" />
+                        <Label htmlFor="trunk-0" className="cursor-pointer w-full text-white">
+                          0 degré (+1)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="0-20" id="trunk-0-20" className="border-teal-500 text-teal-500" />
+                        <Label htmlFor="trunk-0-20" className="cursor-pointer w-full text-white">
+                          0 à 20 degrés (+2)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="20-60" id="trunk-20-60" className="border-amber-500 text-amber-500" />
+                        <Label htmlFor="trunk-20-60" className="cursor-pointer w-full text-white">
+                          20 à 60 degrés (+3)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="60+" id="trunk-60+" className="border-rose-500 text-rose-500" />
+                        <Label htmlFor="trunk-60+" className="cursor-pointer w-full text-white">
+                          60 degrés ou plus (+4)
+                        </Label>
+                      </div>
+                    </RadioGroup>
 
-                  return (
-                    <div key={key} className={`group p-4 pb-16 rounded-lg bg-gray-800/30 hover:bg-gray-800/40 transition-all duration-300 border-l-4 ${itemColors.border}`}>
-                      <div className="flex flex-col gap-2 mb-10">
-                        <div className="flex items-center justify-between">
-                          <span className={`text-3xl font-semibold ${itemColors.text}`}>
-                            {key === 'mentalDemand' ? 'Exigence Mentale' :
-                             key === 'physicalDemand' ? 'Exigence Physique' :
-                             key === 'temporalDemand' ? 'Exigence Temporelle' :
-                             key === 'performance' ? 'Performance' :
-                             key === 'effort' ? 'Effort' : 'Frustration'}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-3xl font-semibold text-gray-400">Score:</span>
-                            <span className={`text-5xl font-mono font-bold ${itemColors.text} bg-gray-800 px-4 py-2 rounded-md min-w-[6rem] text-center`}>
-                              {value.toString().padStart(2, '0')}
-                            </span>
+                    <div className="space-y-2 pt-2 border-t border-gray-800">
+                      <Label className="text-sm text-gray-300">Ajustements</Label>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <Checkbox
+                          id="trunk-rotation"
+                          checked={trunkRotation}
+                          onCheckedChange={(checked) => setTrunkRotation(checked === true)}
+                          className="border-cyan-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:text-gray-900"
+                        />
+                        <Label htmlFor="trunk-rotation" className="cursor-pointer w-full text-white">
+                          Le tronc est en rotation (+1)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <Checkbox
+                          id="trunk-lateral-bending"
+                          checked={trunkLateralBending}
+                          onCheckedChange={(checked) => setTrunkLateralBending(checked === true)}
+                          className="border-cyan-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:text-gray-900"
+                        />
+                        <Label htmlFor="trunk-lateral-bending" className="cursor-pointer w-full text-white">
+                          Le tronc est en flexion latéral (+1)
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-colors">
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-medium mb-4 flex items-center justify-between">
+                    <span className="flex items-center">
+                      <div className="relative h-5 w-5 mr-2 text-cyan-400">
+                        <div className="absolute top-0 left-1 w-1 h-5 bg-current rounded-full"></div>
+                        <div className="absolute top-0 right-1 w-1 h-5 bg-current rounded-full"></div>
+                      </div>
+                      <span className="text-white font-bold">Jambes</span>
+                    </span>
+                    <span
+                      className={`text-sm px-2 py-1 rounded ${getScoreBgColor(legsScore, 4)} border ${getScoreBorderColor(legsScore, 4)}`}
+                    >
+                      Score: <span className={getScoreColor(legsScore, 4)}>{legsScore}</span>/4
+                    </span>
+                  </h3>
+
+                  <div className="space-y-4">
+                    <RadioGroup value={legsPosition} onValueChange={setLegsPosition} className="space-y-2">
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="balanced" id="legs-balanced" className="border-cyan-500 text-cyan-500" />
+                        <Label htmlFor="legs-balanced" className="cursor-pointer w-full text-white">
+                          Posture équilibrée, poids réparti uniformément (+1)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <RadioGroupItem value="unbalanced" id="legs-unbalanced" className="border-amber-500 text-amber-500" />
+                        <Label htmlFor="legs-unbalanced" className="cursor-pointer w-full text-white">
+                          Posture déséquilibrée, poids non réparti uniformément (+2)
+                        </Label>
+                      </div>
+                    </RadioGroup>
+
+                    <div className="space-y-2 pt-2 border-t border-gray-800">
+                      <Label className="text-sm text-gray-300">Ajustements</Label>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <Checkbox
+                          id="legs-kneeling"
+                          checked={legsKneeling}
+                          onCheckedChange={(checked) => setLegsKneeling(checked === true)}
+                          className="border-cyan-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:text-gray-900"
+                        />
+                        <Label htmlFor="legs-kneeling" className="cursor-pointer w-full text-white">
+                          Position à genoux ou accroupie (+1)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition-colors">
+                        <Checkbox
+                          id="legs-walking"
+                          checked={legsWalking}
+                          onCheckedChange={(checked) => setLegsWalking(checked === true)}
+                          className="border-cyan-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:text-gray-900"
+                        />
+                        <Label htmlFor="legs-walking" className="cursor-pointer w-full text-white">
+                          Position debout avec marche fréquente (+1)
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
+            <div className="flex justify-end mt-6">
+              <Button 
+                onClick={handleSave} 
+                className={`${saveFeedback === 'posture' ? 'bg-green-600 hover:bg-green-700' : 'bg-cyan-600 hover:bg-cyan-700'} text-white transition-colors`}
+              >
+                {saveFeedback === 'posture' ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Enregistré !
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Enregistrer
+                  </>
+                )}
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="frequency">
+            <Card className="bg-gray-900 border-gray-800 mb-4">
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium mb-4">
+                      <div className="flex items-center">
+                        <Repeat className="h-5 w-5 mr-2 text-cyan-400" />
+                        <span>Fréquence</span>
+                      </div>
+                    </h3>
+                    <div className="flex items-center">
+                      <div className="w-24 h-12 bg-black rounded-lg border border-gray-800 flex items-center justify-center">
+                        <span className="text-xl font-semibold text-gray-300">{getIntermediateScore(frequency, 120)}/20</span>
+                      </div>
+                      {savedSections.frequency && (
+                        <div className="flex items-center text-green-500 text-sm ml-4">
+                          <CheckCircle2 className="h-4 w-4 mr-1" />
+                          <span>Section enregistrée</span>
                         </div>
-                        <p className="text-base text-gray-400 mt-1">
-                          {mentalWorkloadDefinitions[key as keyof typeof mentalWorkloadDefinitions]}
-                        </p>
-          </div>
-          
-                      <div className="relative mt-6">
-                        {/* Barre de progression */}
-                        <div className="h-2 bg-gray-700 rounded-sm overflow-hidden">
-                          <div 
-                            className={`h-full bg-gradient-to-r ${itemColors.from} ${itemColors.to} transition-all duration-150`}
-                            style={{ width: `${(value / 20) * 100}%` }}
-                          />
-            </div>
-
-                        {/* Curseur personnalisé */}
-                        <div 
-                          className="absolute top-1/2 -translate-y-1/2 pointer-events-none"
-                          style={{ left: `calc(${(value / 20) * 100}% - 6px)` }}
-                        >
-                          <div className={`w-3 h-6 bg-white rounded-sm shadow-lg border ${itemColors.border}`} />
-          </div>
-          
-                        {/* Input range masqué */}
-            <input
-              type="range"
-              min={0}
-                          max={20}
-                          step={1}
-                          value={value}
-                          onChange={(e) => setMentalWorkload({
-                            ...mentalWorkload,
-                            [key]: Number(e.target.value)
-                          })}
-                          className="absolute inset-0 w-full opacity-0 cursor-pointer"
-                        />
-
-                        {/* Graduations principales */}
-                        <div className="absolute w-full flex justify-between px-1 top-4 mt-2">
-                          {[0, 5, 10, 15, 20].map((mark) => (
-                            <div key={mark} className="flex flex-col items-center">
-                              <div className={`h-2 w-0.5 ${value >= mark ? itemColors.active : itemColors.inactive}`} />
-                              <span className={`text-3xl mt-1 ${value >= mark ? itemColors.text : 'text-gray-500'}`}>
-                                {mark}
-                              </span>
-            </div>
-                          ))}
-          </div>
-          
-                        {/* Graduations secondaires */}
-                        <div className="absolute w-full flex justify-between px-1 top-4">
-                          {Array.from({ length: 19 }, (_, i) => i + 1)
-                            .filter(mark => mark % 5 !== 0)
-                            .map((mark) => (
-                              <SecondaryMark
-                                key={mark}
-                                mark={mark}
-                                value={value}
-                                activeClass={itemColors.activeLight}
-                              />
-                            ))}
-            </div>
-          </div>
+                      )}
                     </div>
-                  )
-                })}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Section Risques Psychosociaux */}
-          <AccordionItem value="psychosocial" className="border-b border-gray-800">
-            <AccordionTrigger className="text-xl font-semibold text-white hover:text-gray-300">
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-4">
-                  {calculatePsychosocialScore() > 0 ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <AlertCircle className="h-5 w-5 text-yellow-500" />
-                  )}
-                  <span>Risques Psychosociaux</span>
-                  <span className="text-sm font-normal text-gray-400 italic">Adaptation des documents ressources de l'INRS</span>
+                  </div>
+                  <p className="text-sm text-gray-300 mb-4">
+                    Évaluez la fréquence des actions techniques et des changements de posture.
+                  </p>
                 </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-6 p-4">
-                {/* Score Total */}
-                <div className="p-4 bg-gradient-to-r from-emerald-950/15 via-emerald-900/10 to-emerald-950/15 rounded-lg mb-6 border border-emerald-800/20">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-2xl font-medium text-white/90">Score Global des Risques Psychosociaux</h4>
-                    <div className="flex items-center gap-2">
-                      <div className="w-24 h-2 bg-emerald-950/20 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-emerald-700/40 to-emerald-600/40 transition-all duration-500"
-                          style={{ width: `${calculatePsychosocialScore()}%` }}
-                        />
-                      </div>
-                      <span className="text-3xl font-bold text-emerald-400/80 min-w-[4rem] text-right">
-                        {calculatePsychosocialScore()}%
-                      </span>
+              </CardContent>
+            </Card>
+            <Card className="bg-gray-900 border-gray-800">
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <Label htmlFor="actionFrequency" className="text-white">
+                        Fréquence des actions techniques (par minute)
+                      </Label>
+                      <span className="text-white">{frequency} actions/min</span>
                     </div>
-            </div>
-          </div>
-          
-                {/* Catégories de risques psychosociaux */}
-                {Object.entries(psychosocialDefinitions).map(([category, data]) => {
-                  const colors = psychosocialColors[category as keyof typeof psychosocialColors]
-                  return (
-                    <div key={category} className={`space-y-4 p-6 rounded-lg bg-gradient-to-r ${colors.gradient} border-l-4 ${colors.border} transition-all duration-300 hover:shadow-lg hover:shadow-gray-900/20`}>
-                      <div className="flex items-center gap-3 mb-6">
-                        <h3 className={`text-xl font-semibold ${colors.text}`}>{data.title}</h3>
-                        <div className="h-px flex-1 bg-gradient-to-r from-gray-700/50 to-transparent" />
+                    <Slider
+                      id="actionFrequency"
+                      value={[frequency]}
+                      onValueChange={(value) => setFrequency(value[0])}
+                      min={0}
+                      max={60}
+                      step={1}
+                      className="cursor-pointer"
+                    />
+                    <div className="flex justify-between text-xs text-gray-300 mt-1">
+                      <span>0 actions/min</span>
+                      <span>60 actions/min</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-8">
+                    <div className="flex justify-between mb-2">
+                      <Label htmlFor="postureFrequency" className="text-white">
+                        Fréquence des changements de posture (par minute)
+                      </Label>
+                      <span className="text-white">{postureFrequency} changements/min</span>
+                    </div>
+                    <Slider
+                      id="postureFrequency"
+                      value={[postureFrequency]}
+                      onValueChange={(value) => setPostureFrequency(value[0])}
+                      min={0}
+                      max={60}
+                      step={1}
+                      className="cursor-pointer"
+                    />
+                    <div className="flex justify-between text-xs text-gray-300 mt-1">
+                      <span>0 changements/min</span>
+                      <span>60 changements/min</span>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`p-4 rounded-lg mt-6 ${getScoreBgColor(
+                      (frequency + postureFrequency) / 2,
+                      60
+                    )} border ${getScoreBorderColor((frequency + postureFrequency) / 2, 60)}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Timer className={`h-5 w-5 ${getScoreColor((frequency + postureFrequency) / 2, 60)}`} />
+                      <span className="font-medium text-white">Évaluation de la fréquence</span>
+                    </div>
+                    <p className="mt-2 text-sm text-white">
+                      {(frequency + postureFrequency) / 2 < 15
+                        ? "Fréquence faible - Risque faible"
+                        : (frequency + postureFrequency) / 2 < 30
+                          ? "Fréquence modérée - Risque modéré"
+                          : (frequency + postureFrequency) / 2 < 45
+                            ? "Fréquence élevée - Risque élevé"
+                            : "Fréquence très élevée - Risque très élevé"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <Button 
+                    onClick={handleSave} 
+                    className={`${saveFeedback === 'frequency' ? 'bg-green-600 hover:bg-green-700' : 'bg-cyan-600 hover:bg-cyan-700'} text-white transition-colors`}
+                  >
+                    {saveFeedback === 'frequency' ? (
+                      <>
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Enregistré !
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Enregistrer
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="mental">
+            <Card className="bg-gray-900 border-gray-800 mb-4">
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium mb-4">
+                      <div className="flex items-center">
+                        <Brain className="h-5 w-5 mr-2 text-cyan-400" />
+                        <span>Charge Mentale</span>
                       </div>
-                      <div className="space-y-6">
-                        {Object.entries(data).filter(([key]) => key !== 'title').map(([subCategory, question]) => {
-                          const isPositive = psychosocialDirections[category as keyof typeof psychosocialDirections][subCategory as keyof typeof psychosocialDirections[keyof typeof psychosocialDirections]]
-                          const currentValue = psychosocialRisks[category as keyof PsychosocialRisks][subCategory as keyof typeof psychosocialRisks[keyof PsychosocialRisks]]
-                          const score = isPositive ? currentValue : 3 - currentValue
-                          
-                          return (
-                            <div key={subCategory} className="space-y-3">
-                              <div className="flex items-start gap-2">
-                                <span className="text-sm text-gray-300">{question}</span>
-                                <InfoTooltip content={`${question} (${isPositive ? 'Plus la réponse est "Oui", plus c\'est positif' : 'Plus la réponse est "Non", plus c\'est positif'})`} />
-                              </div>
-                              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                                {psychosocialOptions.map((option) => (
-                                  <label
-                                    key={option.value}
-                                    className={`
-                                      flex items-center justify-center p-3 rounded-md
-                                      ${currentValue === option.value
-                                        ? `${colors.active} text-white shadow-lg shadow-gray-900/20`
-                                        : `${colors.hover} text-gray-300`
-                                      }
-                                      cursor-pointer transition-all duration-200
-                                      border border-gray-700/30
-                                      hover:scale-[1.02] hover:shadow-md
-                                    `}
-                                  >
-            <input
-                                      type="radio"
-                                      name={`${category}-${subCategory}`}
-                                      value={option.value}
-                                      checked={currentValue === option.value}
-                                      onChange={() => updatePsychosocialRisk(category as keyof PsychosocialRisks, subCategory, option.value)}
-                                      className="sr-only"
-                                    />
-                                    <span className="text-sm font-medium">{option.label}</span>
-                                  </label>
-                                ))}
+                    </h3>
+                    <div className="flex items-center">
+                      <div className="w-24 h-12 bg-black rounded-lg border border-gray-800 flex items-center justify-center">
+                        <span className="text-xl font-semibold text-gray-300">{getIntermediateScore(
+                          Object.values(mentalWorkload).reduce((acc, val) => acc + val, 0),
+                          120
+                        )}/20</span>
+                      </div>
+                      {savedSections.mental && (
+                        <div className="flex items-center text-green-500 text-sm ml-4">
+                          <CheckCircle2 className="h-4 w-4 mr-1" />
+                          <span>Section enregistrée</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-300 mb-4">
+                    Évaluez la charge mentale de travail en utilisant les curseurs ci-dessous. Chaque dimension est notée de 0 à 20.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            <div className="grid grid-cols-1 gap-6">
+              {Object.entries(mentalWorkload).map(([key, value]) => (
+                <Card key={key} className="bg-gray-900 border-gray-800 p-4 rounded-lg">
+                  <CardContent className="pt-6">
+                    <h3 className="text-lg font-medium mb-4 flex items-center justify-between">
+                      <span className="flex items-center">
+                        <div className="relative h-5 w-5 mr-2 text-cyan-400">
+                          <div className="absolute top-0 left-1/2 w-1 h-5 bg-current rounded-full transform -translate-x-1/2"></div>
+                          <div className="absolute bottom-0 left-1/2 w-3 h-1 bg-current rounded-full transform -translate-x-1/2"></div>
+                        </div>
+                        {getMentalWorkloadLabel(key)}
+                      </span>
+                      <span
+                        className={`text-sm px-2 py-1 rounded ${getScoreBgColor(value, 20)} border ${getScoreBorderColor(value, 20)}`}
+                      >
+                        Score: <span className={getScoreColor(value, 20)}>{value}</span>/20
+                      </span>
+                    </h3>
+
+                    <div className="space-y-4">
+                      <p className="text-sm text-gray-300 mb-4">{getMentalWorkloadDescription(key)}</p>
+                      <Slider
+                        id={`mental-${key}`}
+                        value={[value]}
+                        onValueChange={(val) =>
+                          setMentalWorkload((prev) => ({ ...prev, [key]: val[0] }))
+                        }
+                        min={0}
+                        max={20}
+                        step={1}
+                        className="cursor-pointer"
+                      />
+                      <div className="flex justify-between text-xs text-gray-300">
+                        {key === 'performance' ? (
+                          <>
+                            <span>Élevé</span>
+                            <span>Faible</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Faible</span>
+                            <span>Élevé</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-                              <div className="flex items-center justify-between text-sm text-gray-400 mt-2">
-                                <span>{isPositive ? 'Négatif' : 'Positif'}</span>
-                                <span className={`font-medium ${score <= 1 ? 'text-red-400' : score <= 2 ? 'text-yellow-400' : 'text-green-400'}`}>
-                                  {score <= 1 ? 'Risque élevé' : score <= 2 ? 'Risque modéré' : 'Risque faible'}
-                                </span>
-                                <span>{isPositive ? 'Positif' : 'Négatif'}</span>
-          </div>
-        </div>
-                          )
-                        })}
-      </div>
-      </div>
-                  )
-                })}
+
+            <div
+              className={`p-4 rounded-lg mt-6 ${getScoreBgColor(mentalScore, 20)} border ${getScoreBorderColor(mentalScore, 20)}`}
+            >
+              <div className="flex items-center gap-2">
+                <Brain className={`h-5 w-5 ${getScoreColor(mentalScore, 20)}`} />
+                <span className="font-medium text-white">Évaluation de la charge mentale</span>
               </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+              <p className="mt-2 text-sm text-white">
+                {mentalScore < 5
+                  ? "Charge mentale faible - Risque faible"
+                  : mentalScore < 10
+                    ? "Charge mentale modérée - Risque modéré"
+                    : mentalScore < 15
+                      ? "Charge mentale élevée - Risque élevé"
+                      : "Charge mentale très élevée - Risque très élevé"}
+              </p>
+            </div>
+
+            <div className="flex justify-end">
+              <Button 
+                onClick={handleSave} 
+                className={`${saveFeedback === 'mental' ? 'bg-green-600 hover:bg-green-700' : 'bg-cyan-600 hover:bg-cyan-700'} text-white transition-colors`}
+              >
+                {saveFeedback === 'mental' ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Enregistré !
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Enregistrer
+                  </>
+                )}
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="psychosocial">
+            <Card className="bg-gray-900 border-gray-800 mb-4">
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium mb-4">
+                      <div className="flex items-center">
+                        <Users className="h-5 w-5 mr-2 text-cyan-400" />
+                        <span>Risques Psychosociaux</span>
+                      </div>
+                    </h3>
+                    <div className="flex items-center">
+                      <div className="w-24 h-12 bg-black rounded-lg border border-gray-800 flex items-center justify-center">
+                        <span className="text-xl font-semibold text-gray-300">{getIntermediateScore(
+                          Object.values(psychosocialRisks).reduce((acc, val) => acc + val, 0),
+                          44
+                        )}/20</span>
+                      </div>
+                      {savedSections.psychosocial && (
+                        <div className="flex items-center text-green-500 text-sm ml-4">
+                          <CheckCircle2 className="h-4 w-4 mr-1" />
+                          <span>Section enregistrée</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-300 mb-4">
+                    Évaluez les risques psychosociaux selon les différentes dimensions ci-dessous.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gray-900 border-gray-800">
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  <Accordion type="single" collapsible className="w-full space-y-4">
+                    {/* Faible autonomie au travail */}
+                    <AccordionItem value="autonomie" className="border-gray-700 rounded-lg overflow-hidden">
+                      <AccordionTrigger className="px-4 py-3 bg-gray-800 hover:bg-gray-700 transition-colors text-white">
+                        <div className="flex items-center">
+                          <Lightbulb className="h-5 w-5 mr-2 text-blue-400" />
+                          <span className="font-medium">Faible autonomie au travail</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="bg-gray-800/80 px-4 py-3 space-y-4 border-l-2 border-blue-500">
+                        {/* Autonomie dans la tâche */}
+                        <div className="space-y-2 border-b border-gray-700 pb-4">
+                          <Label className="text-white font-medium">
+                            Autonomie dans la tâche
+                          </Label>
+                          <p className="text-sm text-gray-300 mb-2">
+                            Les salariés ont-ils des marges de manœuvre dans la manière de réaliser leur travail dès lors que les objectifs sont atteints ?
+                          </p>
+                          <RadioGroup 
+                            value={psychosocialRisks.taskAutonomy.toString()} 
+                            onValueChange={(value) => setPsychosocialRisks(prev => ({...prev, taskAutonomy: parseInt(value)}))}
+                            className="space-y-2"
+                          >
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="0" id="task-autonomy-0" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="task-autonomy-0" className="cursor-pointer w-full text-white">
+                                Jamais/Non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="1" id="task-autonomy-1" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="task-autonomy-1" className="cursor-pointer w-full text-white">
+                                Parfois/Plutôt non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="2" id="task-autonomy-2" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="task-autonomy-2" className="cursor-pointer w-full text-white">
+                                Souvent/Plutôt oui
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="3" id="task-autonomy-3" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="task-autonomy-3" className="cursor-pointer w-full text-white">
+                                Toujours/Oui
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                        
+                        {/* Autonomie temporelle */}
+                        <div className="space-y-2 border-b border-gray-700 pb-4">
+                          <Label className="text-white font-medium">
+                            Autonomie temporelle
+                          </Label>
+                          <p className="text-sm text-gray-300 mb-2">
+                            Les salariés peuvent-ils interrompre momentanément leur travail quand ils en ressentent le besoin ?
+                          </p>
+                          <RadioGroup 
+                            value={psychosocialRisks.temporalAutonomy.toString()} 
+                            onValueChange={(value) => setPsychosocialRisks(prev => ({...prev, temporalAutonomy: parseInt(value)}))}
+                            className="space-y-2"
+                          >
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="0" id="temporal-autonomy-0" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="temporal-autonomy-0" className="cursor-pointer w-full text-white">
+                                Jamais/Non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="1" id="temporal-autonomy-1" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="temporal-autonomy-1" className="cursor-pointer w-full text-white">
+                                Parfois/Plutôt non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="2" id="temporal-autonomy-2" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="temporal-autonomy-2" className="cursor-pointer w-full text-white">
+                                Souvent/Plutôt oui
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="3" id="temporal-autonomy-3" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="temporal-autonomy-3" className="cursor-pointer w-full text-white">
+                                Toujours/Oui
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                        
+                        {/* Utilisation et développement des compétences */}
+                        <div className="space-y-2">
+                          <Label className="text-white font-medium">
+                            Utilisation et développement des compétences
+                          </Label>
+                          <p className="text-sm text-gray-300 mb-2">
+                            Les salariés peuvent-ils utiliser leurs compétences professionnelles et en développer de nouvelles ?
+                          </p>
+                          <RadioGroup 
+                            value={psychosocialRisks.skillsUse.toString()} 
+                            onValueChange={(value) => setPsychosocialRisks(prev => ({...prev, skillsUse: parseInt(value)}))}
+                            className="space-y-2"
+                          >
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="0" id="skills-use-0" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="skills-use-0" className="cursor-pointer w-full text-white">
+                                Jamais/Non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="1" id="skills-use-1" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="skills-use-1" className="cursor-pointer w-full text-white">
+                                Parfois/Plutôt non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="2" id="skills-use-2" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="skills-use-2" className="cursor-pointer w-full text-white">
+                                Souvent/Plutôt oui
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="3" id="skills-use-3" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="skills-use-3" className="cursor-pointer w-full text-white">
+                                Toujours/Oui
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    {/* Rapports sociaux au travail dégradés */}
+                    <AccordionItem value="rapports-sociaux" className="border-gray-700 rounded-lg overflow-hidden">
+                      <AccordionTrigger className="px-4 py-3 bg-gray-800 hover:bg-gray-700 transition-colors text-white">
+                        <div className="flex items-center">
+                          <Users className="h-5 w-5 mr-2 text-purple-400" />
+                          <span className="font-medium">Rapports sociaux au travail dégradés</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="bg-gray-800/80 px-4 py-3 space-y-4 border-l-2 border-purple-500">
+                        {/* Soutien de la part des collègues */}
+                        <div className="space-y-2 border-b border-gray-700 pb-4">
+                          <Label className="text-white font-medium">
+                            Soutien de la part des collègues
+                          </Label>
+                          <p className="text-sm text-gray-300 mb-2">
+                            Existe-t-il des possibilités d'entraide entre les salariés, par exemple en cas de surcharge de travail ou de travail délicat ou compliqué ?
+                          </p>
+                          <RadioGroup 
+                            value={psychosocialRisks.colleagueSupport.toString()} 
+                            onValueChange={(value) => setPsychosocialRisks(prev => ({...prev, colleagueSupport: parseInt(value)}))}
+                            className="space-y-2"
+                          >
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="0" id="colleague-support-0" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="colleague-support-0" className="cursor-pointer w-full text-white">
+                                Jamais/Non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="1" id="colleague-support-1" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="colleague-support-1" className="cursor-pointer w-full text-white">
+                                Parfois/Plutôt non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="2" id="colleague-support-2" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="colleague-support-2" className="cursor-pointer w-full text-white">
+                                Souvent/Plutôt oui
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="3" id="colleague-support-3" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="colleague-support-3" className="cursor-pointer w-full text-white">
+                                Toujours/Oui
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                        
+                        {/* Soutien de la part des supérieurs hiérarchiques */}
+                        <div className="space-y-2 border-b border-gray-700 pb-4">
+                          <Label className="text-white font-medium">
+                            Soutien de la part des supérieurs hiérarchiques
+                          </Label>
+                          <p className="text-sm text-gray-300 mb-2">
+                            Les salariés reçoivent-ils un soutien de la part de l'encadrement ?
+                          </p>
+                          <RadioGroup 
+                            value={psychosocialRisks.hierarchySupport.toString()} 
+                            onValueChange={(value) => setPsychosocialRisks(prev => ({...prev, hierarchySupport: parseInt(value)}))}
+                            className="space-y-2"
+                          >
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="0" id="hierarchy-support-0" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="hierarchy-support-0" className="cursor-pointer w-full text-white">
+                                Jamais/Non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="1" id="hierarchy-support-1" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="hierarchy-support-1" className="cursor-pointer w-full text-white">
+                                Parfois/Plutôt non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="2" id="hierarchy-support-2" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="hierarchy-support-2" className="cursor-pointer w-full text-white">
+                                Souvent/Plutôt oui
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="3" id="hierarchy-support-3" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="hierarchy-support-3" className="cursor-pointer w-full text-white">
+                                Toujours/Oui
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                        
+                        {/* Désaccords professionnels */}
+                        <div className="space-y-2 border-b border-gray-700 pb-4">
+                          <Label className="text-white font-medium">
+                            Désaccords professionnels
+                          </Label>
+                          <p className="text-sm text-gray-300 mb-2">
+                            Existe-t-il entre les salariés des causes de désaccord ayant pour origine l'organisation du travail (flou sur le rôle de chacun, inégalité de traitement, etc.) ?
+                          </p>
+                          <RadioGroup 
+                            value={psychosocialRisks.professionalDisagreements.toString()} 
+                            onValueChange={(value) => setPsychosocialRisks(prev => ({...prev, professionalDisagreements: parseInt(value)}))}
+                            className="space-y-2"
+                          >
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="0" id="professional-disagreements-0" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="professional-disagreements-0" className="cursor-pointer w-full text-white">
+                                Jamais/Non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="1" id="professional-disagreements-1" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="professional-disagreements-1" className="cursor-pointer w-full text-white">
+                                Parfois/Plutôt non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="2" id="professional-disagreements-2" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="professional-disagreements-2" className="cursor-pointer w-full text-white">
+                                Souvent/Plutôt oui
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="3" id="professional-disagreements-3" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="professional-disagreements-3" className="cursor-pointer w-full text-white">
+                                Toujours/Oui
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                        
+                        {/* Reconnaissance dans le travail */}
+                        <div className="space-y-2">
+                          <Label className="text-white font-medium">
+                            Reconnaissance dans le travail
+                          </Label>
+                          <p className="text-sm text-gray-300 mb-2">
+                            Les salariés reçoivent-ils des marques de reconnaissance de leur travail de la part de l'entreprise ?
+                          </p>
+                          <RadioGroup 
+                            value={psychosocialRisks.workRecognition.toString()} 
+                            onValueChange={(value) => setPsychosocialRisks(prev => ({...prev, workRecognition: parseInt(value)}))}
+                            className="space-y-2"
+                          >
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="0" id="work-recognition-0" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="work-recognition-0" className="cursor-pointer w-full text-white">
+                                Jamais/Non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="1" id="work-recognition-1" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="work-recognition-1" className="cursor-pointer w-full text-white">
+                                Parfois/Plutôt non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="2" id="work-recognition-2" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="work-recognition-2" className="cursor-pointer w-full text-white">
+                                Souvent/Plutôt oui
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="3" id="work-recognition-3" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="work-recognition-3" className="cursor-pointer w-full text-white">
+                                Toujours/Oui
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    {/* Conflits de valeurs */}
+                    <AccordionItem value="conflits-valeurs" className="border-gray-700 rounded-lg overflow-hidden">
+                      <AccordionTrigger className="px-4 py-3 bg-gray-800 hover:bg-gray-700 transition-colors text-white">
+                        <div className="flex items-center">
+                          <Heart className="h-5 w-5 mr-2 text-rose-400" />
+                          <span className="font-medium">Conflits de valeurs</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="bg-gray-800/80 px-4 py-3 space-y-4 border-l-2 border-rose-500">
+                        {/* Qualité empêchée */}
+                        <div className="space-y-2 border-b border-gray-700 pb-4">
+                          <Label className="text-white font-medium">
+                            Qualité empêchée
+                          </Label>
+                          <p className="text-sm text-gray-300 mb-2">
+                            Les salariés considèrent-ils qu'ils font un travail de qualité ?
+                          </p>
+                          <RadioGroup 
+                            value={psychosocialRisks.preventedQuality.toString()} 
+                            onValueChange={(value) => setPsychosocialRisks(prev => ({...prev, preventedQuality: parseInt(value)}))}
+                            className="space-y-2"
+                          >
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="0" id="prevented-quality-0" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="prevented-quality-0" className="cursor-pointer w-full text-white">
+                                Jamais/Non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="1" id="prevented-quality-1" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="prevented-quality-1" className="cursor-pointer w-full text-white">
+                                Parfois/Plutôt non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="2" id="prevented-quality-2" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="prevented-quality-2" className="cursor-pointer w-full text-white">
+                                Souvent/Plutôt oui
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="3" id="prevented-quality-3" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="prevented-quality-3" className="cursor-pointer w-full text-white">
+                                Toujours/Oui
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                        
+                        {/* Travail inutile */}
+                        <div className="space-y-2">
+                          <Label className="text-white font-medium">
+                            Travail inutile
+                          </Label>
+                          <p className="text-sm text-gray-300 mb-2">
+                            Les salariés estiment-ils en général que leur travail est reconnu comme utile ?
+                          </p>
+                          <RadioGroup 
+                            value={psychosocialRisks.uselessWork.toString()} 
+                            onValueChange={(value) => setPsychosocialRisks(prev => ({...prev, uselessWork: parseInt(value)}))}
+                            className="space-y-2"
+                          >
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="0" id="useless-work-0" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="useless-work-0" className="cursor-pointer w-full text-white">
+                                Jamais/Non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="1" id="useless-work-1" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="useless-work-1" className="cursor-pointer w-full text-white">
+                                Parfois/Plutôt non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="2" id="useless-work-2" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="useless-work-2" className="cursor-pointer w-full text-white">
+                                Souvent/Plutôt oui
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="3" id="useless-work-3" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="useless-work-3" className="cursor-pointer w-full text-white">
+                                Toujours/Oui
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                    
+                    {/* Insécurité de l'emploi et du travail */}
+                    <AccordionItem value="insecurite-emploi" className="border-gray-700 rounded-lg overflow-hidden">
+                      <AccordionTrigger className="px-4 py-3 bg-gray-800 hover:bg-gray-700 transition-colors text-white">
+                        <div className="flex items-center">
+                          <ShieldAlert className="h-5 w-5 mr-2 text-amber-400" />
+                          <span className="font-medium">Insécurité de l'emploi et du travail</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="bg-gray-800/80 px-4 py-3 space-y-4 border-l-2 border-amber-500">
+                        {/* Insécurité socio-économique */}
+                        <div className="space-y-2 border-b border-gray-700 pb-4">
+                          <Label className="text-white font-medium">
+                            Insécurité socio-économique (emploi, salaire, carrière...)
+                          </Label>
+                          <p className="text-sm text-gray-300 mb-2">
+                            Les salariés sont-ils confrontés à des incertitudes quant au maintien de leur activité dans les prochains mois ?
+                          </p>
+                          <RadioGroup 
+                            value={psychosocialRisks.socioeconomicInsecurity.toString()} 
+                            onValueChange={(value) => setPsychosocialRisks(prev => ({...prev, socioeconomicInsecurity: parseInt(value)}))}
+                            className="space-y-2"
+                          >
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="0" id="socioeconomic-insecurity-0" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="socioeconomic-insecurity-0" className="cursor-pointer w-full text-white">
+                                Jamais/Non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="1" id="socioeconomic-insecurity-1" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="socioeconomic-insecurity-1" className="cursor-pointer w-full text-white">
+                                Parfois/Plutôt non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="2" id="socioeconomic-insecurity-2" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="socioeconomic-insecurity-2" className="cursor-pointer w-full text-white">
+                                Souvent/Plutôt oui
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="3" id="socioeconomic-insecurity-3" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="socioeconomic-insecurity-3" className="cursor-pointer w-full text-white">
+                                Toujours/Oui
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                        
+                        {/* Conduite du changement dans l'entreprise */}
+                        <div className="space-y-2">
+                          <Label className="text-white font-medium">
+                            Conduite du changement dans l'entreprise
+                          </Label>
+                          <p className="text-sm text-gray-300 mb-2">
+                            Les changements sont-ils suffisamment anticipés, accompagnés, et clairement expliqués aux salariés ?
+                          </p>
+                          <RadioGroup 
+                            value={psychosocialRisks.changeManagement.toString()} 
+                            onValueChange={(value) => setPsychosocialRisks(prev => ({...prev, changeManagement: parseInt(value)}))}
+                            className="space-y-2"
+                          >
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="0" id="change-management-0" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="change-management-0" className="cursor-pointer w-full text-white">
+                                Jamais/Non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="1" id="change-management-1" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="change-management-1" className="cursor-pointer w-full text-white">
+                                Parfois/Plutôt non
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="2" id="change-management-2" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="change-management-2" className="cursor-pointer w-full text-white">
+                                Souvent/Plutôt oui
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700 transition-colors">
+                              <RadioGroupItem value="3" id="change-management-3" className="border-cyan-500 text-cyan-500" />
+                              <Label htmlFor="change-management-3" className="cursor-pointer w-full text-white">
+                                Toujours/Oui
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                    {Object.entries(psychosocialRisks).map(([key, value]) => (
+                      <div key={key} className="space-y-2">
+                        <div className="flex justify-between mb-1">
+                          <Label htmlFor={`psychosocial-${key}`} className="text-white">
+                            {getPsychosocialRiskLabel(key)}
+                          </Label>
+                          <span className="text-white">{value}</span>
+                        </div>
+                        <Slider
+                          id={`psychosocial-${key}`}
+                          value={[value]}
+                          onValueChange={(val) =>
+                            setPsychosocialRisks((prev) => ({ ...prev, [key]: val[0] }))
+                          }
+                          min={0}
+                          max={10}
+                          step={1}
+                          className="cursor-pointer"
+                        />
+                        <div className="flex justify-between text-xs text-gray-300">
+                          <span>Faible</span>
+                          <span>Élevé</span>
+                        </div>
+                        <InfoTooltip content={getPsychosocialRiskDescription(key)} />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div
+                    className={`p-4 rounded-lg mt-6 ${getScoreBgColor(
+                      psychosocialScore,
+                      30
+                    )} border ${getScoreBorderColor(psychosocialScore, 30)}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Users className={`h-5 w-5 ${getScoreColor(psychosocialScore, 30)}`} />
+                      <span className="font-medium text-white">Évaluation des risques psychosociaux</span>
+                    </div>
+                    <p className="mt-2 text-sm text-white">
+                      {psychosocialScore < 10
+                        ? "Risques psychosociaux faibles"
+                        : psychosocialScore < 20
+                          ? "Risques psychosociaux modérés"
+                          : "Risques psychosociaux élevés"}
+                    </p>
+                  </div>
+                  
+                  <div className="flex justify-end mt-6">
+                    <Button 
+                      onClick={handleSave} 
+                      className={`${saveFeedback === 'psychosocial' ? 'bg-green-600 hover:bg-green-700' : 'bg-cyan-600 hover:bg-cyan-700'} text-white transition-colors`}
+                    >
+                      {saveFeedback === 'psychosocial' ? (
+                        <>
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                          Enregistré !
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Enregistrer
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
-    </BaseSettingsForm>
+    </div>
   )
-} 
+}
