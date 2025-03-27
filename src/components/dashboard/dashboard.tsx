@@ -7,16 +7,18 @@ import GlassComponent from './glass-component'
 import StrawComponent from './straw-component'
 import React from 'react'
 import { ParameterModals } from './parameter-modals'
-import { Settings, Droplet, Wind, GlassWater, RectangleHorizontal, Cloud, ActivitySquare, Activity, Lightbulb, AlertTriangle, AlertCircle, HelpCircle, ExternalLink, BookOpen, Scale, FileText, Stethoscope, AlertOctagon, InfoIcon, Clock } from 'lucide-react'
+import { Settings, Droplet, Wind, GlassWater, RectangleHorizontal, Cloud, ActivitySquare, Activity, Lightbulb, AlertTriangle, AlertCircle, HelpCircle, ExternalLink, BookOpen, Scale, FileText, Stethoscope, AlertOctagon, InfoIcon, Clock, RefreshCw, Play, Pause } from 'lucide-react'
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { getLocalStorage, setLocalStorage, emitStorageEvent } from '@/lib/localStorage'
 import { EnvironmentParticles } from './environment-particles'
 import { ModelDescription } from '../ui/model-description'
 import { AnimatedTitle } from '../ui/animated-title'
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Slider } from "@/components/ui/slider"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { CostPanel } from "./cost-panel"
-import { Slider } from "@/components/ui/slider"
 import { FastForward } from 'lucide-react'
 
 export default function Dashboard() {
@@ -533,80 +535,121 @@ export default function Dashboard() {
   }, [simulationSpeed]);
 
   return (
-    <div className="relative min-h-screen bg-gray-950 overflow-x-hidden py-6">
+    <div className="relative min-h-screen bg-black w-full">
       {/* En-tête avec description et titre animé */}
       <ModelDescription />
 
       {/* Dashboard principal */}
-      <div className="w-full max-w-[1800px] mx-auto">
+      <div className="w-full">
         {/* Conteneur principal avec marges adaptatives */}
-        <div className="bg-black backdrop-blur-md border border-gray-800/50 rounded-xl p-4 md:p-8 mx-auto">
-          {/* Contrôles de simulation avec flex wrap */}
-          <div className="flex flex-wrap items-center gap-4 mb-4 ml-0 md:ml-4">
-            <button
-              onClick={handleReset}
-              className="px-3 py-2 rounded-lg bg-gray-900/50 border border-gray-800/30 backdrop-blur-sm text-gray-400 hover:text-gray-300 transition-colors"
-            >
-              Réinitialiser
-            </button>
-            <button
-              onClick={handlePauseToggle}
-              className={cn(
-                "px-3 py-2 rounded-lg border backdrop-blur-sm transition-colors",
-                isPaused 
-                  ? "bg-blue-500/20 border-blue-500/30 text-blue-400 hover:bg-blue-500/30" 
-                  : "bg-gray-900/50 border-gray-800/30 text-gray-400 hover:text-gray-300"
-              )}
-            >
-              {isPaused ? "Reprendre" : "Pause"}
-            </button>
-            <div className="inline-flex items-center gap-4 p-3 rounded-lg bg-gray-900/50 border border-gray-800/30 backdrop-blur-sm">
-              <FastForward className="w-5 h-5 text-blue-400" />
-              <div className="flex items-center gap-4">
-                <Slider
-                  value={[simulationSpeed]}
-                  onValueChange={handleSimulationSpeedChange}
-                  min={1}
-                  max={10}
-                  step={0.5}
-                  className="w-[120px]"
-                />
-                <span className="text-sm font-medium text-blue-400 min-w-[40px]">
-                  {simulationSpeed.toFixed(1)}x
-                </span>
-              </div>
-            </div>
-            
-            {/* Chronomètre de travail */}
-            <div className="inline-flex items-center gap-3 p-3 rounded-lg bg-amber-900/20 border border-amber-800/30 backdrop-blur-sm">
-              <Clock className="w-5 h-5 text-amber-400" />
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-amber-400">Temps de travail</span>
-                <div className="flex items-baseline">
-                  <span className="text-2xl font-bold text-amber-300">{formatWorkTime()}</span>
+        <div className="bg-black/40 backdrop-blur-md border-4 border-gray-800/30 rounded-xl p-4 md:p-8 w-full">
+          {/* Contrôles de simulation */}
+          <div className="w-[750px] mb-10">
+            <Card className="relative overflow-hidden bg-gradient-to-br from-slate-950/90 to-slate-900/80 border-slate-800/40">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5" />
+              
+              <CardContent className="relative space-y-4 p-8">
+                {/* Boutons de contrôle */}
+                <div className="flex items-center gap-4">
+                  <Button
+                    onClick={handleReset}
+                    size="lg"
+                    className="relative flex-1 bg-gradient-to-br from-blue-600/20 to-blue-700/20 text-blue-400 border-blue-500/30 hover:border-blue-400/40 hover:bg-blue-600/30 hover:text-blue-300 shadow-lg shadow-blue-900/20 transition-all duration-300"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-transparent animate-shimmer" />
+                    <RefreshCw className="h-5 w-5 mr-2" />
+                    Réinitialiser
+                  </Button>
+                  <Button
+                    onClick={handlePauseToggle}
+                    size="lg"
+                    className="relative flex-1 bg-gradient-to-br from-blue-600/20 to-blue-700/20 text-blue-400 border-blue-500/30 hover:border-blue-400/40 hover:bg-blue-600/30 hover:text-blue-300 shadow-lg shadow-blue-900/20 transition-all duration-300"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-transparent animate-shimmer" />
+                    {isPaused ? <Play className="h-5 w-5 mr-2" /> : <Pause className="h-5 w-5 mr-2" />}
+                    {isPaused ? 'Reprendre' : 'Pause'}
+                  </Button>
                 </div>
-                <div className="flex text-xs text-amber-400/80 mt-0.5">
-                  <span className="mr-[14px]">heures</span>
-                  <span className="ml-2">minutes</span>
+
+                {/* Contrôle de vitesse */}
+                <div className="flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600/20 to-blue-700/20 border border-blue-500/30">
+                    <div className="text-lg text-blue-400">⚡</div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Slider
+                        value={[simulationSpeed]}
+                        onValueChange={(value: number[]) => setSimulationSpeed(value[0])}
+                        min={1}
+                        max={10}
+                        step={0.5}
+                        className="py-4 [&>[role=slider]]:h-5 [&>[role=slider]]:w-5 [&>[role=slider]]:border-2 [&>[role=slider]]:border-blue-500 [&>[role=slider]]:bg-gradient-to-br [&>[role=slider]]:from-blue-400 [&>[role=slider]]:to-blue-500 [&>[role=slider]]:shadow-lg [&>[role=slider]]:shadow-blue-900/20 [&>[role=track]]:h-2 [&>[role=track]]:bg-gradient-to-r [&>[role=track]]:from-blue-600/20 [&>[role=track]]:to-blue-700/20"
+                      />
+                      <div className="absolute left-1/2 mt-1 -translate-x-1/2 text-center">
+                        <span className="text-sm font-medium text-blue-400">{simulationSpeed.toFixed(1)}x</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+
+                {/* Chronomètre */}
+                <div className="flex items-center gap-6 rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-900/20 to-amber-800/10 p-4">
+                  <div className="rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-600/20 to-amber-700/20 p-2">
+                    <Clock className="h-5 w-5 text-amber-400" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-amber-400">Temps de travail</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold text-amber-300">{formatWorkTime()}</span>
+                    </div>
+                    <div className="flex text-xs text-amber-400/80">
+                      <span className="mr-[18px]">heures</span>
+                      <span className="ml-3">minutes</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
+          {/* Style global pour toutes les animations */}
+          <style jsx global>{`
+            @keyframes shimmer {
+              0% { transform: translateX(-100%); }
+              100% { transform: translateX(100%); }
+            }
+            .animate-shimmer {
+              animation: shimmer 2s infinite;
+            }
+            @keyframes waterDrop {
+              0% { transform: translateY(-100%); }
+              100% { transform: translateY(100%); }
+            }
+            @keyframes bubblePulse {
+              0%, 100% { transform: scale(0.65); }
+              50% { transform: scale(0.75); }
+            }
+            @keyframes shine {
+              0% { transform: translateX(-100%); }
+              100% { transform: translateX(100%); }
+            }
+          `}</style>
+
           {/* Section supérieure - Risques unifiés avec adaptation mobile */}
-          <div className="flex justify-center md:justify-center mb-12">
-            <div className="w-full md:w-[900px] relative">
-              <div className="p-6 rounded-xl bg-gradient-to-br from-gray-900/70 via-gray-900/50 to-gray-900/70 border border-gray-800/50 backdrop-blur-md">
+          <div className="absolute top-10 right-20 flex justify-end mb-10 pr-12">
+            <div className="w-full md:w-[800px] relative">
+              <div className="p-6 rounded-xl bg-gradient-to-br from-gray-900/70 via-gray-900/50 to-gray-900/70 border-2 border-gray-800/50 backdrop-blur-md">
                 <div className="grid grid-cols-2 gap-6">
                   {/* Risque d'accident */}
                   <div className="relative group">
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-xl blur-md group-hover:blur-lg transition-all duration-500" />
                     <div className="relative h-[100px] p-4 rounded-xl backdrop-blur-[2px] overflow-hidden">
                       {/* Bordure de progression */}
-                      <div className="absolute inset-0 rounded-xl border-[4px] border-gray-800/50" />
+                      <div className="absolute inset-0 rounded-xl border-2 border-gray-800/50" />
                       <div 
                         className={cn(
-                          "absolute inset-0 rounded-xl border-[4px] transition-all duration-500",
+                          "absolute inset-0 rounded-xl border-2 transition-all duration-500",
                           fillLevel >= 80 ? "border-red-500" :
                           fillLevel >= 60 ? "border-orange-500" :
                           "border-green-500"
@@ -634,10 +677,10 @@ export default function Dashboard() {
                     <div className="absolute inset-0 bg-gradient-to-br from-teal-500/20 to-cyan-500/20 rounded-xl blur-md group-hover:blur-lg transition-all duration-500" />
                     <div className="relative h-[100px] p-4 rounded-xl backdrop-blur-[2px] overflow-hidden">
                       {/* Bordure de progression */}
-                      <div className="absolute inset-0 rounded-xl border-[4px] border-gray-800/50" />
+                      <div className="absolute inset-0 rounded-xl border-2 border-gray-800/50" />
                       <div 
                         className={cn(
-                          "absolute inset-0 rounded-xl border-[4px] transition-all duration-500",
+                          "absolute inset-0 rounded-xl border-2 transition-all duration-500",
                           tmsExposureLevel >= 80 ? "border-red-500" :
                           tmsExposureLevel >= 60 ? "border-orange-500" :
                           "border-green-500"
@@ -664,7 +707,7 @@ export default function Dashboard() {
 
               {/* Liste des recommandations */}
               <div className="absolute top-[calc(100%+1rem)] left-0 right-0 z-30">
-                <div className="p-4 rounded-xl bg-black/40 border border-gray-800/50 backdrop-blur-sm">
+                <div className="p-4 rounded-xl bg-black/40 border-2 border-gray-800/50 backdrop-blur-sm">
                   <div className="flex items-center gap-2 mb-4">
                     <Lightbulb className="w-5 h-5 text-amber-400" />
                     <h3 className="text-sm font-medium text-amber-400">Recommandations</h3>
@@ -751,8 +794,8 @@ export default function Dashboard() {
           {/* Grille principale responsive */}
           <div className="grid grid-cols-1 lg:grid-cols-[750px_1fr] gap-8 mt-8 md:mt-0">
           {/* Panneau de gauche - Informations et contrôles */}
-            <div className="space-y-8 p-4 md:p-6 rounded-xl bg-gradient-to-br from-gray-900/70 via-gray-900/50 to-gray-900/70 border border-gray-800/50 backdrop-blur-sm shadow-lg">
-              <div className="flex items-center justify-between pb-4 border-b border-gray-800/50">
+            <div className="space-y-8 p-4 md:p-6 rounded-xl bg-gradient-to-br from-gray-900/70 via-gray-900/50 to-gray-900/70 border-4 border-gray-800/50 backdrop-blur-sm shadow-lg">
+              <div className="flex items-center justify-between pb-4 border-b-2 border-gray-800/50">
                 <div className="flex items-center gap-3">
                   <Settings className="w-6 h-6 text-gray-400" />
                   <h2 className="text-2xl font-bold text-white">Composants du modèle</h2>
@@ -760,14 +803,14 @@ export default function Dashboard() {
               </div>
 
               {/* Verre */}
-              <div className="space-y-3 p-6 rounded-lg bg-gray-900/30 hover:bg-gray-900/40 transition-colors border-2 border-gray-800/40">
+              <div className="space-y-3 p-6 rounded-lg bg-gray-900/30 hover:bg-gray-900/40 transition-colors border-4 border-gray-700/60">
                 <div className="flex h-[200px]">
                   {/* Contenu principal avec largeur fixe */}
                   <div className="w-[400px] flex flex-col">
                     <div className="flex items-center gap-3">
                       <GlassWater className="w-6 h-6 text-gray-400" />
                       <h3 className="text-xl font-semibold text-gray-300">Verre</h3>
-                  </div>
+                    </div>
                     <p className="text-base text-gray-400 leading-relaxed mt-3">
                       Représente la capacité d'absorption des contraintes (facteurs individuels).
                     </p>
@@ -783,7 +826,7 @@ export default function Dashboard() {
                   </div>
                   
                   {/* Séparateur et barre de progression */}
-                  <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l border-gray-400/20">
+                  <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l-2 border-gray-400/20">
                     <div className="relative h-full w-full flex flex-col items-center">
                       {/* Label supérieur avec espacement fixe */}
                       <div className="h-[40px] flex items-center justify-center -mt-2 pt-0">
@@ -806,7 +849,7 @@ export default function Dashboard() {
                 
                         {/* Valeur à droite */}
                         <div 
-                          className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-gray-900/50 border border-gray-400/10 backdrop-blur-sm transition-all duration-300"
+                          className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-gray-900/50 border-2 border-gray-400/10 backdrop-blur-sm transition-all duration-300"
                           style={{
                             bottom: `${Math.round(((glassWidth - 20) / 70) * 100)}%`,
                             transform: 'translateY(50%)'
@@ -823,7 +866,7 @@ export default function Dashboard() {
               </div>
 
               {/* Robinet */}
-              <div className="space-y-3 p-6 rounded-lg bg-blue-950/20 hover:bg-blue-950/30 transition-colors border-2 border-blue-900/30">
+              <div className="space-y-3 p-6 rounded-lg bg-blue-950/20 hover:bg-blue-950/30 transition-colors border-4 border-blue-900/60">
                 <div className="flex h-[200px]">
                   {/* Contenu principal avec largeur fixe */}
                   <div className="w-[400px] flex flex-col">
@@ -834,7 +877,7 @@ export default function Dashboard() {
                       {/* Indicateur d'impact environnemental (à côté du titre) */}
                       {environmentScore > 0 && (
                         <div className="flex items-center ml-3">
-                          <div className="text-x px-2 py-0.5 rounded bg-purple-950/30 border border-purple-800/30 text-purple-400">
+                          <div className="text-x px-2 py-0.5 rounded bg-purple-950/30 border-2 border-purple-800/30 text-purple-400">
                             <span>+{Math.round(environmentScore * 0.3)}% impact Bulle</span>
                           </div>
                         </div>
@@ -855,10 +898,10 @@ export default function Dashboard() {
                   </div>
                   
                   {/* Séparateur et barre de progression */}
-                  <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l border-blue-400/20">
+                  <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l-2 border-blue-400/20">
                     <div className="relative h-full w-full flex flex-col items-center">
                       {/* Label supérieur avec espacement fixe */}
-                      <div className="h-[40px] flex flex-col items-center justify-center -mt-2 pt-0">
+                      <div className="h-[40px] flex items-center justify-center -mt-2 pt-0">
                         <span className="text-sm text-blue-400">Débit actuel</span>
                       </div>
                       
@@ -878,7 +921,7 @@ export default function Dashboard() {
                 
                         {/* Valeur à droite */}
                         <div 
-                          className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-blue-900/50 border border-blue-400/10 backdrop-blur-sm transition-all duration-300"
+                          className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-blue-900/50 border-2 border-blue-400/10 backdrop-blur-sm transition-all duration-300"
                           style={{
                             bottom: `${flowRate}%`,
                             transform: 'translateY(50%)'
@@ -895,7 +938,7 @@ export default function Dashboard() {
               </div>
 
               {/* Paille */}
-              <div className="space-y-3 p-6 rounded-lg bg-green-950/20 hover:bg-green-950/30 transition-colors border-2 border-green-900/30">
+              <div className="space-y-3 p-6 rounded-lg bg-green-950/20 hover:bg-green-950/30 transition-colors border-4 border-green-900/60">
                 <div className="flex h-[200px]">
                   {/* Contenu principal avec largeur fixe */}
                   <div className="w-[400px] flex flex-col">
@@ -940,7 +983,7 @@ export default function Dashboard() {
                   </div>
                   
                   {/* Séparateur et barre de progression */}
-                  <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l border-green-400/20">
+                  <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l-2 border-green-400/20">
                     <div className="relative h-full w-full flex flex-col items-center">
                       {/* Label supérieur avec espacement fixe */}
                       <div className="h-[40px] flex items-center justify-center -mt-2 pt-0">
@@ -963,7 +1006,7 @@ export default function Dashboard() {
                         
                         {/* Valeur à droite */}
                         <div 
-                          className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-green-900/50 border border-green-400/10 backdrop-blur-sm transition-all duration-300"
+                          className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-green-900/50 border-2 border-green-400/10 backdrop-blur-sm transition-all duration-300"
                           style={{
                             bottom: `${absorptionRate}%`,
                             transform: 'translateY(50%)'
@@ -983,7 +1026,7 @@ export default function Dashboard() {
             </div>
             
               {/* Bulle */}
-              <div className="space-y-3 p-6 rounded-lg bg-purple-950/20 hover:bg-purple-950/30 transition-colors border-2 border-purple-900/30">
+              <div className="space-y-3 p-6 rounded-lg bg-purple-950/20 hover:bg-purple-950/30 transition-colors border-4 border-purple-900/60">
                 <div className="flex h-[200px]">
                   {/* Contenu principal avec largeur fixe */}
                   <div className="w-[400px] flex flex-col">
@@ -1006,7 +1049,7 @@ export default function Dashboard() {
                   </div>
                   
                   {/* Séparateur et barre de progression */}
-                  <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l border-purple-400/20">
+                  <div className="flex flex-col items-center ml-6 w-[120px] pl-6 border-l-2 border-purple-400/20">
                     <div className="relative h-full w-full flex flex-col items-center">
                       {/* Label supérieur avec espacement fixe */}
                       <div className="h-[40px] flex items-center justify-center -mt-2 pt-0">
@@ -1029,7 +1072,7 @@ export default function Dashboard() {
                         
                         {/* Valeur à droite */}
                         <div 
-                          className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-purple-900/50 border border-purple-400/10 backdrop-blur-sm transition-all duration-300"
+                          className="absolute -right-[60px] min-w-[45px] h-[30px] flex items-center justify-center rounded-md bg-purple-900/50 border-2 border-purple-400/10 backdrop-blur-sm transition-all duration-300"
                           style={{
                             bottom: `${environmentScore}%`,
                             transform: 'translateY(50%)'
@@ -1048,22 +1091,21 @@ export default function Dashboard() {
             
             {/* Panneau central - Visualisation avec adaptation mobile */}
             <div className="relative flex items-center justify-center h-full">
-              <div className="relative w-full max-w-[1000px] transform scale-100">
+              <div className="relative w-full max-w-[1800px] mx-auto transform scale-125">
                 {/* Ensemble unifié bulle + composants */}
                 <div className="relative flex items-center justify-center mt-[50px] md:mt-[100px]">
                   {/* Bulle environnementale */}
-                  <div className="absolute inset-[-120px] z-0">
+                  <div className="absolute inset-0 w-[1200px] h-[1200px] z-0" style={{ left: '50%', transform: 'translateX(-50%) translateY(-30%)' }}>
                     <div 
-                      className="relative w-[80%] h-full rounded-[50%] bg-gradient-to-br from-purple-500/3 to-purple-700/5 backdrop-blur-[2px] border border-purple-400/10" 
+                      className="relative w-full h-full rounded-full bg-gradient-to-br from-purple-500/2 to-purple-700/3 backdrop-blur-[1px] border border-purple-400/5" 
                       style={{
-                        aspectRatio: '0.9',
-                        transform: 'scale(1.1)',
+                        aspectRatio: '1',
                         animation: 'bubblePulse 8s ease-in-out infinite',
                         boxShadow: `
-                          inset 0 0 40px rgba(168, 85, 247, 0.05),
-                          0 0 20px rgba(168, 85, 247, 0.05),
-                          inset 0 0 15px rgba(168, 85, 247, 0.1),
-                          0 0 8px rgba(168, 85, 247, 0.08)
+                          inset 0 0 30px rgba(168, 85, 247, 0.03),
+                          0 0 15px rgba(168, 85, 247, 0.03),
+                          inset 0 0 10px rgba(168, 85, 247, 0.05),
+                          0 0 5px rgba(168, 85, 247, 0.04)
                         `
                       }}
                     >
@@ -1072,7 +1114,7 @@ export default function Dashboard() {
           </div>
           
                   {/* Ensemble verre-robinet-paille centré dans la bulle */}
-                  <div className="relative z-10 -translate-x-0 md:-translate-x-20">
+                  <div className="relative z-5">
               {/* Robinet et son filet d'eau */}
                     <div className="flex justify-center mb-10">
                       <div className="relative">
@@ -1140,7 +1182,7 @@ export default function Dashboard() {
 
                     {/* Légende des couleurs */}
                     <div className="relative z-20 mt-8">
-                      <div className="p-3 rounded-lg bg-gray-950/30 border border-gray-800/20 w-full backdrop-blur-[1px]">
+                      <div className="p-3 rounded-lg bg-gray-950/30 border-2 border-gray-800/20 w-full backdrop-blur-[1px]">
                         <h3 className="text-base font-medium text-gray-300 mb-2">Légende des couleurs</h3>
                         <div className="grid grid-cols-2 gap-2">
                           <div className="flex items-center gap-2">
@@ -1166,6 +1208,45 @@ export default function Dashboard() {
               </div>
               </div>
             </div>
+            
+            {/* Panneau des coûts repositionné en dessous du dashboard */}
+            <div className="absolute bottom-[-500px] w-full max-w-[1800px] mx-auto transform scale-90" style={{ transform: 'translateX(2%)' }}>
+              <div className="p-6 rounded-xl bg-gradient-to-br from-slate-800/90 via-slate-800/80 to-slate-900/90 border-2 border-slate-700/50 backdrop-blur-sm shadow-xl">
+                <CostPanel
+                  bodyParts={[
+                    { 
+                      name: "Cou", 
+                      angle: postureScores.neck, 
+                      risk: postureScores.neck + (postureAdjustments.neckRotation ? 1 : 0) + (postureAdjustments.neckInclination ? 1 : 0) >= 4 ? "high" : 
+                       postureScores.neck + (postureAdjustments.neckRotation ? 1 : 0) + (postureAdjustments.neckInclination ? 1 : 0) >= 2 ? "medium" : "low",
+                      hasHistory: medicalHistory.neckProblems
+                    },
+                    { 
+                      name: "Épaules", 
+                      angle: postureScores.shoulder,
+                      risk: postureScores.shoulder + (postureAdjustments.shoulderRaised ? 1 : 0) + (postureAdjustments.shoulderAbduction ? 1 : 0) - (postureAdjustments.shoulderSupport ? 1 : 0) >= 4 ? "high" :
+                       postureScores.shoulder + (postureAdjustments.shoulderRaised ? 1 : 0) + (postureAdjustments.shoulderAbduction ? 1 : 0) - (postureAdjustments.shoulderSupport ? 1 : 0) >= 2 ? "medium" : "low",
+                      hasHistory: medicalHistory.shoulderProblems
+                    },
+                    { 
+                      name: "Poignets", 
+                      angle: postureScores.wrist,
+                      risk: postureScores.wrist + (postureAdjustments.wristDeviation ? 1 : 0) + (postureAdjustments.wristPartialRotation ? 1 : 0) + (postureAdjustments.wristFullRotation ? 2 : 0) >= 4 ? "high" :
+                       postureScores.wrist + (postureAdjustments.wristDeviation ? 1 : 0) + (postureAdjustments.wristPartialRotation ? 1 : 0) + (postureAdjustments.wristFullRotation ? 2 : 0) >= 2 ? "medium" : "low",
+                      hasHistory: medicalHistory.wristProblems
+                    },
+                    { 
+                      name: "Dos", 
+                      angle: postureScores.trunk,
+                      risk: postureScores.trunk >= 3 ? "high" : postureScores.trunk >= 2 ? "medium" : "low",
+                      hasHistory: medicalHistory.backProblems
+                    }
+                  ]}
+                  accidentRisk={accidentRisk}
+                  tmsRisk={tmsRisk}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1175,61 +1256,6 @@ export default function Dashboard() {
         activeModal={activeModal}
         onCloseModal={handleCloseModal}
       />
-
-      {/* Ajuster l'animation pour un effet plus subtil */}
-      <style jsx>{`
-        @keyframes waterDrop {
-          0% { transform: translateY(-100%); }
-          100% { transform: translateY(100%); }
-        }
-        @keyframes bubblePulse {
-          0%, 100% { transform: scale(1.1); }
-          50% { transform: scale(1.15); }
-        }
-        @keyframes shine {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-      `}</style>
-
-      {/* Panneau des coûts repositionné de manière responsive */}
-      <div className="relative w-full lg:w-[500px] mt-8 mx-auto lg:mx-0 lg:ml-auto lg:mr-[5%]">
-        <div className="p-6 rounded-xl bg-gradient-to-br from-slate-800/90 via-slate-800/80 to-slate-900/90 border border-slate-700/50 backdrop-blur-sm shadow-xl">
-          <CostPanel
-            bodyParts={[
-              { 
-                name: "Cou", 
-                angle: postureScores.neck, 
-                risk: postureScores.neck + (postureAdjustments.neckRotation ? 1 : 0) + (postureAdjustments.neckInclination ? 1 : 0) >= 4 ? "high" : 
-                       postureScores.neck + (postureAdjustments.neckRotation ? 1 : 0) + (postureAdjustments.neckInclination ? 1 : 0) >= 2 ? "medium" : "low",
-                hasHistory: medicalHistory.neckProblems
-              },
-              { 
-                name: "Épaules", 
-                angle: postureScores.shoulder,
-                risk: postureScores.shoulder + (postureAdjustments.shoulderRaised ? 1 : 0) + (postureAdjustments.shoulderAbduction ? 1 : 0) - (postureAdjustments.shoulderSupport ? 1 : 0) >= 4 ? "high" :
-                       postureScores.shoulder + (postureAdjustments.shoulderRaised ? 1 : 0) + (postureAdjustments.shoulderAbduction ? 1 : 0) - (postureAdjustments.shoulderSupport ? 1 : 0) >= 2 ? "medium" : "low",
-                hasHistory: medicalHistory.shoulderProblems
-              },
-              { 
-                name: "Poignets", 
-                angle: postureScores.wrist,
-                risk: postureScores.wrist + (postureAdjustments.wristDeviation ? 1 : 0) + (postureAdjustments.wristPartialRotation ? 1 : 0) + (postureAdjustments.wristFullRotation ? 2 : 0) >= 4 ? "high" :
-                       postureScores.wrist + (postureAdjustments.wristDeviation ? 1 : 0) + (postureAdjustments.wristPartialRotation ? 1 : 0) + (postureAdjustments.wristFullRotation ? 2 : 0) >= 2 ? "medium" : "low",
-                hasHistory: medicalHistory.wristProblems
-              },
-              { 
-                name: "Dos", 
-                angle: postureScores.trunk,
-                risk: postureScores.trunk >= 3 ? "high" : postureScores.trunk >= 2 ? "medium" : "low",
-                hasHistory: medicalHistory.backProblems
-              }
-            ]}
-            accidentRisk={accidentRisk}
-            tmsRisk={tmsRisk}
-          />
-        </div>
-      </div>
     </div>
   )
 } 
