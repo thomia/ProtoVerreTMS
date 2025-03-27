@@ -45,7 +45,7 @@ interface BaseSettingsFormProps {
   getValueDescription?: (value: number) => string
   onSubmit: () => void
   children: React.ReactNode
-  scoreType?: 'tap' | 'glass' | 'straw'
+  scoreType?: 'tap' | 'glass' | 'straw' | 'bubble'
   showSaveMessage?: boolean
   autoSave?: boolean
   onAutoSaveChange?: (value: boolean) => void
