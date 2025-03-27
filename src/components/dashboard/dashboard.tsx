@@ -1209,44 +1209,6 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {/* Panneau des coûts repositionné en dessous du dashboard */}
-            <div className="absolute bottom-[-500px] w-full max-w-[1800px] mx-auto transform scale-90" style={{ transform: 'translateX(2%)' }}>
-              <div className="p-6 rounded-xl bg-gradient-to-br from-slate-800/90 via-slate-800/80 to-slate-900/90 border-2 border-slate-700/50 backdrop-blur-sm shadow-xl">
-                <CostPanel
-                  bodyParts={[
-                    { 
-                      name: "Cou", 
-                      angle: postureScores.neck, 
-                      risk: postureScores.neck + (postureAdjustments.neckRotation ? 1 : 0) + (postureAdjustments.neckInclination ? 1 : 0) >= 4 ? "high" : 
-                       postureScores.neck + (postureAdjustments.neckRotation ? 1 : 0) + (postureAdjustments.neckInclination ? 1 : 0) >= 2 ? "medium" : "low",
-                      hasHistory: medicalHistory.neckProblems
-                    },
-                    { 
-                      name: "Épaules", 
-                      angle: postureScores.shoulder,
-                      risk: postureScores.shoulder + (postureAdjustments.shoulderRaised ? 1 : 0) + (postureAdjustments.shoulderAbduction ? 1 : 0) - (postureAdjustments.shoulderSupport ? 1 : 0) >= 4 ? "high" :
-                       postureScores.shoulder + (postureAdjustments.shoulderRaised ? 1 : 0) + (postureAdjustments.shoulderAbduction ? 1 : 0) - (postureAdjustments.shoulderSupport ? 1 : 0) >= 2 ? "medium" : "low",
-                      hasHistory: medicalHistory.shoulderProblems
-                    },
-                    { 
-                      name: "Poignets", 
-                      angle: postureScores.wrist,
-                      risk: postureScores.wrist + (postureAdjustments.wristDeviation ? 1 : 0) + (postureAdjustments.wristPartialRotation ? 1 : 0) + (postureAdjustments.wristFullRotation ? 2 : 0) >= 4 ? "high" :
-                       postureScores.wrist + (postureAdjustments.wristDeviation ? 1 : 0) + (postureAdjustments.wristPartialRotation ? 1 : 0) + (postureAdjustments.wristFullRotation ? 2 : 0) >= 2 ? "medium" : "low",
-                      hasHistory: medicalHistory.wristProblems
-                    },
-                    { 
-                      name: "Dos", 
-                      angle: postureScores.trunk,
-                      risk: postureScores.trunk >= 3 ? "high" : postureScores.trunk >= 2 ? "medium" : "low",
-                      hasHistory: medicalHistory.backProblems
-                    }
-                  ]}
-                  accidentRisk={accidentRisk}
-                  tmsRisk={tmsRisk}
-                />
-              </div>
-            </div>
           </div>
         </div>
       </div>
