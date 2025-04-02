@@ -1,4 +1,6 @@
 import Dashboard from '@/components/dashboard/dashboard';
+import Link from 'next/link';
+import { UserCircle } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -7,6 +9,17 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500/2 via-transparent to-transparent" />
         <div className="relative w-full max-w-[2000px] mx-auto px-8 py-6">
           <Dashboard />
+          
+          {/* Bouton d'accès à l'espace personnel */}
+          <div className="flex justify-center mt-8 mb-4">
+            <Link 
+              href="/espace-personnel" 
+              className="flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/10"
+            >
+              <UserCircle className="h-6 w-6" />
+              <span className="text-lg font-medium">Accéder à mon Espace Personnel</span>
+            </Link>
+          </div>
         </div>
       </div>
       

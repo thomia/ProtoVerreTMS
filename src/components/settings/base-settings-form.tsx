@@ -171,30 +171,54 @@ export default function BaseSettingsForm({
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
+        <h2 className={`text-2xl font-bold tracking-tight ${
+          scoreType === 'bubble' ? "text-purple-400" :
+          scoreType === 'straw' ? "text-green-400" :
+          scoreType === 'glass' ? "text-white" :
+          "text-blue-400"
+        }`}>{title}</h2>
         {subtitle && (
-          <p className="text-gray-400/80">{subtitle}</p>
+          <p className={`${
+            scoreType === 'bubble' ? "text-purple-300" :
+            scoreType === 'straw' ? "text-green-300" :
+            scoreType === 'glass' ? "text-white" :
+            "text-blue-300"
+          }`}>{subtitle}</p>
         )}
         {description && (
-          <p className="text-gray-400/80">{description}</p>
+          <p className={`${
+            scoreType === 'bubble' ? "text-purple-300" :
+            scoreType === 'straw' ? "text-green-300" :
+            scoreType === 'glass' ? "text-white" :
+            "text-blue-300"
+          }`}>{description}</p>
         )}
       </div>
 
       {currentValue !== undefined && getValueDescription && (
         <div className="p-4 rounded-lg bg-gradient-to-r from-gray-900/60 via-gray-800/40 to-gray-900/60 border border-gray-800">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-base text-gray-400">Score calculé</span>
+            <span className={`text-base ${
+              scoreType === 'bubble' ? "text-purple-300" :
+              scoreType === 'straw' ? "text-green-300" :
+              scoreType === 'glass' ? "text-white" :
+              "text-blue-300"
+            }`}>Score calculé</span>
             <span className={`text-lg font-medium ${
-              currentValue >= 80 ? "text-red-400" : 
-              currentValue >= 60 ? "text-orange-400" : 
-              currentValue >= 40 ? "text-yellow-400" : 
-              "text-green-400"
+              scoreType === 'bubble' ? "text-purple-400" :
+              scoreType === 'straw' ? "text-green-400" :
+              scoreType === 'glass' ? "text-white" :
+              "text-blue-400"
             }`}>{currentValue}%</span>
           </div>
           
           <div className="relative h-2 bg-gray-800 rounded-full overflow-hidden">
             <div 
               className={`absolute h-full left-0 top-0 rounded-full transition-all duration-300 ${
+                scoreType === 'bubble' ? "bg-gradient-to-r from-purple-600 to-purple-500" :
+                scoreType === 'straw' ? "bg-gradient-to-r from-green-600 to-green-500" :
+                scoreType === 'glass' ? "bg-white" :
+                scoreType === 'tap' ? "bg-gradient-to-r from-blue-600 to-blue-500" : 
                 currentValue >= 80 ? "bg-gradient-to-r from-red-500 to-red-400" : 
                 currentValue >= 60 ? "bg-gradient-to-r from-orange-500 to-orange-400" : 
                 currentValue >= 40 ? "bg-gradient-to-r from-yellow-500 to-yellow-400" : 
@@ -204,7 +228,12 @@ export default function BaseSettingsForm({
             />
           </div>
           
-          <p className="mt-2 text-sm text-gray-500">{getValueDescription(currentValue)}</p>
+          <p className={`mt-2 text-sm ${
+            scoreType === 'bubble' ? "text-purple-300" :
+            scoreType === 'straw' ? "text-green-300" :
+            scoreType === 'glass' ? "text-white" :
+            "text-blue-300"
+          }`}>{getValueDescription(currentValue)}</p>
         </div>
       )}
 
@@ -220,10 +249,21 @@ export default function BaseSettingsForm({
                 id="auto-save" 
                 checked={autoSave} 
                 onCheckedChange={handleAutoSaveChange}
+                className={`${
+                  scoreType === 'bubble' ? "data-[state=checked]:bg-purple-600" :
+                  scoreType === 'straw' ? "data-[state=checked]:bg-green-600" :
+                  scoreType === 'glass' ? "data-[state=checked]:bg-white" :
+                  "data-[state=checked]:bg-blue-600"
+                }`}
               />
               <label 
                 htmlFor="auto-save" 
-                className="text-sm font-medium text-gray-400 cursor-pointer"
+                className={`text-sm font-medium cursor-pointer ${
+                  scoreType === 'bubble' ? "text-purple-300" :
+                  scoreType === 'straw' ? "text-green-300" :
+                  scoreType === 'glass' ? "text-white" :
+                  "text-blue-300"
+                }`}
               >
                 Sauvegarde automatique
               </label>
@@ -233,7 +273,12 @@ export default function BaseSettingsForm({
         
         <div className="flex items-center gap-4">
           {showSaveSuccess && (
-            <span className="flex items-center text-sm text-green-400">
+            <span className={`flex items-center text-sm ${
+              scoreType === 'bubble' ? "text-purple-400" :
+              scoreType === 'straw' ? "text-green-400" :
+              scoreType === 'glass' ? "text-white" :
+              "text-blue-400"
+            }`}>
               <Check className="mr-1 h-4 w-4" />
               Paramètres sauvegardés
             </span>
@@ -243,7 +288,19 @@ export default function BaseSettingsForm({
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="bg-blue-600 hover:bg-blue-700"
+            className={`relative px-4 py-2 font-medium text-sm rounded-md shadow-lg transition-all duration-200 ${
+              isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+            } ${
+              scoreType === 'bubble' 
+                ? "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white border border-purple-500/50"
+                : scoreType === 'straw'
+                  ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white border border-green-500/50"
+                  : scoreType === 'glass'
+                    ? "bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600 text-white border border-slate-500/50"
+                    : scoreType === 'tap'
+                    ? "bg-blue-400 hover:bg-blue-300 text-white border border-blue-300/50"
+                    : "bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white border border-gray-500/50"
+            }`}
           >
             {isSubmitting ? 'Sauvegarde...' : 'Sauvegarder'}
           </Button>

@@ -136,21 +136,16 @@ export default function BubbleSettingsForm() {
                   <Label className="text-lg font-medium text-white">Température</Label>
                   <span className="px-3 py-1.5 rounded-md bg-gray-800 text-base font-medium text-gray-100 shadow-md">{settings.temperature}°C</span>
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center pointer-events-none">
-                    <div className="h-2 w-full bg-gradient-to-r from-transparent via-green-500/20 to-transparent" style={{ clipPath: 'inset(0 ${100 - ((23/25) * 100)}% 0 ${(17/25) * 100}%)' }} />
-                  </div>
-                  <Slider
-                    min={5}
-                    max={30}
-                    step={0.5}
-                    value={[settings.temperature]}
-                    onValueChange={([value]) =>
-                      setSettings({ ...settings, temperature: value })
-                    }
-                    className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:bg-gray-200 [&_[role=slider]]:border-2 [&_[role=slider]]:border-gray-300 [&_[role=slider]]:shadow-md relative [&_.range]:bg-gradient-to-r [&_.range]:from-gray-300 [&_.range]:to-gray-400 [&_[role=slider]]:hover:scale-110 [&_[role=slider]]:transition-transform"
-                  />
-                </div>
+                <Slider
+                  min={5}
+                  max={30}
+                  step={0.5}
+                  value={[settings.temperature]}
+                  onValueChange={([value]) =>
+                    setSettings({ ...settings, temperature: value })
+                  }
+                  className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:bg-gray-200 [&_[role=slider]]:border-2 [&_[role=slider]]:border-gray-300 [&_[role=slider]]:shadow-md relative [&_.range]:bg-gray-300 [&_[role=slider]]:hover:scale-110 [&_[role=slider]]:transition-transform"
+                />
                 <div className="flex justify-between items-center text-sm">
                   <div className="flex flex-col items-center">
                     <span className="text-gray-300 font-medium">5°C</span>
@@ -181,7 +176,7 @@ export default function BubbleSettingsForm() {
                   onValueChange={([value]) =>
                     setSettings({ ...settings, lighting: value })
                   }
-                  className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:bg-gray-200 [&_[role=slider]]:border-2 [&_[role=slider]]:border-gray-300 [&_[role=slider]]:shadow-md relative [&_.range]:bg-gradient-to-r [&_.range]:from-gray-300 [&_.range]:to-gray-400 [&_[role=slider]]:hover:scale-110 [&_[role=slider]]:transition-transform"
+                  className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:bg-gray-200 [&_[role=slider]]:border-2 [&_[role=slider]]:border-gray-300 [&_[role=slider]]:shadow-md relative [&_.range]:bg-gray-300 [&_[role=slider]]:hover:scale-110 [&_[role=slider]]:transition-transform"
                 />
                 <div className="flex justify-between items-center text-sm">
                   <div className="flex flex-col items-center">
@@ -212,21 +207,16 @@ export default function BubbleSettingsForm() {
                     </span>
                   </div>
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center pointer-events-none">
-                    <div className="h-2 w-full bg-gradient-to-r from-gray-300 via-yellow-300 to-red-500" />
-                  </div>
-                  <Slider
-                    min={40}
-                    max={95}
-                    step={1}
-                    value={[settings.noise]}
-                    onValueChange={([value]) => {
-                      setSettings(prev => ({ ...prev, noise: Math.round(value) }))
-                    }}
-                    className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:bg-gray-200 [&_[role=slider]]:border-2 [&_[role=slider]]:border-gray-300 [&_[role=slider]]:shadow-md relative [&_.range]:bg-gradient-to-r [&_.range]:from-gray-300 [&_.range]:via-yellow-400 [&_.range]:to-red-500 [&_[role=slider]]:hover:scale-110 [&_[role=slider]]:transition-transform"
-                  />
-                </div>
+                <Slider
+                  min={40}
+                  max={95}
+                  step={1}
+                  value={[settings.noise]}
+                  onValueChange={([value]) => {
+                    setSettings(prev => ({ ...prev, noise: Math.round(value) }))
+                  }}
+                  className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:bg-gray-200 [&_[role=slider]]:border-2 [&_[role=slider]]:border-gray-300 [&_[role=slider]]:shadow-md relative [&_.range]:bg-gray-300 [&_[role=slider]]:hover:scale-110 [&_[role=slider]]:transition-transform"
+                />
                 <div className="flex justify-between items-center text-sm relative h-12">
                   <div className="flex flex-col items-center absolute left-[2%]">
                     <span className="text-gray-300 font-medium">40 dB</span>
@@ -284,7 +274,7 @@ export default function BubbleSettingsForm() {
                   onValueChange={([value]) =>
                     setSettings({ ...settings, hygiene: value })
                   }
-                  className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:bg-gray-200 [&_[role=slider]]:border-2 [&_[role=slider]]:border-gray-300 [&_[role=slider]]:shadow-md relative [&_.range]:bg-gradient-to-r [&_.range]:from-gray-300 [&_.range]:to-gray-400 [&_[role=slider]]:hover:scale-110 [&_[role=slider]]:transition-transform"
+                  className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:bg-gray-200 [&_[role=slider]]:border-2 [&_[role=slider]]:border-gray-300 [&_[role=slider]]:shadow-md relative [&_.range]:bg-gray-300 [&_[role=slider]]:hover:scale-110 [&_[role=slider]]:transition-transform"
                 />
                 <div className="flex justify-between items-center text-sm">
                   <div className="flex flex-col items-center">
@@ -310,7 +300,7 @@ export default function BubbleSettingsForm() {
                   step={5}
                   value={[settings.space]}
                   onValueChange={([value]) => setSettings({ ...settings, space: value })}
-                  className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:bg-gray-200 [&_[role=slider]]:border-2 [&_[role=slider]]:border-gray-300 [&_[role=slider]]:shadow-md relative [&_.range]:bg-gradient-to-r [&_.range]:from-gray-300 [&_.range]:to-gray-400 [&_[role=slider]]:hover:scale-110 [&_[role=slider]]:transition-transform"
+                  className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:bg-gray-200 [&_[role=slider]]:border-2 [&_[role=slider]]:border-gray-300 [&_[role=slider]]:shadow-md relative [&_.range]:bg-gray-300 [&_[role=slider]]:hover:scale-110 [&_[role=slider]]:transition-transform"
                 />
                 <div className="flex justify-between items-center text-sm">
                   <div className="flex flex-col items-center">
@@ -338,7 +328,7 @@ export default function BubbleSettingsForm() {
                   onValueChange={([value]) =>
                     setSettings({ ...settings, equipment: value })
                   }
-                  className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:bg-gray-200 [&_[role=slider]]:border-2 [&_[role=slider]]:border-gray-300 [&_[role=slider]]:shadow-md relative [&_.range]:bg-gradient-to-r [&_.range]:from-gray-300 [&_.range]:to-gray-400 [&_[role=slider]]:hover:scale-110 [&_[role=slider]]:transition-transform"
+                  className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:bg-gray-200 [&_[role=slider]]:border-2 [&_[role=slider]]:border-gray-300 [&_[role=slider]]:shadow-md relative [&_.range]:bg-gray-300 [&_[role=slider]]:hover:scale-110 [&_[role=slider]]:transition-transform"
                 />
                 <div className="flex justify-between items-center text-sm">
                   <div className="flex flex-col items-center">
@@ -361,7 +351,7 @@ export default function BubbleSettingsForm() {
                     className={cn(
                       "relative px-6 py-4 rounded-xl text-lg font-semibold transition-all duration-200 overflow-hidden",
                       !settings.nightShift
-                        ? "bg-gradient-to-br from-yellow-500/20 to-orange-600/20 text-yellow-100 shadow-lg shadow-orange-900/20 ring-2 ring-yellow-500/50"
+                        ? "bg-gray-900/80 text-yellow-100 shadow-lg shadow-orange-900/20 ring-2 ring-yellow-500/50"
                         : "bg-gray-900/80 text-gray-400 hover:bg-gray-800/90 hover:text-gray-300"
                     )}
                   >
@@ -372,7 +362,7 @@ export default function BubbleSettingsForm() {
                     className={cn(
                       "relative px-6 py-4 rounded-xl text-lg font-semibold transition-all duration-200 overflow-hidden",
                       settings.nightShift
-                        ? "bg-gradient-to-br from-blue-500/20 to-indigo-600/20 text-blue-100 shadow-lg shadow-blue-900/20 ring-2 ring-blue-500/50"
+                        ? "bg-gray-900/80 text-blue-100 shadow-lg shadow-blue-900/20 ring-2 ring-blue-500/50"
                         : "bg-gray-900/80 text-gray-400 hover:bg-gray-800/90 hover:text-gray-300"
                     )}
                   >

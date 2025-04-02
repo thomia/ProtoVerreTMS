@@ -75,7 +75,6 @@ export default function GlassSettingsForm() {
   const [physicalActivity, setPhysicalActivity] = useState(50)
   const [nutrition, setNutrition] = useState(50)
   const [sleepDuration, setSleepDuration] = useState(7)
-  const [stress, setStress] = useState(50)
   const [absorptionCapacity, setAbsorptionCapacity] = useState(50)
   const [isSaved, setIsSaved] = useState(false)
   const [formSubmitted, setFormSubmitted] = useState(false)
@@ -108,7 +107,6 @@ export default function GlassSettingsForm() {
         if (settings.physicalActivity) setPhysicalActivity(settings.physicalActivity)
         if (settings.nutrition) setNutrition(settings.nutrition)
         if (settings.sleepDuration) setSleepDuration(settings.sleepDuration)
-        if (settings.stress) setStress(settings.stress)
         
         // Antécédents médicaux
         if (settings.medicalHistory) {
@@ -130,7 +128,7 @@ export default function GlassSettingsForm() {
   // Fonction pour calculer la capacité d'absorption (mémorisée)
   const calculateCapacity = useCallback(() => {
     // Calculer la capacité d'absorption en fonction des paramètres
-    const baseCapacity = 50;
+    const baseCapacity = 0;
     
     // Facteur d'âge (diminue avec l'âge)
     const ageFactor = age <= 30 ? 20 : 
@@ -139,17 +137,13 @@ export default function GlassSettingsForm() {
                       age <= 60 ? 5 : 0;
     
     // Facteur d'activité physique (0-100%)
-    const activityFactor = physicalActivity * 0.1;
+    const activityFactor = physicalActivity * 2;
     
     // Facteur de nutrition (0-100%)
-    const nutritionFactor = nutrition * 0.1;
+    const nutritionFactor = nutrition * 2;
     
-    // Facteur de sommeil (optimal = 7-8h)
-    const sleepFactor = sleepDuration >= 7 && sleepDuration <= 8 ? 10 :
-                       sleepDuration >= 6 && sleepDuration <= 9 ? 5 : 0;
-    
-    // Facteur de stress (négatif)
-    const stressFactor = -stress * 0.1;
+    // Facteur de sommeil (10% par heure jusqu'à 7h)
+    const sleepFactor = Math.min(sleepDuration, 7) * 10;
     
     // Facteur d'antécédents médicaux (négatif)
     let medicalFactor = 0;
@@ -158,13 +152,13 @@ export default function GlassSettingsForm() {
     });
     
     // Calculer la capacité totale
-    let capacity = baseCapacity + ageFactor + activityFactor + nutritionFactor + sleepFactor + stressFactor + medicalFactor;
+    let capacity = baseCapacity + ageFactor + activityFactor + nutritionFactor + sleepFactor + medicalFactor;
     
     // Limiter la capacité entre 10% et 100%
     capacity = Math.max(10, Math.min(100, capacity));
     
     return Math.round(capacity);
-  }, [age, physicalActivity, nutrition, sleepDuration, stress, medicalHistory]);
+  }, [age, physicalActivity, nutrition, sleepDuration, medicalHistory]);
 
   // Mémoriser la capacité calculée
   const calculatedCapacity = useMemo(() => calculateCapacity(), [calculateCapacity]);
@@ -180,7 +174,6 @@ export default function GlassSettingsForm() {
       physicalActivity,
       nutrition,
       sleepDuration,
-      stress,
       medicalHistory,
       absorptionCapacity: capacity
     };
@@ -211,7 +204,7 @@ export default function GlassSettingsForm() {
     emitStorageEvent();
     
     return capacity;
-  }, [age, physicalActivity, nutrition, sleepDuration, stress, medicalHistory]);
+  }, [age, physicalActivity, nutrition, sleepDuration, medicalHistory]);
 
   // Calculer et sauvegarder la capacité quand nécessaire
   useEffect(() => {
@@ -288,8 +281,16 @@ export default function GlassSettingsForm() {
       label: 'Alimentation',
       min: 1,
       max: 5,
-      unit: '/5',
-      value: nutrition
+      unit: '',
+      value: nutrition,
+      getDisplayValue: (value: number) => {
+        if (value === 1) return "Très déséquilibrée";
+        if (value === 2) return "Déséquilibrée";
+        if (value === 3) return "Moyenne";
+        if (value === 4) return "Équilibrée";
+        if (value === 5) return "Très équilibrée";
+        return "";
+      }
     },
     {
       id: 'sleepDuration',
@@ -324,12 +325,12 @@ export default function GlassSettingsForm() {
           {individualFactors.map((factor) => (
             <div 
               key={factor.id} 
-              className="bg-gray-800/40 rounded-lg p-6 space-y-4"
+              className="bg-gradient-to-br from-slate-900/90 to-slate-800/80 border border-slate-700/50 rounded-lg p-6 space-y-4"
             >
               <div className="flex items-center justify-between">
-                <Label className="text-xl font-medium text-gray-200">{factor.label}</Label>
-                <span className="text-lg font-medium text-gray-200 bg-gray-700/50 px-3 py-1.5 rounded-md">
-                  {factor.value}{factor.unit}
+                <Label className="text-xl font-medium text-white">{factor.label}</Label>
+                <span className="text-lg font-medium text-white bg-blue-900/40 border border-blue-700/30 px-3 py-1.5 rounded-md">
+                  {factor.getDisplayValue ? factor.getDisplayValue(factor.value) : `${factor.value}${factor.unit}`}
                 </span>
               </div>
               <div className="relative pt-1">
@@ -339,18 +340,18 @@ export default function GlassSettingsForm() {
                   max={factor.max}
                   value={factor.value}
                   onChange={(e) => updateIndividualFactor(factor.id, parseInt(e.target.value))}
-                  className="w-full h-2.5 bg-gray-600/50 rounded-lg appearance-none cursor-pointer accent-blue-500
+                  className="w-full h-2.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500
                     [&::-webkit-slider-thumb]:w-5 
                     [&::-webkit-slider-thumb]:h-5 
                     [&::-webkit-slider-thumb]:appearance-none 
                     [&::-webkit-slider-thumb]:bg-white 
                     [&::-webkit-slider-thumb]:rounded-full 
-                    [&::-webkit-slider-thumb]:shadow-lg
+                    [&::-webkit-slider-thumb]:shadow-[0_0_5px_rgba(255,255,255,0.5)]
                     [&::-webkit-slider-thumb]:transition-all
                     [&::-webkit-slider-thumb]:duration-150
                     [&::-webkit-slider-thumb]:hover:scale-110"
                 />
-                <div className="flex justify-between mt-2 text-base text-gray-400">
+                <div className="flex justify-between mt-2 text-base text-white/60">
                   <span>{factor.min}{factor.unit}</span>
                   <span>{factor.max}{factor.unit}</span>
                 </div>
@@ -361,7 +362,7 @@ export default function GlassSettingsForm() {
         
         {/* Antécédents médicaux */}
         <div className="space-y-4">
-          <h3 className="text-xl font-medium text-gray-200 mb-2">Antécédents médicaux</h3>
+          <h3 className="text-xl font-medium text-white mb-2">Antécédents médicaux</h3>
           <div className="grid grid-cols-2 gap-4">
             {pathologies.map((pathology) => {
               const isSelected = medicalHistory[pathology.id as MedicalHistoryKey];
@@ -375,23 +376,23 @@ export default function GlassSettingsForm() {
                   }}
                   className={`w-full text-left transition-all duration-200 px-4 py-3 rounded-lg group
                     ${isSelected 
-                      ? 'bg-blue-500/20 border-2 border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' 
-                      : 'bg-gray-800/40 border-2 border-transparent hover:border-gray-600'
+                      ? 'bg-blue-900/30 border-2 border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' 
+                      : 'bg-gradient-to-br from-slate-900/90 to-slate-800/80 border-2 border-slate-700/50 hover:border-blue-700/50'
                     }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <p className={`text-lg font-medium mb-1 ${isSelected ? 'text-blue-400' : 'text-gray-300'}`}>
+                      <p className={`text-lg font-medium mb-1 ${isSelected ? 'text-white' : 'text-gray-300'}`}>
                         {pathology.label}
                       </p>
-                      <p className={`text-base ${isSelected ? 'text-blue-300/80' : 'text-gray-500'}`}>
+                      <p className={`text-base ${isSelected ? 'text-white/80' : 'text-gray-500'}`}>
                         {pathology.description}
                       </p>
                     </div>
                     <div className={`ml-3 rounded-full p-1.5 
                       ${isSelected 
                         ? 'bg-blue-500 text-white' 
-                        : 'bg-gray-700/50 text-gray-400'
+                        : 'bg-slate-700 text-gray-400'
                       }`}
                     >
                       <svg 

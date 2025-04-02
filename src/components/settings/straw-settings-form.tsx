@@ -175,8 +175,8 @@ export default function StrawSettingsForm() {
                   relative flex items-center justify-center p-4 rounded-xl w-full
                   border-2 transition-all duration-200
                   ${activeBreaks.isActive 
-                    ? 'border-green-500 bg-green-500/10' 
-                    : 'border-gray-700 bg-gray-800/50 hover:border-green-500/50 hover:bg-green-500/5'
+                    ? 'border-green-500' 
+                    : 'border-gray-700 hover:border-green-500/50'
                   }
                 `}
               >
@@ -189,7 +189,7 @@ export default function StrawSettingsForm() {
                 `}>
                   {activeBreaks.isActive && <Check className="w-4 h-4 text-white" />}
                 </div>
-                <span className="text-lg font-medium text-white">Pauses actives</span>
+                <span className={`text-lg font-medium ${activeBreaks.isActive ? 'text-green-400' : 'text-white'}`}>Pauses actives</span>
               </button>
             </div>
 
@@ -241,8 +241,8 @@ export default function StrawSettingsForm() {
                 relative flex flex-col items-center justify-center p-3 rounded-xl
                 border-2 transition-all duration-200 min-h-[140px]
                 ${stretching.morning 
-                  ? 'border-green-500 bg-green-500/10' 
-                  : 'border-gray-700 bg-gray-800/50 hover:border-green-500/50 hover:bg-green-500/5'
+                  ? 'border-green-500' 
+                  : 'border-gray-700 hover:border-green-500/50'
                 }
               `}
             >
@@ -258,7 +258,7 @@ export default function StrawSettingsForm() {
                 </div>
               </div>
               <Dumbbell className={`w-6 h-6 mb-3 ${stretching.morning ? 'text-green-400' : 'text-gray-400'}`} />
-              <h4 className="text-lg font-semibold text-white text-center mb-1">Échauffement</h4>
+              <h4 className={`text-lg font-semibold ${stretching.morning ? 'text-green-400' : 'text-white'} text-center mb-1`}>Échauffement</h4>
               <p className="text-xs text-center text-gray-400">Le matin avant de commencer<br/>ou juste avant la tâche physique</p>
             </button>
 
@@ -273,8 +273,8 @@ export default function StrawSettingsForm() {
                 relative flex flex-col items-center justify-center p-3 rounded-xl
                 border-2 transition-all duration-200 min-h-[140px]
                 ${stretching.isActive 
-                  ? 'border-green-500 bg-green-500/10' 
-                  : 'border-gray-700 bg-gray-800/50 hover:border-green-500/50 hover:bg-green-500/5'
+                  ? 'border-green-500' 
+                  : 'border-gray-700 hover:border-green-500/50'
                 }
               `}
             >
@@ -290,7 +290,7 @@ export default function StrawSettingsForm() {
                 </div>
               </div>
               <Activity className={`w-6 h-6 mb-3 ${stretching.isActive ? 'text-green-400' : 'text-gray-400'}`} />
-              <h4 className="text-lg font-semibold text-white text-center mb-1">Étirements</h4>
+              <h4 className={`text-lg font-semibold ${stretching.isActive ? 'text-green-400' : 'text-white'} text-center mb-1`}>Étirements</h4>
               <p className="text-xs text-center text-gray-400">Pendant la journée</p>
             </button>
           </div>
@@ -315,13 +315,13 @@ export default function StrawSettingsForm() {
               relative flex flex-col items-center justify-center p-3 rounded-xl w-full
               border-2 transition-all duration-200
               ${relaxation.isActive 
-                ? 'border-green-500 bg-green-500/10' 
-                : 'border-gray-700 bg-gray-800/50 hover:border-green-500/50 hover:bg-green-500/5'
+                ? 'border-green-500' 
+                : 'border-gray-700 hover:border-green-500/50'
               }
             `}
           >
             <Sparkles className={`w-6 h-6 mb-2 ${relaxation.isActive ? 'text-green-400' : 'text-gray-400'}`} />
-            <h4 className="text-lg font-semibold text-white text-center">Exercices de relaxation</h4>
+            <h4 className={`text-lg font-semibold ${relaxation.isActive ? 'text-green-400' : 'text-white'} text-center`}>Exercices de relaxation</h4>
           </button>
         </div>
 

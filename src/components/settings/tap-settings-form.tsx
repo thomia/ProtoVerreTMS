@@ -180,28 +180,6 @@ const psychosocialColors = {
   }
 }
 
-const psychosocialDirections = {
-  workAutonomy: {
-    taskAutonomy: true, 
-    temporalAutonomy: true, 
-    skillsUse: true, 
-  },
-  socialRelations: {
-    colleagueSupport: true, 
-    hierarchySupport: true, 
-    professionalDisagreements: false, 
-    workRecognition: true, 
-  },
-  valueConflicts: {
-    preventedQuality: false, 
-    uselessWork: false, 
-  },
-  jobInsecurity: {
-    socioeconomicInsecurity: false, 
-    changeManagement: false, 
-  },
-};
-
 const physicalSliderColors = {
   weight: {
     from: 'from-rose-600',
@@ -366,11 +344,7 @@ function getMentalWorkloadDescription(key: string): string {
 }
 
 function getScoreColor(score: number, max: number): string {
-  const percentage = score / max
-  if (percentage < 0.25) return "text-cyan-400"
-  if (percentage < 0.5) return "text-teal-400"
-  if (percentage < 0.75) return "text-amber-400"
-  return "text-rose-400"
+  return "text-blue-400"
 }
 
 function getScoreBgColor(score: number, max: number): string {
@@ -680,18 +654,26 @@ export default function TapSettingsForm() {
 
   return (
     <div className="bg-black text-white">
-      <div className="sticky top-0 z-20 bg-black border-b border-gray-800 shadow-lg">
-        <div className="container mx-auto p-4 flex flex-col md:flex-row items-center justify-between">
-          <h1 className="text-2xl font-bold mb-2 md:mb-0 text-white">Paramètres du Robinet</h1>
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-300">Débit actuel:</div>
-            <div className={`text-2xl font-bold ${getScoreColor(globalScore, 100)}`}>{globalScore.toFixed(0)}/100</div>
-            <div
-              className={`px-3 py-1 rounded-full text-sm ${getScoreBgColor(globalScore, 100)} ${getScoreBorderColor(globalScore, 100)} border`}
-            >
-              {getGlobalScoreText(globalScore)}
-            </div>
+      <div className="sticky top-0 z-20 bg-gradient-to-b from-slate-950 to-slate-900 border-b border-gray-800 shadow-lg">
+        <div className="container mx-auto p-4">
+          <h1 className="text-2xl font-bold mb-3 text-[#3b82f6]">Paramètres du Robinet</h1>
+          <p className="text-[#3b82f6]/90 mb-4">Le travail, avec l'ensemble de ses composantes, constitue le facteur clé dans l'analyse du risque de troubles musculo-squelettiques (TMS) et de probabilité d'accident de travail. Quels sont les déterminants physiques, psychologiques et organisationnels impliqués ? Examinez chaque aspect pour évaluer le niveau de contrainte : la charge manipulée (poids, fréquence), les postures adoptées, ainsi que l'état émotionnel (charge mentale, facteurs psychosociaux).</p>
+          
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-2">
+            <div className="text-[#3b82f6] font-medium">Score calculé</div>
+            <div className="text-xl font-bold text-[#3b82f6]">{globalScore.toFixed(0)}%</div>
           </div>
+          
+          <div className="relative h-2 bg-gray-800 rounded-full overflow-hidden mb-2">
+            <div 
+              className="absolute h-full left-0 top-0 rounded-full transition-all duration-300 bg-[#3b82f6]"
+              style={{ width: `${globalScore}%` }}
+            />
+          </div>
+          
+          <p className="text-sm text-[#3b82f6]/90 mt-1">
+            {getGlobalScoreText(globalScore)}
+          </p>
         </div>
       </div>
 
@@ -704,8 +686,8 @@ export default function TapSettingsForm() {
             >
               <div className="flex items-center">
                 <Weight className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Charge manipulée</span>
-                <span className="sm:hidden">Charge</span>
+                <span className="hidden sm:inline text-[#3b82f6]">Charge manipulée</span>
+                <span className="sm:hidden text-[#3b82f6]">Charge</span>
                 {savedSections.charge && <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" />}
               </div>
             </TabsTrigger>
@@ -715,8 +697,8 @@ export default function TapSettingsForm() {
             >
               <div className="flex items-center">
                 <Layers className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Positions de travail</span>
-                <span className="sm:hidden">Posture</span>
+                <span className="hidden sm:inline text-[#3b82f6]">Positions de travail</span>
+                <span className="sm:hidden text-[#3b82f6]">Posture</span>
                 {savedSections.posture && <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" />}
               </div>
             </TabsTrigger>
@@ -726,8 +708,8 @@ export default function TapSettingsForm() {
             >
               <div className="flex items-center">
                 <Repeat className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Fréquence</span>
-                <span className="sm:hidden">Fréq.</span>
+                <span className="hidden sm:inline text-[#3b82f6]">Fréquence</span>
+                <span className="sm:hidden text-[#3b82f6]">Fréq.</span>
                 {savedSections.frequency && <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" />}
               </div>
             </TabsTrigger>
@@ -737,8 +719,8 @@ export default function TapSettingsForm() {
             >
               <div className="flex items-center">
                 <Brain className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Charge Mentale</span>
-                <span className="sm:hidden">Mental</span>
+                <span className="hidden sm:inline text-[#3b82f6]">Charge Mentale</span>
+                <span className="sm:hidden text-[#3b82f6]">Mental</span>
                 {savedSections.mental && <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" />}
               </div>
             </TabsTrigger>
@@ -748,8 +730,8 @@ export default function TapSettingsForm() {
             >
               <div className="flex items-center">
                 <Users className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Risques Psychosociaux</span>
-                <span className="sm:hidden">RPS</span>
+                <span className="hidden sm:inline text-[#3b82f6]">Risques Psychosociaux</span>
+                <span className="sm:hidden text-[#3b82f6]">RPS</span>
                 {savedSections.psychosocial && <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" />}
               </div>
             </TabsTrigger>
@@ -763,12 +745,12 @@ export default function TapSettingsForm() {
                     <h3 className="text-lg font-medium mb-4">
                       <div className="flex items-center">
                         <Weight className="h-5 w-5 mr-2 text-cyan-400" />
-                        <span>Charge manipulée</span>
+                        <span className="text-[#3b82f6]">Charge manipulée</span>
                       </div>
                     </h3>
                     <div className="flex items-center">
                       <div className="w-24 h-12 bg-black rounded-lg border border-gray-800 flex items-center justify-center">
-                        <span className="text-xl font-semibold text-gray-300">{getIntermediateScore(load, 55)}/20</span>
+                        <span className="text-xl font-semibold text-white">{getIntermediateScore(load, 55)}/20</span>
                       </div>
                       {savedSections.charge && (
                         <div className="flex items-center text-green-500 text-sm ml-4">
@@ -827,22 +809,19 @@ export default function TapSettingsForm() {
                     </p>
                   </div>
                 </div>
-                <div className="flex justify-end">
+                <div className="flex justify-end items-center gap-4">
+                  {saveFeedback === 'charge' && (
+                    <span className="flex items-center text-sm text-[#3b82f6]">
+                      <CheckCircle2 className="mr-1 h-4 w-4" />
+                      Paramètres sauvegardés
+                    </span>
+                  )}
                   <Button 
                     onClick={handleSave} 
-                    className={`${saveFeedback === 'charge' ? 'bg-green-600 hover:bg-green-700' : 'bg-cyan-600 hover:bg-cyan-700'} text-white transition-colors`}
+                    variant="outline"
+                    className="!bg-[#3b82f6] hover:!bg-[#60a5fa] !text-white !border-[#3b82f6]/50 transition-all duration-200 shadow-lg font-medium text-sm rounded-md px-4 py-2"
                   >
-                    {saveFeedback === 'charge' ? (
-                      <>
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                        Enregistré !
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Enregistrer
-                      </>
-                    )}
+                    Sauvegarder
                   </Button>
                 </div>
               </CardContent>
@@ -857,12 +836,12 @@ export default function TapSettingsForm() {
                     <h3 className="text-lg font-medium mb-4">
                       <div className="flex items-center">
                         <Layers className="h-5 w-5 mr-2 text-cyan-400" />
-                        <span>Position de travail</span>
+                        <span className="text-[#3b82f6]">Position de travail</span>
                       </div>
                     </h3>
                     <div className="flex items-center">
                       <div className="w-24 h-12 bg-black rounded-lg border border-gray-800 flex items-center justify-center">
-                        <span className="text-xl font-semibold text-gray-300">{getIntermediateScore(
+                        <span className="text-xl font-semibold text-white">{getIntermediateScore(
                           neckScore + shoulderScore + elbowScore + wristScore + trunkScore + legsScore,
                           30
                         )}/20</span>
@@ -887,12 +866,12 @@ export default function TapSettingsForm() {
                   <h3 className="text-lg font-medium mb-4 flex items-center justify-between">
                     <span className="flex items-center">
                       <Skull className="h-5 w-5 mr-2 text-cyan-400" />
-                      <span className="text-white font-bold">Cou</span>
+                      <span className="text-white font-bold text-[#3b82f6]">Cou</span>
                     </span>
                     <span
                       className={`text-sm px-2 py-1 rounded ${getScoreBgColor(neckScore, 6)} border ${getScoreBorderColor(neckScore, 6)}`}
                     >
-                      Score: <span className={getScoreColor(neckScore, 6)}>{neckScore}</span>/6
+                      <span className="text-white">Score:</span> <span className={getScoreColor(neckScore, 6)}>{neckScore}</span><span className="text-white">/6</span>
                     </span>
                   </h3>
 
@@ -965,12 +944,12 @@ export default function TapSettingsForm() {
                         <div className="absolute top-0 left-1/2 w-1 h-3 bg-current rounded-full transform -translate-x-1/2"></div>
                         <div className="absolute bottom-0 left-1/2 w-3 h-1 bg-current rounded-full transform -translate-x-1/2"></div>
                       </div>
-                      <span className="text-white font-bold">Épaule</span>
+                      <span className="text-white font-bold text-[#3b82f6]">Épaule</span>
                     </span>
                     <span
                       className={`text-sm px-2 py-1 rounded ${getScoreBgColor(shoulderScore, 6)} border ${getScoreBorderColor(shoulderScore, 6)}`}
                     >
-                      Score: <span className={getScoreColor(shoulderScore, 6)}>{shoulderScore}</span>/6
+                      <span className="text-white">Score:</span> <span className={getScoreColor(shoulderScore, 6)}>{shoulderScore}</span><span className="text-white">/6</span>
                     </span>
                   </h3>
 
@@ -1050,12 +1029,12 @@ export default function TapSettingsForm() {
                         <div className="absolute top-1 left-1 w-1 h-4 bg-current rounded-full"></div>
                         <div className="absolute top-2 left-1/2 w-3 h-1 bg-current rounded-full transform rotate-45 -translate-x-1/4"></div>
                       </div>
-                      <span className="text-white font-bold">Coude</span>
+                      <span className="text-white font-bold text-[#3b82f6]">Coude</span>
                     </span>
                     <span
                       className={`text-sm px-2 py-1 rounded ${getScoreBgColor(elbowScore, 3)} border ${getScoreBorderColor(elbowScore, 3)}`}
                     >
-                      Score: <span className={getScoreColor(elbowScore, 3)}>{elbowScore}</span>/3
+                      <span className="text-white">Score:</span> <span className={getScoreColor(elbowScore, 3)}>{elbowScore}</span><span className="text-white">/3</span>
                     </span>
                   </h3>
 
@@ -1107,12 +1086,12 @@ export default function TapSettingsForm() {
                         <div className="absolute top-2 left-0 w-5 h-1 bg-current rounded-full"></div>
                         <div className="absolute top-0 right-0 w-1 h-3 bg-current rounded-full"></div>
                       </div>
-                      <span className="text-white font-bold">Poignet</span>
+                      <span className="text-white font-bold text-[#3b82f6]">Poignet</span>
                     </span>
                     <span
                       className={`text-sm px-2 py-1 rounded ${getScoreBgColor(wristScore, 6)} border ${getScoreBorderColor(wristScore, 6)}`}
                     >
-                      Score: <span className={getScoreColor(wristScore, 6)}>{wristScore}</span>/6
+                      <span className="text-white">Score:</span> <span className={getScoreColor(wristScore, 6)}>{wristScore}</span><span className="text-white">/6</span>
                     </span>
                   </h3>
 
@@ -1192,12 +1171,12 @@ export default function TapSettingsForm() {
                         <div className="absolute top-0 left-1 w-1 h-5 bg-current rounded-full"></div>
                         <div className="absolute top-0 right-1 w-1 h-5 bg-current rounded-full"></div>
                       </div>
-                      <span className="text-white font-bold">Tronc</span>
+                      <span className="text-white font-bold text-[#3b82f6]">Tronc</span>
                     </span>
                     <span
                       className={`text-sm px-2 py-1 rounded ${getScoreBgColor(trunkScore, 6)} border ${getScoreBorderColor(trunkScore, 6)}`}
                     >
-                      Score: <span className={getScoreColor(trunkScore, 6)}>{trunkScore}</span>/6
+                      <span className="text-white">Score:</span> <span className={getScoreColor(trunkScore, 6)}>{trunkScore}</span><span className="text-white">/6</span>
                     </span>
                   </h3>
 
@@ -1266,12 +1245,12 @@ export default function TapSettingsForm() {
                         <div className="absolute top-0 left-1 w-1 h-5 bg-current rounded-full"></div>
                         <div className="absolute top-0 right-1 w-1 h-5 bg-current rounded-full"></div>
                       </div>
-                      <span className="text-white font-bold">Jambes</span>
+                      <span className="text-white font-bold text-[#3b82f6]">Jambes</span>
                     </span>
                     <span
                       className={`text-sm px-2 py-1 rounded ${getScoreBgColor(legsScore, 4)} border ${getScoreBorderColor(legsScore, 4)}`}
                     >
-                      Score: <span className={getScoreColor(legsScore, 4)}>{legsScore}</span>/4
+                      <span className="text-white">Score:</span> <span className={getScoreColor(legsScore, 4)}>{legsScore}</span><span className="text-white">/4</span>
                     </span>
                   </h3>
 
@@ -1320,22 +1299,19 @@ export default function TapSettingsForm() {
                 </CardContent>
               </Card>
             </div>
-            <div className="flex justify-end mt-6">
+            <div className="flex justify-end items-center gap-4">
+              {saveFeedback === 'posture' && (
+                <span className="flex items-center text-sm text-[#3b82f6]">
+                  <CheckCircle2 className="mr-1 h-4 w-4" />
+                  Paramètres sauvegardés
+                </span>
+              )}
               <Button 
                 onClick={handleSave} 
-                className={`${saveFeedback === 'posture' ? 'bg-green-600 hover:bg-green-700' : 'bg-cyan-600 hover:bg-cyan-700'} text-white transition-colors`}
+                variant="outline"
+                className="!bg-[#3b82f6] hover:!bg-[#60a5fa] !text-white !border-[#3b82f6]/50 transition-all duration-200 shadow-lg font-medium text-sm rounded-md px-4 py-2"
               >
-                {saveFeedback === 'posture' ? (
-                  <>
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Enregistré !
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Enregistrer
-                  </>
-                )}
+                Sauvegarder
               </Button>
             </div>
           </TabsContent>
@@ -1348,12 +1324,12 @@ export default function TapSettingsForm() {
                     <h3 className="text-lg font-medium mb-4">
                       <div className="flex items-center">
                         <Repeat className="h-5 w-5 mr-2 text-cyan-400" />
-                        <span>Fréquence</span>
+                        <span className="text-[#3b82f6]">Fréquence</span>
                       </div>
                     </h3>
                     <div className="flex items-center">
                       <div className="w-24 h-12 bg-black rounded-lg border border-gray-800 flex items-center justify-center">
-                        <span className="text-xl font-semibold text-gray-300">{getIntermediateScore(frequency, 120)}/20</span>
+                        <span className="text-xl font-semibold text-white">{getIntermediateScore(frequency, 120)}/20</span>
                       </div>
                       {savedSections.frequency && (
                         <div className="flex items-center text-green-500 text-sm ml-4">
@@ -1437,22 +1413,19 @@ export default function TapSettingsForm() {
                     </p>
                   </div>
                 </div>
-                <div className="flex justify-end">
+                <div className="flex justify-end items-center gap-4">
+                  {saveFeedback === 'frequency' && (
+                    <span className="flex items-center text-sm text-[#3b82f6]">
+                      <CheckCircle2 className="mr-1 h-4 w-4" />
+                      Paramètres sauvegardés
+                    </span>
+                  )}
                   <Button 
                     onClick={handleSave} 
-                    className={`${saveFeedback === 'frequency' ? 'bg-green-600 hover:bg-green-700' : 'bg-cyan-600 hover:bg-cyan-700'} text-white transition-colors`}
+                    variant="outline"
+                    className="!bg-[#3b82f6] hover:!bg-[#60a5fa] !text-white !border-[#3b82f6]/50 transition-all duration-200 shadow-lg font-medium text-sm rounded-md px-4 py-2"
                   >
-                    {saveFeedback === 'frequency' ? (
-                      <>
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                        Enregistré !
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Enregistrer
-                      </>
-                    )}
+                    Sauvegarder
                   </Button>
                 </div>
               </CardContent>
@@ -1467,12 +1440,12 @@ export default function TapSettingsForm() {
                     <h3 className="text-lg font-medium mb-4">
                       <div className="flex items-center">
                         <Brain className="h-5 w-5 mr-2 text-cyan-400" />
-                        <span>Charge Mentale</span>
+                        <span className="text-[#3b82f6]">Charge Mentale</span>
                       </div>
                     </h3>
                     <div className="flex items-center">
                       <div className="w-24 h-12 bg-black rounded-lg border border-gray-800 flex items-center justify-center">
-                        <span className="text-xl font-semibold text-gray-300">{getIntermediateScore(
+                        <span className="text-xl font-semibold text-white">{getIntermediateScore(
                           Object.values(mentalWorkload).reduce((acc, val) => acc + val, 0),
                           120
                         )}/20</span>
@@ -1506,7 +1479,7 @@ export default function TapSettingsForm() {
                       <span
                         className={`text-sm px-2 py-1 rounded ${getScoreBgColor(value, 20)} border ${getScoreBorderColor(value, 20)}`}
                       >
-                        Score: <span className={getScoreColor(value, 20)}>{value}</span>/20
+                        <span className="text-white">Score:</span> <span className={getScoreColor(value, 20)}>{value}</span><span className="text-white">/20</span>
                       </span>
                     </h3>
 
@@ -1560,22 +1533,19 @@ export default function TapSettingsForm() {
               </p>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end items-center gap-4">
+              {saveFeedback === 'mental' && (
+                <span className="flex items-center text-sm text-[#3b82f6]">
+                  <CheckCircle2 className="mr-1 h-4 w-4" />
+                  Paramètres sauvegardés
+                </span>
+              )}
               <Button 
                 onClick={handleSave} 
-                className={`${saveFeedback === 'mental' ? 'bg-green-600 hover:bg-green-700' : 'bg-cyan-600 hover:bg-cyan-700'} text-white transition-colors`}
+                variant="outline"
+                className="!bg-[#3b82f6] hover:!bg-[#60a5fa] !text-white !border-[#3b82f6]/50 transition-all duration-200 shadow-lg font-medium text-sm rounded-md px-4 py-2"
               >
-                {saveFeedback === 'mental' ? (
-                  <>
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Enregistré !
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Enregistrer
-                  </>
-                )}
+                Sauvegarder
               </Button>
             </div>
           </TabsContent>
@@ -1588,12 +1558,12 @@ export default function TapSettingsForm() {
                     <h3 className="text-lg font-medium mb-4">
                       <div className="flex items-center">
                         <Users className="h-5 w-5 mr-2 text-cyan-400" />
-                        <span>Risques Psychosociaux</span>
+                        <span className="text-[#3b82f6]">Risques Psychosociaux</span>
                       </div>
                     </h3>
                     <div className="flex items-center">
                       <div className="w-24 h-12 bg-black rounded-lg border border-gray-800 flex items-center justify-center">
-                        <span className="text-xl font-semibold text-gray-300">{getIntermediateScore(
+                        <span className="text-xl font-semibold text-white">{getIntermediateScore(
                           Object.values(psychosocialRisks).reduce((acc, val) => acc + val, 0),
                           44
                         )}/20</span>
@@ -1621,7 +1591,7 @@ export default function TapSettingsForm() {
                       <AccordionTrigger className="px-4 py-3 bg-gray-800 hover:bg-gray-700 transition-colors text-white">
                         <div className="flex items-center">
                           <Lightbulb className="h-5 w-5 mr-2 text-blue-400" />
-                          <span className="font-medium">Faible autonomie au travail</span>
+                          <span className="font-medium text-[#3b82f6]">Faible autonomie au travail</span>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="bg-gray-800/80 px-4 py-3 space-y-4 border-l-2 border-blue-500">
@@ -1752,7 +1722,7 @@ export default function TapSettingsForm() {
                       <AccordionTrigger className="px-4 py-3 bg-gray-800 hover:bg-gray-700 transition-colors text-white">
                         <div className="flex items-center">
                           <Users className="h-5 w-5 mr-2 text-purple-400" />
-                          <span className="font-medium">Rapports sociaux au travail dégradés</span>
+                          <span className="font-medium text-[#3b82f6]">Rapports sociaux au travail dégradés</span>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="bg-gray-800/80 px-4 py-3 space-y-4 border-l-2 border-purple-500">
@@ -1923,7 +1893,7 @@ export default function TapSettingsForm() {
                       <AccordionTrigger className="px-4 py-3 bg-gray-800 hover:bg-gray-700 transition-colors text-white">
                         <div className="flex items-center">
                           <Heart className="h-5 w-5 mr-2 text-rose-400" />
-                          <span className="font-medium">Conflits de valeurs</span>
+                          <span className="font-medium text-[#3b82f6]">Conflits de valeurs</span>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="bg-gray-800/80 px-4 py-3 space-y-4 border-l-2 border-rose-500">
@@ -2014,7 +1984,7 @@ export default function TapSettingsForm() {
                       <AccordionTrigger className="px-4 py-3 bg-gray-800 hover:bg-gray-700 transition-colors text-white">
                         <div className="flex items-center">
                           <ShieldAlert className="h-5 w-5 mr-2 text-amber-400" />
-                          <span className="font-medium">Insécurité de l'emploi et du travail</span>
+                          <span className="font-medium text-[#3b82f6]">Insécurité de l'emploi et du travail</span>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="bg-gray-800/80 px-4 py-3 space-y-4 border-l-2 border-amber-500">
@@ -2149,22 +2119,19 @@ export default function TapSettingsForm() {
                     </p>
                   </div>
                   
-                  <div className="flex justify-end mt-6">
+                  <div className="flex justify-end items-center gap-4">
+                    {saveFeedback === 'psychosocial' && (
+                      <span className="flex items-center text-sm text-[#3b82f6]">
+                        <CheckCircle2 className="mr-1 h-4 w-4" />
+                        Paramètres sauvegardés
+                      </span>
+                    )}
                     <Button 
                       onClick={handleSave} 
-                      className={`${saveFeedback === 'psychosocial' ? 'bg-green-600 hover:bg-green-700' : 'bg-cyan-600 hover:bg-cyan-700'} text-white transition-colors`}
+                      variant="outline"
+                      className="!bg-[#3b82f6] hover:!bg-[#60a5fa] !text-white !border-[#3b82f6]/50 transition-all duration-200 shadow-lg font-medium text-sm rounded-md px-4 py-2"
                     >
-                      {saveFeedback === 'psychosocial' ? (
-                        <>
-                          <CheckCircle2 className="h-4 w-4 mr-2" />
-                          Enregistré !
-                        </>
-                      ) : (
-                        <>
-                          <Save className="h-4 w-4 mr-2" />
-                          Enregistrer
-                        </>
-                      )}
+                      Sauvegarder
                     </Button>
                   </div>
                 </div>

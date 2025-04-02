@@ -15,7 +15,6 @@ import { EnvironmentParticles } from './environment-particles'
 import { ModelDescription } from '../ui/model-description'
 import { AnimatedTitle } from '../ui/animated-title'
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { CostPanel } from "./cost-panel"
@@ -402,7 +401,7 @@ export default function Dashboard() {
         const netFlow = isStrawEnabled 
           ? (adjustedFlowRate - absorptionRate) / capacityFactor 
           : adjustedFlowRate / capacityFactor
-        const newLevel = prevLevel + (netFlow * deltaTime * simulationSpeed / 100000)
+        const newLevel = prevLevel + (netFlow * deltaTime * simulationSpeed / 20000)
         return Math.min(Math.max(newLevel, 0), 100)
       })
       
@@ -551,24 +550,31 @@ export default function Dashboard() {
               <CardContent className="relative space-y-4 p-8">
                 {/* Boutons de contrôle */}
                 <div className="flex items-center gap-4">
-                  <Button
+                  <button
                     onClick={handleReset}
-                    size="lg"
-                    className="relative flex-1 bg-gradient-to-br from-blue-600/20 to-blue-700/20 text-blue-400 border-blue-500/30 hover:border-blue-400/40 hover:bg-blue-600/30 hover:text-blue-300 shadow-lg shadow-blue-900/20 transition-all duration-300"
+                    className="flex-1 h-16 bg-gradient-to-br from-blue-600/50 to-blue-700/60 text-white border border-blue-500/50 rounded-md hover:bg-blue-600/70 hover:text-white active:transform active:scale-95 transition-all duration-150 focus:outline-none cursor-pointer shadow-md"
+                    type="button"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-transparent animate-shimmer" />
-                    <RefreshCw className="h-5 w-5 mr-2" />
-                    Réinitialiser
-                  </Button>
-                  <Button
+                    <div className="flex items-center justify-center w-full h-full">
+                      <RefreshCw className="h-6 w-6 mr-3 pointer-events-none" />
+                      <span className="text-lg font-medium pointer-events-none">Réinitialiser</span>
+                    </div>
+                  </button>
+                  <button
                     onClick={handlePauseToggle}
-                    size="lg"
-                    className="relative flex-1 bg-gradient-to-br from-blue-600/20 to-blue-700/20 text-blue-400 border-blue-500/30 hover:border-blue-400/40 hover:bg-blue-600/30 hover:text-blue-300 shadow-lg shadow-blue-900/20 transition-all duration-300"
+                    className="flex-1 h-16 bg-gradient-to-br from-blue-600/50 to-blue-700/60 text-white border border-blue-500/50 rounded-md hover:bg-blue-600/70 hover:text-white active:transform active:scale-95 transition-all duration-150 focus:outline-none cursor-pointer shadow-md"
+                    type="button"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-transparent animate-shimmer" />
-                    {isPaused ? <Play className="h-5 w-5 mr-2" /> : <Pause className="h-5 w-5 mr-2" />}
-                    {isPaused ? 'Reprendre' : 'Pause'}
-                  </Button>
+                    <div className="flex items-center justify-center w-full h-full">
+                      {isPaused ? 
+                        <Play className="h-6 w-6 mr-3 pointer-events-none" /> : 
+                        <Pause className="h-6 w-6 mr-3 pointer-events-none" />
+                      }
+                      <span className="text-lg font-medium pointer-events-none">
+                        {isPaused ? 'Reprendre' : 'Pause'}
+                      </span>
+                    </div>
+                  </button>
                 </div>
 
                 {/* Contrôle de vitesse */}
