@@ -2,7 +2,7 @@ import { EspacePersonnelNavigation } from "@/components/espace-personnel/navigat
 import AnalyseDetail from "@/components/espace-personnel/analyse-detail"
 import type { Metadata } from "next"
 
-type AnalyseDetailPageProps = {
+interface AnalyseDetailPageProps {
   params: {
     id: string
   }
@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: AnalyseDetailPageProps): Prom
   }
 }
 
-export default function AnalyseDetailPage({ params }: AnalyseDetailPageProps) {
+export default function AnalyseDetailPage({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900">
       <div className="container mx-auto px-4 py-8">
