@@ -2,20 +2,26 @@ import { EspacePersonnelNavigation } from "@/components/espace-personnel/navigat
 import AnalyseDetail from "@/components/espace-personnel/analyse-detail"
 import type { Metadata } from "next"
 
-interface AnalyseDetailPageProps {
-  params: {
-    id: string
-  }
+type PageParams = {
+  id: string
 }
 
-export async function generateMetadata({ params }: AnalyseDetailPageProps): Promise<Metadata> {
+export async function generateMetadata({ 
+  params 
+}: { 
+  params: PageParams 
+}): Promise<Metadata> {
   return {
     title: `Analyse ${params.id} | ProtoVerreTMS`,
     description: `Détails de l'analyse ${params.id} dans l'espace personnel`
   }
 }
 
-export default function AnalyseDetailPage({ params }: { params: { id: string } }) {
+export default function AnalyseDetailPage({
+  params
+}: {
+  params: PageParams
+}) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900">
       <div className="container mx-auto px-4 py-8">
