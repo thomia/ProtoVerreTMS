@@ -3,20 +3,19 @@ import AnalyseDetail from "@/components/espace-personnel/analyse-detail"
 import type { Metadata } from "next"
 
 type Props = {
-  params: {
-    id: string
-  }
+  params: Promise<{ id: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params
   return {
-    title: `Analyse ${params.id} | ProtoVerreTMS`,
-    description: `Détails de l'analyse ${params.id} dans l'espace personnel`
+    title: `Analyse ${id} | ProtoVerreTMS`,
+    description: `Détails de l'analyse ${id} dans l'espace personnel`
   }
 }
 
-export default function Page(props: Props) {
-  const { id } = props.params;
+export default async function Page({ params }: Props) {
+  const { id } = await params
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900">
