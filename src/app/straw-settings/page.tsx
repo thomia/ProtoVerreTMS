@@ -40,4 +40,4 @@ export default function StrawSettingsPage() {
       </div>
     </div>
   )
-} 
+}

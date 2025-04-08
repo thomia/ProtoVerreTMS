@@ -26,7 +26,7 @@ export default function GlassComponent({ fillLevel }: GlassComponentProps) {
         className="absolute bottom-0 left-0 right-0 bg-blue-400/70 animate-fill-glass"
         style={{ 
           height: '0%',
-          transition: 'height 1s ease-in-out'
+          transition: 'height 0.2s ease-in-out'
         }}
       />
       
