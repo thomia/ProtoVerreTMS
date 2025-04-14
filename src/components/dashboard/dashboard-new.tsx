@@ -8,7 +8,7 @@ import StrawComponent from './straw-component'
 import StormComponent from './storm-component'
 import React from 'react'
 import { ParameterModals } from './parameter-modals'
-import { Settings, Droplet, Wind, GlassWater, RectangleHorizontal, Cloud, Clock, RefreshCw, Play, Pause } from 'lucide-react'
+import { Settings, Droplet, Wind, GlassWater, RectangleHorizontal, Cloud, Clock, RefreshCw, Play, Pause, Shuffle } from 'lucide-react'
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { getLocalStorage, setLocalStorage, emitStorageEvent } from '@/lib/localStorage'
@@ -106,7 +106,7 @@ export default function Dashboard() {
     // Charger les paramètres depuis localStorage
     const savedFlowRate = getLocalStorage('flowRate');
     const savedFillLevel = getLocalStorage('fillLevel');
-    const savedGlassCapacity = getLocalStorage('glassCapacity');
+    // La variable savedGlassCapacity est maintenant gérée dans un autre useEffect
     const savedEnvironmentScore = getLocalStorage('environmentScore');
     
     if (savedFlowRate) {
@@ -126,13 +126,7 @@ export default function Dashboard() {
       }
     }
     
-    if (savedGlassCapacity) {
-      try {
-        setGlassCapacity(Number(savedGlassCapacity));
-      } catch (e) {
-        console.error("Erreur lors du chargement de la capacité du verre:", e);
-      }
-    }
+    // La gestion de savedGlassCapacity est déplacée dans un autre useEffect
     
     if (savedEnvironmentScore) {
       try {
@@ -141,25 +135,6 @@ export default function Dashboard() {
         console.error("Erreur lors du chargement du score environnemental:", e);
       }
     }
-    
-    // Écouter l'événement de mise à jour de la capacité du verre
-    const handleGlassCapacityUpdate = (e: CustomEvent<{ capacity: number }>) => {
-      if (e.detail && typeof e.detail.capacity === 'number') {
-        setGlassCapacity(e.detail.capacity);
-      }
-    };
-    
-    // Écouter l'événement de mise à jour du score environnemental
-    window.addEventListener('environmentScoreUpdated', ((e: CustomEvent<{ score: number }>) => {
-      if (e.detail && typeof e.detail.score === 'number') {
-        setEnvironmentScore(e.detail.score);
-      }
-    }) as EventListener);
-    
-    // Nettoyage des écouteurs d'événements
-    return () => {
-      window.removeEventListener('environmentScoreUpdated', (() => {}) as EventListener);
-    };
   }, [isMounted]);
   
   // Charger les paramètres de posture depuis localStorage
@@ -299,57 +274,63 @@ export default function Dashboard() {
     };
   }, []);
   
-  // Mettre à jour la capacité du verre lorsque sa largeur change
-  useEffect(() => {
-    // Calculer la capacité en fonction de la largeur
-    // 20 = 0%, 90 = 100%
-    const capacity = Math.round(((glassWidth - 20) / 70) * 100);
-    setGlassCapacity(capacity);
-    
-    // Sauvegarder dans localStorage
-    setLocalStorage('glassCapacity', capacity.toString());
-    
-    // Émettre un événement pour notifier les autres composants
-    const event = new CustomEvent('glassCapacityUpdated', { 
-      detail: { capacity } 
-    });
-    window.dispatchEvent(event);
-  }, [glassCapacity]);
-  
-  // Écouter les changements de capacité via les événements personnalisés
+  // Écouter l'événement de mise à jour de la capacité du verre
   useEffect(() => {
     if (!isMounted) return;
     
-    // Fonction pour gérer les changements de capacité
-    const handleCapacityChange = () => {
-      if (typeof window === 'undefined') return;
-      
-      const savedCapacity = getLocalStorage('glassCapacity');
-      if (savedCapacity) {
-        try {
-          setGlassCapacity(Number(savedCapacity));
-        } catch (e) {
-          console.error("Erreur lors de la mise à jour de la capacité:", e);
-        }
-      }
-    };
+    console.log("Configuration de l'écouteur pour glassCapacityUpdated");
     
+    // Fonction de gestion de l'événement
     const handleCapacityUpdate = (e: CustomEvent<{ capacity: number }>) => {
       if (e.detail && typeof e.detail.capacity === 'number') {
-        setGlassCapacity(e.detail.capacity);
+        const roundedCapacity = Math.round(e.detail.capacity);
+        console.log("Événement glassCapacityUpdated reçu avec capacité:", roundedCapacity);
+        setGlassCapacity(roundedCapacity);
       }
     };
     
-    window.addEventListener('storage', handleCapacityChange);
-    window.addEventListener('localStorageUpdated', handleCapacityChange);
+    // Ajouter l'écouteur d'événement
     window.addEventListener('glassCapacityUpdated', handleCapacityUpdate as EventListener);
     
+    // Charger la capacité initiale depuis localStorage
+    const glassCapacityFromStorage = getLocalStorage('glassCapacity');
+    if (glassCapacityFromStorage) {
+      try {
+        const capacity = Math.round(Number(glassCapacityFromStorage));
+        console.log("Capacité initiale chargée depuis localStorage:", capacity);
+        setGlassCapacity(capacity);
+      } catch (e) {
+        console.error("Erreur lors du chargement de la capacité du verre:", e);
+      }
+    }
+    
+    // Nettoyage de l'écouteur d'événement
     return () => {
-      window.removeEventListener('storage', handleCapacityChange);
-      window.removeEventListener('localStorageUpdated', handleCapacityChange);
       window.removeEventListener('glassCapacityUpdated', handleCapacityUpdate as EventListener);
     };
-  }, [isMounted, glassCapacity]);
+  }, [isMounted]);
+  
+  // Écouter l'événement de mise à jour du score environnemental
+  useEffect(() => {
+    if (!isMounted) return;
+    
+    // Fonction de gestion de l'événement
+    const handleEnvironmentScoreUpdate = (e: CustomEvent<{ score: number }>) => {
+      if (e.detail && typeof e.detail.score === 'number') {
+        const roundedScore = Math.round(e.detail.score);
+        console.log("Événement environmentScoreUpdated reçu avec score:", roundedScore);
+        setEnvironmentScore(roundedScore);
+      }
+    };
+    
+    // Ajouter l'écouteur d'événement
+    window.addEventListener('environmentScoreUpdated', handleEnvironmentScoreUpdate as EventListener);
+    
+    // Nettoyage de l'écouteur d'événement
+    return () => {
+      window.removeEventListener('environmentScoreUpdated', handleEnvironmentScoreUpdate as EventListener);
+    };
+  }, [isMounted]);
   
   // Charger l'état de la paille depuis localStorage
   useEffect(() => {
@@ -423,28 +404,62 @@ export default function Dashboard() {
   // Fonction pour obtenir la largeur du filet d'eau en fonction du débit
   const getWaterStreamWidth = () => {
     // Largeur min: 2px, max: 12px
-    return 2 + (flowRate / 10);
+    return Math.floor(2 + (flowRate / 10));
   };
 
   // Fonction pour obtenir l'opacité du filet d'eau en fonction du débit
   const getWaterStreamOpacity = () => {
     // Opacité min: 0.2, max: 0.9
-    return 0.2 + (flowRate / 100) * 0.7;
+    return Math.round((0.2 + (flowRate / 100) * 0.7) * 100) / 100;
   };
 
   // Gérer les changements de débit du robinet
   const handleFlowRateChange = (newFlowRate: number) => {
-    setFlowRate(newFlowRate);
-    lastFlowRateRef.current = newFlowRate;
+    // Arrondir le débit à un nombre entier
+    const roundedFlowRate = Math.round(newFlowRate);
+    
+    setFlowRate(roundedFlowRate);
+    lastFlowRateRef.current = roundedFlowRate;
     
     // Sauvegarder dans localStorage
-    setLocalStorage('flowRate', newFlowRate.toString());
+    setLocalStorage('flowRate', roundedFlowRate.toString());
     
     // Émettre un événement pour notifier les autres composants
     const event = new CustomEvent('tapFlowRateUpdated', { 
-      detail: { flowRate: newFlowRate } 
+      detail: { flowRate: roundedFlowRate } 
     });
     window.dispatchEvent(event);
+  };
+
+  // Générer des valeurs aléatoires pour tous les composants
+  const handleRandomize = () => {
+    // Générer un débit aléatoire pour le robinet (1-100)
+    const randomFlowRate = Math.floor(Math.random() * 100) + 1;
+    setFlowRate(randomFlowRate);
+    setLocalStorage('flowRate', randomFlowRate.toString());
+    
+    // Générer une capacité aléatoire pour le verre (30-100)
+    const randomCapacity = Math.floor(Math.random() * 71) + 30;
+    setGlassCapacity(randomCapacity);
+    setLocalStorage('glassCapacity', randomCapacity.toString());
+    
+    // Générer un taux d'absorption aléatoire pour la paille (10-80)
+    const randomAbsorptionRate = Math.floor(Math.random() * 71) + 10;
+    setAbsorptionRate(randomAbsorptionRate);
+    setLocalStorage('absorptionRate', randomAbsorptionRate.toString());
+    
+    // Générer une intensité aléatoire pour l'orage (10-100)
+    const randomStormIntensity = Math.floor(Math.random() * 91) + 10;
+    setStormIntensity(randomStormIntensity);
+    setLocalStorage('stormIntensity', randomStormIntensity.toString());
+    
+    // Générer un score environnemental aléatoire pour la bulle (20-100)
+    const randomEnvironmentScore = Math.floor(Math.random() * 81) + 20;
+    setEnvironmentScore(randomEnvironmentScore);
+    setLocalStorage('environmentScore', randomEnvironmentScore.toString());
+    
+    // Émettre un événement pour notifier les autres composants
+    emitStorageEvent();
   };
 
   // Calculer le risque d'accident en fonction du débit et du score environnemental
@@ -574,6 +589,25 @@ export default function Dashboard() {
     }
   }, [simulationSpeed, isPaused, lastSimulationSpeed, workStartTime]);
 
+  // Mettre à jour la largeur du verre en fonction de la capacité d'absorption
+  useEffect(() => {
+    if (!isMounted) return;
+    
+    // Calculer la largeur du verre en fonction de la capacité d'absorption
+    // Capacité 0% = largeur minimale (20%)
+    // Capacité 100% = largeur maximale (90%)
+    const newGlassWidth = Math.round(20 + (glassCapacity * 0.7));
+    console.log("Mise à jour de la largeur du verre:", newGlassWidth, "basée sur la capacité:", glassCapacity);
+    
+    // Mettre à jour la largeur du verre
+    setGlassWidth(newGlassWidth);
+    
+    // Calculer la largeur en pixels (entre 70px et 260px)
+    const newGlassWidthPx = Math.round(70 + (newGlassWidth / 100) * 190);
+    setGlassWidthPx(newGlassWidthPx);
+    
+  }, [glassCapacity, isMounted]);
+
   return (
     <div className="w-full">
       {/* En-tête du dashboard */}
@@ -600,6 +634,14 @@ export default function Dashboard() {
                 >
                   <RefreshCw className="h-4 w-4" />
                   <span>Réinitialiser</span>
+                </button>
+                
+                <button
+                  onClick={handleRandomize}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm transition-colors"
+                >
+                  <Shuffle className="h-4 w-4" />
+                  <span>Aléatoire</span>
                 </button>
                 
                 <button
@@ -660,6 +702,7 @@ export default function Dashboard() {
             <div className="space-y-3">
               <TapSectionV2 
                 flowRate={flowRate}
+                environmentImpact={Math.round(environmentScore * 0.15)}
                 onSettingsClick={() => handleOpenModal('tap')}
               />
               
@@ -692,107 +735,80 @@ export default function Dashboard() {
           <div className="lg:col-span-8">
             <div className="p-6 rounded-lg bg-gray-950/30 border border-gray-800/20 h-full">
               <div className="flex flex-col items-center">
-                <h3 className="text-xl font-medium text-gray-300 mb-6">Simulation TMS</h3>
+                <h3 className="text-xl font-medium text-gray-300 mb-6">Simulation</h3>
                 
                 <div className="relative w-full max-w-[700px] h-[700px] flex flex-col items-center justify-center">
-                  {/* Bulle environnementale */}
-                  <div className="absolute inset-0 rounded-full overflow-hidden">
+                  {/* Bulle environnementale - positionnée pour englober complètement tout le système, y compris le bas du verre */}
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full overflow-hidden border-2 border-purple-400/40 bg-transparent shadow-[0_0_20px_rgba(168,85,247,0.15)] z-0" style={{ top: '53%' }}>
                     <EnvironmentParticles 
                       score={environmentScore} 
                       isPaused={isPaused}
                     />
                   </div>
                   
-                  {/* Robinet */}
-                  <div className="relative z-20 mb-6 scale-125">
-                    <TapComponent 
-                      flowRate={flowRate} 
-                      onFlowRateChange={handleFlowRateChange}
-                      hideDebitLabel={false}
-                    />
-                  </div>
-                  
-                  {/* Flux d'eau initial */}
-                  <div 
-                    className="relative z-10 mb-4"
-                    style={{
-                      height: '80px',
-                      width: `${getWaterStreamWidth() * 1.25}px`,
-                      background: `linear-gradient(180deg, 
-                        rgba(59, 130, 246, ${getWaterStreamOpacity()}) 0%,
-                        rgba(37, 99, 235, ${getWaterStreamOpacity()}) 100%
-                      )`,
-                      borderRadius: '0 0 2px 2px',
-                      boxShadow: `0 0 8px rgba(59, 130, 246, 0.5)`,
-                    }}
-                  />
-                  
-                  {/* Orage - positionné entre le robinet et le verre */}
-                  <div className="mb-6 relative z-20 scale-125">
-                    <StormComponent 
-                      intensity={stormIntensity} 
-                      onIntensityChange={setStormIntensity}
-                      hideIntensityLabel={false} 
-                    />
-                  </div>
-                  
-                  {/* Flux d'eau après l'orage */}
-                  <div 
-                    className="relative z-10 mb-4"
-                    style={{
-                      height: '80px',
-                      width: `${getWaterStreamWidth() * (1 - stormIntensity/200) * 1.25}px`,
-                      background: `linear-gradient(180deg, 
-                        rgba(59, 130, 246, ${getWaterStreamOpacity() * (1 - stormIntensity/200)}) 0%,
-                        rgba(37, 99, 235, ${getWaterStreamOpacity() * (1 - stormIntensity/200)}) 100%
-                      )`,
-                      borderRadius: '0 0 2px 2px',
-                      boxShadow: `0 0 8px rgba(59, 130, 246, 0.5)`,
-                    }}
-                  />
-                  
-                  {/* Verre avec paille */}
-                  <div className="scale-125">
-                    <div ref={glassRef} className="relative">
-                      <GlassComponent 
-                        fillLevel={fillLevel} 
-                        absorptionRate={absorptionRate}
-                        width={glassWidth}
+                  {/* Structure simplifiée avec le robinet intégrant directement le filet d'eau */}
+                  <div className="flex flex-col items-center justify-center relative" style={{ height: '600px' }}>
+                    {/* Robinet avec filet d'eau intégré - abaissé encore plus */}
+                    <div className="relative z-20 mt-[200px]">
+                      <TapComponent 
+                        flowRate={flowRate} 
+                        onFlowRateChange={handleFlowRateChange}
+                        hideDebitLabel={false}
                       />
-                      
-                      {/* Paille positionnée dans le verre */}
-                      <div className="absolute top-[-230px] right-[-5px] z-20">
-                        <StrawComponent 
-                          absorptionRate={absorptionRate} 
-                          setAbsorptionRate={setAbsorptionRate} 
-                          isInsideGlass={true}
+                    </div>
+                    
+                    {/* Orage - positionné entre le robinet et le verre, décalé sur la gauche */}
+                    <div className="relative z-20 scale-110 mt-[-180px] mb-[30px] ml-[-120px]">
+                      <StormComponent 
+                        intensity={stormIntensity} 
+                        onIntensityChange={setStormIntensity}
+                        hideIntensityLabel={false} 
+                      />
+                    </div>
+                    
+                    {/* Verre avec paille - remonté légèrement */}
+                    <div className="scale-125 mt-[-20px] relative z-10">
+                      <div ref={glassRef} className="relative">
+                        <GlassComponent 
+                          fillLevel={fillLevel} 
+                          absorptionRate={absorptionRate}
+                          width={glassWidth}
                         />
+                        
+                        {/* Paille positionnée dans le verre */}
+                        <div className="absolute top-[-230px] right-[-5px] z-20">
+                          <StrawComponent 
+                            absorptionRate={absorptionRate} 
+                            setAbsorptionRate={setAbsorptionRate} 
+                            isInsideGlass={true}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              
-              {/* Légende des couleurs */}
-              <div className="mt-6 w-full max-w-[700px] mx-auto">
-                <div className="p-3 rounded-lg bg-gray-950/30 border border-gray-800/20">
-                  <h3 className="text-sm font-medium text-gray-400 mb-2 text-center">Légende des couleurs</h3>
-                  <div className="grid grid-cols-4 gap-2">
-                    <div className="flex items-center justify-center gap-1">
-                      <div className="w-2 h-2 bg-green-500/80 rounded-full"></div>
-                      <span className="text-xs text-gray-400">0-60% (Normal)</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-1">
-                      <div className="w-2 h-2 bg-yellow-500/80 rounded-full"></div>
-                      <span className="text-xs text-gray-400">60-80% (Vigilance)</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-1">
-                      <div className="w-2 h-2 bg-red-500/80 rounded-full"></div>
-                      <span className="text-xs text-gray-400">80-90% (Danger)</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-1">
-                      <div className="w-2 h-2 bg-purple-500/80 rounded-full"></div>
-                      <span className="text-xs text-gray-400">90-100% (Critique)</span>
+                
+                {/* Légende des couleurs - abaissée */}
+                <div className="mt-40 w-full max-w-[700px] mx-auto">
+                  <div className="p-3 rounded-lg bg-gray-950/30 border border-gray-800/20">
+                    <h3 className="text-sm font-medium text-gray-400 mb-2 text-center">Légende des couleurs</h3>
+                    <div className="grid grid-cols-4 gap-2">
+                      <div className="flex items-center justify-center gap-1">
+                        <div className="w-2 h-2 bg-green-500/80 rounded-full"></div>
+                        <span className="text-xs text-gray-400">0-60% (Normal)</span>
+                      </div>
+                      <div className="flex items-center justify-center gap-1">
+                        <div className="w-2 h-2 bg-yellow-500/80 rounded-full"></div>
+                        <span className="text-xs text-gray-400">60-80% (Vigilance)</span>
+                      </div>
+                      <div className="flex items-center justify-center gap-1">
+                        <div className="w-2 h-2 bg-red-500/80 rounded-full"></div>
+                        <span className="text-xs text-gray-400">80-90% (Danger)</span>
+                      </div>
+                      <div className="flex items-center justify-center gap-1">
+                        <div className="w-2 h-2 bg-purple-500/80 rounded-full"></div>
+                        <span className="text-xs text-gray-400">90-100% (Critique)</span>
+                      </div>
                     </div>
                   </div>
                 </div>

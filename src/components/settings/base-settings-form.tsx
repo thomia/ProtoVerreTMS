@@ -111,15 +111,15 @@ const scoreConfigs = {
     colors: {
       text: (value: number) => ({
         color: value < 25 ? 'rgb(216, 180, 254)' :  // violet très clair
-               value < 50 ? 'rgb(192, 132, 252)' :   // violet clair
-               value < 75 ? 'rgb(168, 85, 247)' :    // violet moyen
-               'rgb(147, 51, 234)'                   // violet foncé
+               value < 50 ? 'rgb(168, 85, 247)' :   // violet clair
+               value < 75 ? 'rgb(147, 51, 234)' :   // violet moyen
+               'rgb(126, 34, 206)'                  // violet foncé
       }),
       gradient: (value: number) => `linear-gradient(to right, 
         ${value < 25 ? 'rgb(216, 180, 254), rgb(192, 132, 252)' :
-          value < 50 ? 'rgb(192, 132, 252), rgb(168, 85, 247)' :
-          value < 75 ? 'rgb(168, 85, 247), rgb(147, 51, 234)' :
-          'rgb(147, 51, 234), rgb(126, 34, 206)'
+          value < 50 ? 'rgb(168, 85, 247), rgb(147, 51, 234)' :
+          value < 75 ? 'rgb(147, 51, 234), rgb(126, 34, 206)' :
+          'rgb(126, 34, 206), rgb(107, 33, 168)'
         })`
     }
   },
@@ -127,16 +127,16 @@ const scoreConfigs = {
     title: "Tempête",
     colors: {
       text: (value: number) => ({
-        color: value < 25 ? 'rgb(255, 215, 0)' :  // jaune très clair
-               value < 50 ? 'rgb(245, 158, 11)' :   // jaune clair
-               value < 75 ? 'rgb(220, 105, 0)' :    // jaune moyen
-               'rgb(184, 63, 39)'                   // jaune foncé
+        color: value < 25 ? 'rgb(255, 215, 0)' :    // jaune doré clair
+               value < 50 ? 'rgb(212, 160, 23)' :   // ambre (#D4A017)
+               value < 75 ? 'rgb(184, 134, 11)' :   // ambre foncé (#B8860B)
+               'rgb(153, 101, 21)'                  // ambre très foncé
       }),
       gradient: (value: number) => `linear-gradient(to right, 
-        ${value < 25 ? 'rgb(255, 215, 0), rgb(245, 158, 11)' :
-          value < 50 ? 'rgb(245, 158, 11), rgb(220, 105, 0)' :
-          value < 75 ? 'rgb(220, 105, 0), rgb(184, 63, 39)' :
-          'rgb(184, 63, 39), rgb(146, 43, 26)'
+        ${value < 25 ? 'rgb(255, 215, 0), rgb(212, 160, 23)' :
+          value < 50 ? 'rgb(212, 160, 23), rgb(184, 134, 11)' :
+          value < 75 ? 'rgb(184, 134, 11), rgb(153, 101, 21)' :
+          'rgb(153, 101, 21), rgb(120, 80, 20)'
         })`
     }
   }
@@ -272,7 +272,7 @@ export default function BaseSettingsForm({
                   : scoreType === 'glass'
                     ? "bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600 text-white border border-slate-500/50"
                     : scoreType === 'storm'
-                      ? "bg-gradient-to-r from-[#D4A017] to-[#B8860B] hover:from-[#FFD700] hover:to-[#D4A017] text-white border border-[#D4A017]/50"
+                      ? "bg-gradient-to-r from-[#D4A017] to-[#B8860B] hover:from-[#D4A017] hover:to-[#FFD700] text-white border border-[#D4A017]/50"
                       : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white border border-blue-500/50"
             }`}
           >

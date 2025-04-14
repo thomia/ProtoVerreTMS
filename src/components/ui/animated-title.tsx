@@ -10,7 +10,7 @@ interface AnimatedTitleProps {
 
 export function AnimatedTitle({ 
   title = "ProtoVerreTMS", 
-  subtitle = "Simulation des Troubles Musculo-Squelettiques",
+  subtitle = "Simulation des risques d'accident de travail et de troubles musculo-squelettiques",
   className 
 }: AnimatedTitleProps) {
   const [titleNumber, setTitleNumber] = useState(0);

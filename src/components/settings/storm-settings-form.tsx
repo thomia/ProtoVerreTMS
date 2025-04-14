@@ -5,111 +5,134 @@ import BaseSettingsForm from "./base-settings-form"
 import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
 import { getLocalStorage, setLocalStorage, emitStorageEvent } from "@/lib/localStorage"
-import { Cloud, AlertTriangle, RefreshCw } from "lucide-react"
+import { 
+  Cloud, 
+  AlertTriangle, 
+  RefreshCw, 
+  Clock, 
+  BarChart3, 
+  Repeat,
+  Dumbbell,
+  Brain,
+  Briefcase
+} from "lucide-react"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
+
+// Types pour les paramètres d'aléas
+type StormSettings = {
+  impact: number;
+  duration: number;
+  frequency: number;
+  type: 'physical' | 'mental' | 'organizational';
+}
 
 export default function StormSettingsForm({ hideHeader = false }: { hideHeader?: boolean }) {
-  // État pour l'intensité de l'orage
+  // État pour l'intensité de l'orage (score calculé)
   const [intensity, setIntensity] = useState(0)
   
-  // Facteurs d'aléas
-  const [interruptions, setInterruptions] = useState(0)
-  const [changes, setChanges] = useState(0)
-  const [technicalIssues, setTechnicalIssues] = useState(0)
+  // Paramètres d'aléas
+  const [impact, setImpact] = useState(5)
+  const [duration, setDuration] = useState(15) // en minutes
+  const [frequency, setFrequency] = useState(3) // occurrences par jour
+  const [aleaType, setAleaType] = useState<'physical' | 'mental' | 'organizational'>('physical')
   
   // Charger les paramètres depuis localStorage
   useEffect(() => {
+    const savedStormSettings = getLocalStorage('stormSettings')
+    if (savedStormSettings) {
+      try {
+        const settings = JSON.parse(savedStormSettings) as StormSettings
+        setImpact(settings.impact)
+        setDuration(settings.duration)
+        setFrequency(settings.frequency)
+        setAleaType(settings.type)
+      } catch (error) {
+        console.error("Erreur lors du chargement des paramètres de l'orage:", error)
+      }
+    }
+    
     const savedIntensity = getLocalStorage('stormIntensity')
     if (savedIntensity) {
       setIntensity(parseInt(savedIntensity))
     }
-    
-    const savedInterruptions = getLocalStorage('stormInterruptions')
-    if (savedInterruptions) {
-      setInterruptions(parseInt(savedInterruptions))
-    } else {
-      setInterruptions(Math.floor(Math.random() * 100))
-    }
-    
-    const savedChanges = getLocalStorage('stormChanges')
-    if (savedChanges) {
-      setChanges(parseInt(savedChanges))
-    } else {
-      setChanges(Math.floor(Math.random() * 100))
-    }
-    
-    const savedTechnicalIssues = getLocalStorage('stormTechnicalIssues')
-    if (savedTechnicalIssues) {
-      setTechnicalIssues(parseInt(savedTechnicalIssues))
-    } else {
-      setTechnicalIssues(Math.floor(Math.random() * 100))
-    }
   }, [])
   
-  // Mettre à jour l'intensité lorsque les facteurs changent
+  // Calculer l'intensité de l'orage
   useEffect(() => {
-    // Calculer l'intensité en fonction des facteurs (moyenne pondérée)
-    const calculatedIntensity = Math.round(
-      (interruptions * 0.4) + (changes * 0.3) + (technicalIssues * 0.3)
+    // Normaliser les valeurs
+    const normalizedImpact = impact / 10 // 1-10 -> 0.1-1
+    const normalizedDuration = duration / 60 // 1-60 -> 0.017-1
+    const normalizedFrequency = frequency / 10 // 1-10 -> 0.1-1
+    
+    // Calculer le score brut (sans le facteur de type)
+    // Avec cette formule, quand tous les paramètres sont au max, le score sera de 100
+    const rawScore = (
+      (normalizedImpact * 100 / 3) + 
+      (normalizedDuration * 100 / 3) + 
+      (normalizedFrequency * 100 / 3)
     )
     
-    setIntensity(calculatedIntensity)
+    // Arrondir le score
+    const roundedScore = Math.round(rawScore)
     
-    // Sauvegarder dans localStorage
-    setLocalStorage('stormIntensity', calculatedIntensity.toString())
-    setLocalStorage('stormInterruptions', interruptions.toString())
-    setLocalStorage('stormChanges', changes.toString())
-    setLocalStorage('stormTechnicalIssues', technicalIssues.toString())
+    // Limiter le score entre 0 et 100
+    const finalScore = Math.min(100, Math.max(0, roundedScore))
     
-    // Émettre un événement personnalisé pour notifier les autres composants
-    const event = new CustomEvent('stormIntensityUpdated', { 
-      detail: { intensity: calculatedIntensity } 
-    })
-    window.dispatchEvent(event)
+    // Mettre à jour l'intensité
+    setIntensity(finalScore)
     
-    // Émettre un événement de stockage pour notifier les autres composants
+    // Sauvegarder l'intensité
+    setLocalStorage('stormIntensity', finalScore.toString())
+    
+    // Émettre un événement pour notifier les autres composants
     emitStorageEvent()
-  }, [interruptions, changes, technicalIssues])
-  
-  // Fonction pour réinitialiser les paramètres
-  const handleReset = () => {
-    setInterruptions(0)
-    setChanges(0)
-    setTechnicalIssues(0)
-  }
-  
-  // Fonction pour générer des valeurs aléatoires
-  const handleRandomize = () => {
-    setInterruptions(Math.floor(Math.random() * 100))
-    setChanges(Math.floor(Math.random() * 100))
-    setTechnicalIssues(Math.floor(Math.random() * 100))
-  }
-  
-  // Obtenir la description de l'intensité
-  const getIntensityDescription = (value: number) => {
-    if (value < 40) return "Faible"
-    if (value < 60) return "Modérée"
-    if (value < 80) return "Élevée"
-    return "Critique"
-  }
-  
-  // Obtenir la couleur en fonction de l'intensité
-  const getIntensityColor = () => {
-    if (intensity >= 80) return "text-red-500"
-    if (intensity >= 60) return "text-orange-500"
-    if (intensity >= 40) return "text-yellow-500"
-    return "text-green-500"
-  }
+  }, [impact, duration, frequency, aleaType])
   
   // Fonction de soumission du formulaire
   const handleSubmit = () => {
     // Sauvegarder les valeurs actuelles
+    const settings: StormSettings = {
+      impact,
+      duration,
+      frequency,
+      type: aleaType
+    }
+    
+    setLocalStorage('stormSettings', JSON.stringify(settings))
     setLocalStorage('stormIntensity', intensity.toString())
-    setLocalStorage('stormInterruptions', interruptions.toString())
-    setLocalStorage('stormChanges', changes.toString())
-    setLocalStorage('stormTechnicalIssues', technicalIssues.toString())
     
     // Émettre un événement pour notifier les autres composants
     emitStorageEvent()
+  }
+  
+  // Obtenir la description de l'intensité
+  const getIntensityDescription = (value: number) => {
+    if (value < 30) return "Faible"
+    if (value < 70) return "Modérée"
+    return "Élevée"
+  }
+  
+  // Obtenir la couleur en fonction de l'intensité
+  const getIntensityColor = (value: number) => {
+    if (value < 30) return "text-green-500"
+    if (value < 70) return "text-yellow-500"
+    return "text-red-500"
+  }
+  
+  // Obtenir la description de la durée
+  const getDurationDescription = (value: number) => {
+    if (value <= 5) return "Courte durée"
+    if (value <= 30) return "Durée moyenne"
+    return "Longue durée"
+  }
+  
+  // Obtenir la description de la fréquence
+  const getFrequencyDescription = (value: number) => {
+    if (value <= 3) return "Basse fréquence"
+    if (value <= 7) return "Fréquence moyenne"
+    return "Haute fréquence"
   }
   
   return (
@@ -120,105 +143,125 @@ export default function StormSettingsForm({ hideHeader = false }: { hideHeader?:
       currentValue={intensity}
       getValueDescription={getIntensityDescription}
       onSubmit={handleSubmit}
-      scoreType="bubble"
+      scoreType="storm"
       autoSave={true}
     >
       <div className="space-y-8">
-        {/* Facteur d'interruptions */}
+        {/* Impact de l'aléa */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <RefreshCw className="h-4 w-4 text-[#D4A017]" />
-              <span className="text-sm font-medium text-[#D4A017]">Interruptions</span>
+              <BarChart3 className="h-4 w-4 text-[#D4A017]" />
+              <span className="text-sm font-medium text-[#D4A017]">Impact de l'aléa</span>
             </div>
-            <span className={`text-sm font-bold ${getIntensityColor()}`}>{interruptions}%</span>
+            <div className="flex items-center gap-1">
+              <span className={`text-sm font-bold ${getIntensityColor(impact * 10)}`}>{impact}</span>
+              <span className="text-sm text-gray-400">/10</span>
+            </div>
           </div>
           <Slider
-            value={[interruptions]}
-            min={0}
-            max={100}
+            value={[impact]}
+            min={1}
+            max={10}
             step={1}
-            onValueChange={(value) => setInterruptions(value[0])}
+            onValueChange={(value) => setImpact(value[0])}
             className="[&>.slider-track]:bg-[#D4A017]/20 [&>.slider-range]:bg-[#D4A017] [&>.slider-thumb]:border-[#D4A017]"
           />
-          <p className="text-xs text-gray-400">
-            Fréquence des interruptions de travail (appels, demandes, etc.)
+          <div className="flex justify-between">
+            <span className="text-xs text-gray-400">Faible</span>
+            <span className="text-xs text-gray-400">Fort</span>
+          </div>
+          <p className="text-xs text-gray-400 mt-1">
+            Mesure l'ampleur de la perturbation causée par l'aléa sur le travail.
           </p>
         </div>
         
-        {/* Facteur de changements */}
+        {/* Durée de l'aléa */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <RefreshCw className="h-4 w-4 text-[#D4A017]" />
-              <span className="text-sm font-medium text-[#D4A017]">Changements</span>
+              <Clock className="h-4 w-4 text-[#D4A017]" />
+              <span className="text-sm font-medium text-[#D4A017]">Durée de l'aléa</span>
             </div>
-            <span className={`text-sm font-bold ${getIntensityColor()}`}>{changes}%</span>
+            <div className="flex items-center gap-1">
+              <span className={`text-sm font-bold ${getIntensityColor(duration * 1.67)}`}>{duration}</span>
+              <span className="text-sm text-gray-400">min</span>
+            </div>
           </div>
           <Slider
-            value={[changes]}
-            min={0}
-            max={100}
+            value={[duration]}
+            min={1}
+            max={60}
             step={1}
-            onValueChange={(value) => setChanges(value[0])}
+            onValueChange={(value) => setDuration(value[0])}
             className="[&>.slider-track]:bg-[#D4A017]/20 [&>.slider-range]:bg-[#D4A017] [&>.slider-thumb]:border-[#D4A017]"
           />
-          <p className="text-xs text-gray-400">
-            Fréquence des changements de priorités ou de tâches en cours de journée
+          <div className="flex justify-between">
+            <span className="text-xs text-gray-400">Court</span>
+            <span className="text-xs text-gray-400">Long</span>
+          </div>
+          <p className="text-xs text-gray-400 mt-1">
+            {getDurationDescription(duration)} - Temps pendant lequel le travailleur est affecté par l'aléa.
           </p>
         </div>
         
-        {/* Facteur de problèmes techniques */}
+        {/* Fréquence des aléas */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-[#D4A017]" />
-              <span className="text-sm font-medium text-[#D4A017]">Problèmes techniques</span>
+              <Repeat className="h-4 w-4 text-[#D4A017]" />
+              <span className="text-sm font-medium text-[#D4A017]">Fréquence des aléas</span>
             </div>
-            <span className={`text-sm font-bold ${getIntensityColor()}`}>{technicalIssues}%</span>
+            <div className="flex items-center gap-1">
+              <span className={`text-sm font-bold ${getIntensityColor(frequency * 10)}`}>{frequency}</span>
+              <span className="text-sm text-gray-400">fois/jour</span>
+            </div>
           </div>
           <Slider
-            value={[technicalIssues]}
-            min={0}
-            max={100}
+            value={[frequency]}
+            min={1}
+            max={10}
             step={1}
-            onValueChange={(value) => setTechnicalIssues(value[0])}
+            onValueChange={(value) => setFrequency(value[0])}
             className="[&>.slider-track]:bg-[#D4A017]/20 [&>.slider-range]:bg-[#D4A017] [&>.slider-thumb]:border-[#D4A017]"
           />
-          <p className="text-xs text-gray-400">
-            Fréquence des problèmes techniques ou pannes d'équipement
+          <div className="flex justify-between">
+            <span className="text-xs text-gray-400">Rare</span>
+            <span className="text-xs text-gray-400">Fréquent</span>
+          </div>
+          <p className="text-xs text-gray-400 mt-1">
+            {getFrequencyDescription(frequency)} - Nombre d'occurrences des aléas par journée de travail.
           </p>
         </div>
         
-        {/* Actions */}
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleReset}
-            className="flex-1 border-gray-700 hover:bg-gray-800 hover:text-white"
+        {/* Type d'aléa */}
+        <div className="space-y-2">
+          <div className="flex items-center">
+            <span className="text-sm font-medium text-[#D4A017]">Type d'aléa</span>
+          </div>
+          <RadioGroup 
+            value={aleaType} 
+            onValueChange={(value) => setAleaType(value as 'physical' | 'mental' | 'organizational')}
+            className="flex flex-col space-y-1"
           >
-            Réinitialiser
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRandomize}
-            className="flex-1 border-[#D4A017]/50 text-[#D4A017] hover:bg-[#D4A017]/10"
-          >
-            Valeurs aléatoires
-          </Button>
-        </div>
-        
-        {/* Résumé */}
-        <div className="rounded-lg bg-gray-900/50 p-4 border border-gray-800">
-          <h3 className="text-sm font-medium text-[#D4A017] mb-2">Impact sur le modèle</h3>
-          <p className="text-xs text-gray-400">
-            L'intensité de l'Orage représente les aléas et imprévus qui viennent perturber le travail.
-            Plus l'intensité est élevée, plus le travailleur doit faire face à des interruptions et des changements,
-            ce qui augmente la charge mentale et peut affecter sa capacité à gérer le flux de travail.
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="physical" id="physical" className="border-[#D4A017]" />
+              <Label htmlFor="physical" className="text-sm text-gray-300">Physique</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="mental" id="mental" className="border-[#D4A017]" />
+              <Label htmlFor="mental" className="text-sm text-gray-300">Mental</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="organizational" id="organizational" className="border-[#D4A017]" />
+              <Label htmlFor="organizational" className="text-sm text-gray-300">Organisationnel</Label>
+            </div>
+          </RadioGroup>
+          <p className="text-xs text-gray-400 mt-1">
+            Nature de la perturbation qui affecte le travailleur.
           </p>
         </div>
+        
       </div>
     </BaseSettingsForm>
   )

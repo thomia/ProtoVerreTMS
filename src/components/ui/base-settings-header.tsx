@@ -56,11 +56,21 @@ export function BaseSettingsHeader({
       
       {currentValue !== undefined && (
         <div className="space-y-2">
-          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-            <div
-              className={cn("h-full rounded-full", getProgressBarColor())}
-              style={{ width: `${currentValue}%` }}
-            />
+          <div className="flex flex-col space-y-1">
+            <div className="flex justify-between items-center">
+              <p className={cn("text-sm font-medium", getTextColor())}>
+                Score calculé
+              </p>
+              <p className={cn("text-sm font-bold", getTextColor())}>
+                {Math.round(currentValue)}%
+              </p>
+            </div>
+            <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+              <div
+                className={cn("h-full rounded-full", getProgressBarColor())}
+                style={{ width: `${currentValue}%` }}
+              />
+            </div>
           </div>
           
           <p className={cn("text-sm", getTextColor())}>

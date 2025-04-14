@@ -71,8 +71,43 @@ export function emitStorageEvent(key: string = 'custom-storage-event'): void {
   if (!isBrowser) return;
   
   try {
+    // Émettre l'événement storage standard
     window.dispatchEvent(new Event('storage'));
+    
+    // Émettre des événements personnalisés en fonction de la clé
+    if (key.includes('flowRate') || key === 'custom-storage-event') {
+      const flowRateValue = getLocalStorage('flowRate');
+      if (flowRateValue) {
+        const flowRate = Math.round(parseFloat(flowRateValue));
+        const event = new CustomEvent('tapFlowRateUpdated', { 
+          detail: { flowRate } 
+        });
+        window.dispatchEvent(event);
+      }
+    }
+    
+    if (key.includes('glassCapacity') || key === 'custom-storage-event') {
+      const capacityValue = getLocalStorage('glassCapacity');
+      if (capacityValue) {
+        const capacity = Math.round(parseFloat(capacityValue));
+        const event = new CustomEvent('glassCapacityUpdated', { 
+          detail: { capacity } 
+        });
+        window.dispatchEvent(event);
+      }
+    }
+    
+    if (key.includes('stormIntensity') || key === 'custom-storage-event') {
+      const intensityValue = getLocalStorage('stormIntensity');
+      if (intensityValue) {
+        const intensity = Math.round(parseFloat(intensityValue));
+        const event = new CustomEvent('stormIntensityUpdated', { 
+          detail: { intensity } 
+        });
+        window.dispatchEvent(event);
+      }
+    }
   } catch (error) {
     console.error('Erreur lors de l\'émission de l\'événement storage:', error);
   }
-} 
+}

@@ -17,7 +17,7 @@ interface SectionProps {
   bgColor: string
   textColor: string
   onSettingsClick: () => void
-  rightLabel: string
+  rightLabel: string | React.ReactNode
   children?: React.ReactNode
 }
 
@@ -48,7 +48,7 @@ export function Section({
             {icon}
             <h3 className={cn("text-base font-medium", textColor)}>{title}</h3>
             <div className="ml-auto">
-              <span className={cn("text-sm", textColor)}>{rightLabel}</span>
+              {rightLabel}
             </div>
           </div>
           <p className="text-xs text-gray-400 leading-relaxed mt-1">
@@ -72,8 +72,8 @@ export function Section({
         </div>
         
         {/* Séparateur et barre de progression */}
-        <div className="flex flex-col items-center ml-4 w-[80px] pl-4 border-l border-gray-700/30">
-          <div className="relative h-full w-full flex flex-col items-center">
+        <div className="flex items-center justify-center ml-4 pl-4 border-l border-gray-700/30 flex-grow">
+          <div className="w-[100px] flex items-center justify-center">
             {children}
           </div>
         </div>
@@ -98,7 +98,7 @@ export function StrawSectionV2({
   return (
     <Section
       title="Paille"
-      description="Représente la capacité de récupération (étirements, échauffements, pauses, relaxation, sommeil)."
+      description="Représente la récupération (étirements, échauffements, pauses, relaxation, sommeil)."
       value={absorptionRate}
       maxValue={80}
       icon={<RectangleHorizontal className="w-5 h-5 text-green-400 transform rotate-90 scale-y-[0.3]" />}
@@ -107,43 +107,29 @@ export function StrawSectionV2({
       bgColor="bg-green-950/20"
       textColor="text-green-400"
       onSettingsClick={onSettingsClick}
-      rightLabel="Activée"
-    >
-      <div className="flex items-center justify-between w-full mb-2">
-        <span className="text-xs text-gray-400">Activée</span>
-        <Switch
-          checked={isEnabled}
-          onCheckedChange={onToggle}
-          className="data-[state=checked]:bg-green-500 h-4 w-7"
-        />
-      </div>
-      
-      <div className="flex flex-col items-center mt-1">
-        <span className="text-xs text-gray-400 mb-1">Absorption</span>
-        
-        <div className="relative flex items-center">
-          <VerticalProgress
-            value={absorptionRate}
-            max={80}
-            colorType="straw"
-            height={80}
-            width={8}
-            showValue={false}
-            className={cn(isEnabled ? "opacity-100" : "opacity-50")}
+      rightLabel={
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-400">Activée</span>
+          <Switch
+            checked={isEnabled}
+            onCheckedChange={onToggle}
+            className="data-[state=checked]:bg-green-500 h-4 w-7"
           />
-          
-          <div 
-            className="absolute -right-[30px] min-w-[35px] h-[22px] flex items-center justify-center rounded-md bg-black/40 border border-green-500/20 backdrop-blur-sm transition-all duration-300"
-            style={{
-              bottom: `${(absorptionRate / 80) * 100}%`,
-              transform: 'translateY(50%)'
-            }}
-          >
-            <span className="text-xs font-medium text-green-400">
-              {absorptionRate}%
-            </span>
-          </div>
         </div>
+      }
+    >
+      <div className="flex items-center justify-center h-full w-full">
+        <VerticalProgress
+          value={absorptionRate}
+          max={80}
+          colorType="straw"
+          height={80}
+          width={16}
+          showValue={true}
+          showLabel={true}
+          label="Absorption"
+          className={cn(isEnabled ? "opacity-100" : "opacity-50")}
+        />
       </div>
     </Section>
   )
@@ -151,17 +137,19 @@ export function StrawSectionV2({
 
 interface TapSectionProps {
   flowRate: number
+  environmentImpact?: number
   onSettingsClick: () => void
 }
 
 export function TapSectionV2({
   flowRate,
+  environmentImpact,
   onSettingsClick
 }: TapSectionProps) {
   return (
     <Section
       title="Robinet"
-      description="Représente le flux de travail (cadence, rythme, intensité, charge de travail)."
+      description="Représente le flux de travail, la cadence et la charge de travail."
       value={flowRate}
       icon={<Droplet className="w-5 h-5 text-blue-400" />}
       color="bg-blue-400"
@@ -169,32 +157,23 @@ export function TapSectionV2({
       bgColor="bg-blue-950/20"
       textColor="text-blue-400"
       onSettingsClick={onSettingsClick}
-      rightLabel="Débit"
-    >
-      <div className="flex flex-col items-center mt-4">
-        <span className="text-xs text-gray-400 mb-1">Débit</span>
-        
-        <div className="relative flex items-center">
-          <VerticalProgress
-            value={flowRate}
-            colorType="tap"
-            height={80}
-            width={8}
-            showValue={false}
-          />
-          
-          <div 
-            className="absolute -right-[30px] min-w-[35px] h-[22px] flex items-center justify-center rounded-md bg-black/40 border border-blue-500/20 backdrop-blur-sm transition-all duration-300"
-            style={{
-              bottom: `${flowRate}%`,
-              transform: 'translateY(50%)'
-            }}
-          >
-            <span className="text-xs font-medium text-blue-400">
-              {flowRate}%
-            </span>
-          </div>
+      rightLabel={environmentImpact ? (
+        <div className="px-2 py-0.5 rounded bg-purple-900/50 border border-purple-500/30 text-xs text-purple-400">
+          +{environmentImpact}% impact Bulle
         </div>
+      ) : ""}
+    >
+      <div className="flex items-center justify-center h-full w-full">
+        <VerticalProgress
+          value={flowRate}
+          colorType="tap"
+          height={80}
+          width={16}
+          showValue={true}
+          showLabel={true}
+          label="Débit"
+          labelClassName="whitespace-nowrap"
+        />
       </div>
     </Section>
   )
@@ -218,36 +197,22 @@ export function GlassSectionV2({
       value={capacity}
       icon={<GlassWater className="w-5 h-5 text-gray-300" />}
       color="bg-gray-300"
-      borderColor="border-gray-800/60"
+      borderColor="border-gray-700/60"
       bgColor="bg-gray-950/20"
       textColor="text-gray-300"
       onSettingsClick={onSettingsClick}
-      rightLabel="Capacité"
+      rightLabel=""
     >
-      <div className="flex flex-col items-center mt-4">
-        <span className="text-xs text-gray-400 mb-1">Capacité</span>
-        
-        <div className="relative flex items-center">
-          <VerticalProgress
-            value={capacity}
-            colorType="glass"
-            height={80}
-            width={8}
-            showValue={false}
-          />
-          
-          <div 
-            className="absolute -right-[30px] min-w-[35px] h-[22px] flex items-center justify-center rounded-md bg-black/40 border border-gray-500/20 backdrop-blur-sm transition-all duration-300"
-            style={{
-              bottom: `${capacity}%`,
-              transform: 'translateY(50%)'
-            }}
-          >
-            <span className="text-xs font-medium text-gray-300">
-              {capacity}%
-            </span>
-          </div>
-        </div>
+      <div className="flex items-center justify-center h-full w-full">
+        <VerticalProgress
+          value={capacity}
+          colorType="glass"
+          height={80}
+          width={16}
+          showValue={true}
+          showLabel={true}
+          label="Capacité"
+        />
       </div>
     </Section>
   )
@@ -267,38 +232,24 @@ export function StormSectionV2({
       title="Orage"
       description="Représente les facteurs environnementaux (tempête, vent, pluie, etc.)."
       value={intensity}
-      icon={<Wind className="w-5 h-5 text-orange-400" />}
-      color="bg-orange-400"
-      borderColor="border-orange-900/60"
-      bgColor="bg-orange-950/20"
-      textColor="text-orange-400"
+      icon={<Wind className="w-5 h-5 text-[#D4A017]" />}
+      color="bg-[#D4A017]"
+      borderColor="border-[#D4A017]/60"
+      bgColor="bg-[#D4A017]/10"
+      textColor="text-[#D4A017]"
       onSettingsClick={onSettingsClick}
-      rightLabel="Intensité"
+      rightLabel=""
     >
-      <div className="flex flex-col items-center mt-4">
-        <span className="text-xs text-gray-400 mb-1">Intensité</span>
-        
-        <div className="relative flex items-center">
-          <VerticalProgress
-            value={intensity}
-            colorType="storm"
-            height={80}
-            width={8}
-            showValue={false}
-          />
-          
-          <div 
-            className="absolute -right-[30px] min-w-[35px] h-[22px] flex items-center justify-center rounded-md bg-black/40 border border-[#D4A017]/20 backdrop-blur-sm transition-all duration-300"
-            style={{
-              bottom: `${intensity}%`,
-              transform: 'translateY(50%)'
-            }}
-          >
-            <span className="text-xs font-medium text-[#D4A017]">
-              {intensity}%
-            </span>
-          </div>
-        </div>
+      <div className="flex items-center justify-center h-full w-full">
+        <VerticalProgress
+          value={intensity}
+          colorType="storm"
+          height={80}
+          width={16}
+          showValue={true}
+          showLabel={true}
+          label="Intensité"
+        />
       </div>
     </Section>
   )
@@ -324,32 +275,18 @@ export function BubbleSectionV2({
       bgColor="bg-purple-950/20"
       textColor="text-purple-400"
       onSettingsClick={onSettingsClick}
-      rightLabel="Score"
+      rightLabel=""
     >
-      <div className="flex flex-col items-center mt-4">
-        <span className="text-xs text-gray-400 mb-1">Score</span>
-        
-        <div className="relative flex items-center">
-          <VerticalProgress
-            value={environmentScore}
-            colorType="bubble"
-            height={80}
-            width={8}
-            showValue={false}
-          />
-          
-          <div 
-            className="absolute -right-[30px] min-w-[35px] h-[22px] flex items-center justify-center rounded-md bg-black/40 border border-purple-500/20 backdrop-blur-sm transition-all duration-300"
-            style={{
-              bottom: `${environmentScore}%`,
-              transform: 'translateY(50%)'
-            }}
-          >
-            <span className="text-xs font-medium text-purple-400">
-              {environmentScore}%
-            </span>
-          </div>
-        </div>
+      <div className="flex items-center justify-center h-full w-full">
+        <VerticalProgress
+          value={environmentScore}
+          colorType="bubble"
+          height={80}
+          width={16}
+          showValue={true}
+          showLabel={true}
+          label="Agitation"
+        />
       </div>
     </Section>
   )

@@ -109,9 +109,10 @@ export default function TapComponent({ flowRate, onFlowRateChange, hideDebitLabe
   return (
     <div 
       className="relative"
+      onClick={handleClick}
     >
       <motion.div 
-        className="relative h-[160px] w-full max-w-[160px] flex flex-col items-center"
+        className="relative h-[400px] w-full max-w-[160px] flex flex-col items-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
@@ -148,20 +149,78 @@ export default function TapComponent({ flowRate, onFlowRateChange, hideDebitLabe
               <div className="absolute bottom-[-10px] left-1/2 transform -translate-x-1/2 w-12 h-10 bg-gradient-to-b from-blue-400 to-blue-500 rounded-full border-2 border-blue-400/50">
                 {/* Ouverture */}
                 <div className="absolute bottom-[2px] left-1/2 transform -translate-x-1/2 w-6 h-3 bg-blue-200 rounded-b-lg border border-blue-300"></div>
+                
+                {/* Filet d'eau continu */}
+                {flowRate > 0 && (
+                  <div 
+                    className="absolute bottom-0 left-1/2 transform -translate-x-1/2"
+                    style={{
+                      width: `${getFlowWidth()}px`,
+                      height: '300px',
+                      background: `linear-gradient(180deg, 
+                        rgba(59, 130, 246, 0.9) 0%,
+                        rgba(37, 99, 235, 0.9) 100%
+                      )`,
+                      borderRadius: '0 0 2px 2px',
+                      boxShadow: `0 0 ${Math.max(4, flowRate / 10)}px rgba(59, 130, 246, 0.7), inset 0 0 10px rgba(255, 255, 255, 0.3)`,
+                      position: 'relative',
+                      overflow: 'visible'
+                    }}
+                  >
+                    {/* Effet d'eau qui coule - plus continu */}
+                    {Array.from({ length: 10 }).map((_, index) => (
+                      <motion.div
+                        key={`water-flow-${index}`}
+                        className="absolute inset-0"
+                        style={{
+                          background: 'linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%)',
+                          backgroundSize: '100% 20px',
+                        }}
+                        animate={{
+                          backgroundPosition: ['0px 0px', '0px 20px']
+                        }}
+                        transition={{
+                          repeat: Infinity,
+                          duration: 1.2,
+                          delay: index * 0.12,
+                          ease: "linear"
+                        }}
+                      />
+                    ))}
+                    
+                    {/* Gouttes d'eau qui se fragmentent à la fin - plus nombreuses et adaptées au débit */}
+                    <div className="absolute bottom-[-30px] left-0 w-full">
+                      {Array.from({ length: Math.min(8, Math.ceil(flowRate / 15)) }).map((_, index) => (
+                        <motion.div
+                          key={`water-drop-${index}`}
+                          className="absolute rounded-full bg-blue-400/80"
+                          style={{
+                            width: `${Math.max(4, flowRate / 12)}px`,
+                            height: `${Math.max(4, flowRate / 12)}px`,
+                            left: `${(index * (100 / Math.min(8, Math.ceil(flowRate / 15))))}%`,
+                            bottom: '0px',
+                            boxShadow: `0 0 ${Math.max(2, flowRate / 20)}px rgba(59, 130, 246, 0.7)`
+                          }}
+                          animate={{
+                            y: [0, 30, 60],
+                            opacity: [0.9, 0.6, 0],
+                            scale: [1, 0.9, 0.7]
+                          }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 0.8,
+                            delay: index * 0.1,
+                            ease: "easeIn"
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
-        
-        {/* Filet d'eau qui tombe */}
-        <div 
-          className="absolute top-[120px] left-1/2 transform -translate-x-1/2 bg-blue-200"
-          style={{
-            width: `${getFlowWidth()}px`,
-            height: '60px',
-            opacity: flowRate > 0 ? 0.8 : 0
-          }}
-        ></div>
         
         {/* Affichage des contraintes au clic */}
         <AnimatePresence>
