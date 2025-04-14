@@ -15,6 +15,7 @@ const TapSettingsForm = lazy(() => import('@/components/settings/tap-settings-fo
 const GlassSettingsForm = lazy(() => import('@/components/settings/glass-settings-form'));
 const StrawSettingsForm = lazy(() => import('@/components/settings/straw-settings-form'));
 const BubbleSettingsForm = lazy(() => import('@/components/settings/bubble-settings-form'));
+const StormSettingsForm = lazy(() => import('@/components/settings/storm-settings-form'));
 
 // Composant de chargement
 const LoadingForm = () => (
@@ -71,6 +72,11 @@ export function ParameterModals({
           title: 'Paramètres de la Bulle',
           icon: <Cloud className="h-5 w-5 text-purple-500 mr-2" />
         };
+      case 'storm':
+        return { 
+          title: 'Paramètres de l\'Orage',
+          icon: <Cloud className="h-5 w-5 text-[#D4A017] mr-2" />
+        };
       default:
         return { 
           title: 'Paramètres',
@@ -108,6 +114,12 @@ export function ParameterModals({
           return (
             <Suspense fallback={<LoadingForm />}>
               <BubbleSettingsForm />
+            </Suspense>
+          );
+        case 'storm':
+          return (
+            <Suspense fallback={<LoadingForm />}>
+              <StormSettingsForm />
             </Suspense>
           );
         default:

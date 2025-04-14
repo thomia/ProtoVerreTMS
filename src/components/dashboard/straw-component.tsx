@@ -6,6 +6,7 @@ import { Slider } from "@/components/ui/slider"
 import { cn } from '@/lib/utils'
 import { Switch } from "@/components/ui/switch"
 import { getLocalStorage, setLocalStorage } from '@/lib/localStorage'
+import { VerticalProgress } from '@/components/ui/vertical-progress'
 
 interface StrawComponentProps {
   absorptionRate: number;
@@ -221,37 +222,54 @@ export default function StrawComponent({
       
       {/* Contrôle du taux d'absorption */}
       {!isInsideGlass && (
-        <div className="absolute -right-[120px] top-1/2 transform -translate-y-1/2 w-[100px]">
-          <div className="p-2 bg-black/60 backdrop-blur-sm rounded-lg border border-green-500/30">
+        <div className="absolute -right-[160px] top-1/2 transform -translate-y-1/2 w-[140px]">
+          <div className="p-4 bg-black/60 backdrop-blur-sm rounded-lg border border-green-500/30">
             <div className="flex flex-col items-center mb-2">
-              <span className="text-xs text-gray-300 mb-1">Récupération:</span>
-              <span className={cn("text-sm font-bold", getAbsorptionColor())}>
-                {getAbsorptionDescription()}
-              </span>
-            </div>
-            
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-gray-300">État:</span>
+              <span className="text-sm text-green-400 font-medium">Paille</span>
+              <span className="text-xs text-gray-300 mb-1">Activée</span>
               <Switch
                 checked={isEnabled}
                 onCheckedChange={handleToggle}
-                className="data-[state=checked]:bg-green-500"
+                className="data-[state=checked]:bg-green-500 mt-1"
               />
             </div>
-
-            <Slider
-              value={[absorptionRate]}
-              min={10}
-              max={80}
-              step={5}
-              onValueChange={(values: number[]) => setAbsorptionRate(values[0])}
-              className="my-2"
-              disabled={!isEnabled}
-            />
             
-            <div className="flex justify-between text-[10px] text-gray-400">
-              <span>10%</span>
-              <span>80%</span>
+            <div className="flex flex-col items-center mt-4">
+              <span className="text-xs text-gray-300 mb-2">Absorption</span>
+              
+              <div className="flex items-center justify-center gap-6">
+                <VerticalProgress
+                  value={absorptionRate}
+                  max={80}
+                  colorType="straw"
+                  height={120}
+                  width={12}
+                  showValue={true}
+                  className="my-2"
+                />
+                
+                <div className="flex flex-col h-[120px] justify-between text-[10px] text-gray-400">
+                  <span>80%</span>
+                  <span>40%</span>
+                  <span>10%</span>
+                </div>
+              </div>
+              
+              <span className={cn("text-sm font-bold mt-2", getAbsorptionColor())}>
+                {getAbsorptionDescription()}
+              </span>
+              
+              <div className="mt-4 w-full">
+                <Slider
+                  value={[absorptionRate]}
+                  min={10}
+                  max={80}
+                  step={5}
+                  onValueChange={(values: number[]) => setAbsorptionRate(values[0])}
+                  className="my-2"
+                  disabled={!isEnabled}
+                />
+              </div>
             </div>
           </div>
         </div>

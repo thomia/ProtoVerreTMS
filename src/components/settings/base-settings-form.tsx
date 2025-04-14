@@ -6,6 +6,7 @@ import { Info } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Check } from "lucide-react"
+import { BaseSettingsHeader } from "@/components/ui/base-settings-header"
 
 // Props pour le composant InfoTooltip
 interface InfoTooltipProps {
@@ -45,10 +46,11 @@ interface BaseSettingsFormProps {
   getValueDescription?: (value: number) => string
   onSubmit: () => void
   children: React.ReactNode
-  scoreType?: 'tap' | 'glass' | 'straw' | 'bubble'
+  scoreType?: 'tap' | 'glass' | 'straw' | 'bubble' | 'storm'
   showSaveMessage?: boolean
   autoSave?: boolean
   onAutoSaveChange?: (value: boolean) => void
+  hideHeader?: boolean
 }
 
 // Configurations des couleurs pour chaque type de score
@@ -120,6 +122,23 @@ const scoreConfigs = {
           'rgb(147, 51, 234), rgb(126, 34, 206)'
         })`
     }
+  },
+  storm: {
+    title: "Tempête",
+    colors: {
+      text: (value: number) => ({
+        color: value < 25 ? 'rgb(255, 215, 0)' :  // jaune très clair
+               value < 50 ? 'rgb(245, 158, 11)' :   // jaune clair
+               value < 75 ? 'rgb(220, 105, 0)' :    // jaune moyen
+               'rgb(184, 63, 39)'                   // jaune foncé
+      }),
+      gradient: (value: number) => `linear-gradient(to right, 
+        ${value < 25 ? 'rgb(255, 215, 0), rgb(245, 158, 11)' :
+          value < 50 ? 'rgb(245, 158, 11), rgb(220, 105, 0)' :
+          value < 75 ? 'rgb(220, 105, 0), rgb(184, 63, 39)' :
+          'rgb(184, 63, 39), rgb(146, 43, 26)'
+        })`
+    }
   }
 }
 
@@ -135,13 +154,13 @@ export default function BaseSettingsForm({
   scoreType = 'tap',
   showSaveMessage = false,
   autoSave = false,
-  onAutoSaveChange
+  onAutoSaveChange,
+  hideHeader = false
 }: BaseSettingsFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
-  const config = scoreConfigs[scoreType]
-
-  // Gérer la soumission du formulaire
+  
+  // Fonction pour gérer la soumission du formulaire
   const handleSubmit = useCallback(async () => {
     if (isSubmitting) return; // Éviter les doubles soumissions
     
@@ -157,84 +176,36 @@ export default function BaseSettingsForm({
       setIsSubmitting(false);
     }
   }, [isSubmitting, onSubmit]);
-
-  // Mettre à jour la valeur d'autosave avec un délai pour éviter les boucles
+  
+  // Gérer le changement d'état de la sauvegarde automatique
   const handleAutoSaveChange = useCallback((checked: boolean) => {
     if (onAutoSaveChange) {
-      // Utiliser un délai pour éviter les mises à jour trop fréquentes
-      setTimeout(() => {
-        onAutoSaveChange(checked);
-      }, 0);
+      onAutoSaveChange(checked);
     }
   }, [onAutoSaveChange]);
+  
+  // Fonction pour obtenir la description de la valeur
+  const getValueDescriptionWithDefault = useCallback((value: number) => {
+    if (getValueDescription) {
+      return getValueDescription(value);
+    }
+    
+    if (value < 40) return "Faible";
+    if (value < 60) return "Modéré";
+    if (value < 80) return "Élevé";
+    return "Critique";
+  }, [getValueDescription]);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2">
-        <h2 className={`text-2xl font-bold tracking-tight ${
-          scoreType === 'bubble' ? "text-purple-400" :
-          scoreType === 'straw' ? "text-green-400" :
-          scoreType === 'glass' ? "text-white" :
-          "text-blue-400"
-        }`}>{title}</h2>
-        {subtitle && (
-          <p className={`${
-            scoreType === 'bubble' ? "text-purple-300" :
-            scoreType === 'straw' ? "text-green-300" :
-            scoreType === 'glass' ? "text-white" :
-            "text-blue-300"
-          }`}>{subtitle}</p>
-        )}
-        {description && (
-          <p className={`${
-            scoreType === 'bubble' ? "text-purple-300" :
-            scoreType === 'straw' ? "text-green-300" :
-            scoreType === 'glass' ? "text-white" :
-            "text-blue-300"
-          }`}>{description}</p>
-        )}
-      </div>
-
-      {currentValue !== undefined && getValueDescription && (
-        <div className="p-4 rounded-lg bg-gradient-to-r from-gray-900/60 via-gray-800/40 to-gray-900/60 border border-gray-800">
-          <div className="flex items-center justify-between mb-2">
-            <span className={`text-base ${
-              scoreType === 'bubble' ? "text-purple-300" :
-              scoreType === 'straw' ? "text-green-300" :
-              scoreType === 'glass' ? "text-white" :
-              "text-blue-300"
-            }`}>Score calculé</span>
-            <span className={`text-lg font-medium ${
-              scoreType === 'bubble' ? "text-purple-400" :
-              scoreType === 'straw' ? "text-green-400" :
-              scoreType === 'glass' ? "text-white" :
-              "text-blue-400"
-            }`}>{currentValue}%</span>
-          </div>
-          
-          <div className="relative h-2 bg-gray-800 rounded-full overflow-hidden">
-            <div 
-              className={`absolute h-full left-0 top-0 rounded-full transition-all duration-300 ${
-                scoreType === 'bubble' ? "bg-gradient-to-r from-purple-600 to-purple-500" :
-                scoreType === 'straw' ? "bg-gradient-to-r from-green-600 to-green-500" :
-                scoreType === 'glass' ? "bg-white" :
-                scoreType === 'tap' ? "bg-gradient-to-r from-blue-600 to-blue-500" : 
-                currentValue >= 80 ? "bg-gradient-to-r from-red-500 to-red-400" : 
-                currentValue >= 60 ? "bg-gradient-to-r from-orange-500 to-orange-400" : 
-                currentValue >= 40 ? "bg-gradient-to-r from-yellow-500 to-yellow-400" : 
-                "bg-gradient-to-r from-green-500 to-green-400"
-              }`}
-              style={{ width: `${currentValue}%` }}
-            />
-          </div>
-          
-          <p className={`mt-2 text-sm ${
-            scoreType === 'bubble' ? "text-purple-300" :
-            scoreType === 'straw' ? "text-green-300" :
-            scoreType === 'glass' ? "text-white" :
-            "text-blue-300"
-          }`}>{getValueDescription(currentValue)}</p>
-        </div>
+      {!hideHeader && currentValue !== undefined && (
+        <BaseSettingsHeader
+          title={title}
+          description={description}
+          currentValue={currentValue}
+          getValueDescription={getValueDescriptionWithDefault}
+          scoreType={scoreType}
+        />
       )}
 
       <div className="rounded-lg border-2 border-gray-800/50 p-6">
@@ -253,6 +224,7 @@ export default function BaseSettingsForm({
                   scoreType === 'bubble' ? "data-[state=checked]:bg-purple-600" :
                   scoreType === 'straw' ? "data-[state=checked]:bg-green-600" :
                   scoreType === 'glass' ? "data-[state=checked]:bg-white" :
+                  scoreType === 'storm' ? "data-[state=checked]:bg-[#D4A017]" :
                   "data-[state=checked]:bg-blue-600"
                 }`}
               />
@@ -262,6 +234,7 @@ export default function BaseSettingsForm({
                   scoreType === 'bubble' ? "text-purple-300" :
                   scoreType === 'straw' ? "text-green-300" :
                   scoreType === 'glass' ? "text-white" :
+                  scoreType === 'storm' ? "text-[#D4A017]" :
                   "text-blue-300"
                 }`}
               >
@@ -277,6 +250,7 @@ export default function BaseSettingsForm({
               scoreType === 'bubble' ? "text-purple-400" :
               scoreType === 'straw' ? "text-green-400" :
               scoreType === 'glass' ? "text-white" :
+              scoreType === 'storm' ? "text-[#D4A017]" :
               "text-blue-400"
             }`}>
               <Check className="mr-1 h-4 w-4" />
@@ -297,9 +271,9 @@ export default function BaseSettingsForm({
                   ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white border border-green-500/50"
                   : scoreType === 'glass'
                     ? "bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600 text-white border border-slate-500/50"
-                    : scoreType === 'tap'
-                    ? "bg-blue-400 hover:bg-blue-300 text-white border border-blue-300/50"
-                    : "bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white border border-gray-500/50"
+                    : scoreType === 'storm'
+                      ? "bg-gradient-to-r from-[#D4A017] to-[#B8860B] hover:from-[#FFD700] hover:to-[#D4A017] text-white border border-[#D4A017]/50"
+                      : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white border border-blue-500/50"
             }`}
           >
             {isSubmitting ? 'Sauvegarde...' : 'Sauvegarder'}
@@ -308,4 +282,4 @@ export default function BaseSettingsForm({
       </div>
     </div>
   );
-} 
+}

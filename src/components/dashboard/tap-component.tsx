@@ -153,20 +153,15 @@ export default function TapComponent({ flowRate, onFlowRateChange, hideDebitLabe
           </div>
         </div>
         
-        {/* Indicateur de débit - Visible en permanence sauf si hideDebitLabel est true */}
-        {!hideDebitLabel && (
-          <div className="absolute top-[-30px] right-[-20px] px-3 py-1 bg-black/70 backdrop-blur-sm rounded-full shadow-lg border border-white/20 z-20">
-            <span className={cn(
-              "text-sm font-bold",
-              flowRate >= 80 ? "text-red-500" : 
-              flowRate >= 60 ? "text-orange-500" : 
-              flowRate >= 40 ? "text-yellow-500" : 
-              "text-green-500"
-            )}>
-              Débit: {getFlowDescription()}
-            </span>
-          </div>
-        )}
+        {/* Filet d'eau qui tombe */}
+        <div 
+          className="absolute top-[120px] left-1/2 transform -translate-x-1/2 bg-blue-200"
+          style={{
+            width: `${getFlowWidth()}px`,
+            height: '60px',
+            opacity: flowRate > 0 ? 0.8 : 0
+          }}
+        ></div>
         
         {/* Affichage des contraintes au clic */}
         <AnimatePresence>
@@ -228,4 +223,4 @@ export default function TapComponent({ flowRate, onFlowRateChange, hideDebitLabe
       </motion.div>
     </div>
   )
-} 
+}
