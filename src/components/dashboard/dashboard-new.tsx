@@ -80,8 +80,8 @@ export default function Dashboard() {
   const glassRef = React.useRef<HTMLDivElement>(null);
   const lastFlowRateRef = React.useRef<number>(0);
 
-  // États pour le chronomètre de travail (8h)
-  const [workTime, setWorkTime] = useState(0); // temps écoulé en minutes simulées
+  // États pour le chronomètre de travail (8 minutes)
+  const [workTime, setWorkTime] = useState(0); // temps écoulé en secondes
   const [workStartTime, setWorkStartTime] = useState(Date.now()); // moment de démarrage du chrono
   const [lastSimulationSpeed, setLastSimulationSpeed] = useState(1); // pour suivre les changements de vitesse
 
@@ -94,9 +94,11 @@ export default function Dashboard() {
     setActiveModal(null);
   }, []);
   
-  // Effet pour marquer le composant comme monté
+  // Effet pour marquer le composant comme monté et démarrer le chronomètre
   useEffect(() => {
     setIsMounted(true);
+    // Initialiser le temps de démarrage
+    setWorkStartTime(Date.now());
   }, []);
 
   // Charger les paramètres depuis localStorage
@@ -379,7 +381,7 @@ export default function Dashboard() {
     
     if (isPaused) {
       // Si on reprend, mettre à jour le temps de démarrage
-      setWorkStartTime(prev => Date.now() - (workTime * 60000 / simulationSpeed));
+      setWorkStartTime(prev => Date.now() - (workTime * 1000 / simulationSpeed));
     }
   };
 
@@ -388,17 +390,15 @@ export default function Dashboard() {
     // Sauvegarder l'ancienne vitesse
     setLastSimulationSpeed(simulationSpeed);
     
+    // Calculer le temps simulé actuel
+    const elapsedRealTime = Date.now() - workStartTime;
+    const currentSimulatedTime = elapsedRealTime * simulationSpeed;
+    
+    // Mettre à jour le temps de démarrage pour maintenir la cohérence du temps simulé
+    setWorkStartTime(Date.now() - (currentSimulatedTime / speed));
+    
     // Mettre à jour la vitesse
     setSimulationSpeed(speed);
-    
-    // Ajuster le temps de démarrage pour maintenir la cohérence
-    if (!isPaused) {
-      setWorkStartTime(prev => {
-        const elapsedRealTime = Date.now() - prev;
-        const simulatedTime = elapsedRealTime * simulationSpeed;
-        return Date.now() - (simulatedTime / speed);
-      });
-    }
   };
 
   // Fonction pour obtenir la largeur du filet d'eau en fonction du débit
@@ -479,9 +479,10 @@ export default function Dashboard() {
   // Mettre à jour le niveau d'exposition aux TMS en fonction du temps de travail
   useEffect(() => {
     // Plus le temps de travail est long, plus l'exposition est élevée
+    // 480 secondes = 8 minutes = 100% d'exposition
     const calculatedExposure = Math.min(100, Math.round((workTime / 480) * 100));
     setTmsExposureLevel(calculatedExposure);
-  }, []);
+  }, [workTime]);
 
   // Mettre à jour le score environnemental en fonction du temps
   useEffect(() => {
@@ -501,21 +502,55 @@ export default function Dashboard() {
     const interval = setInterval(() => {
       if (!isPaused) {
         const elapsedRealTime = Date.now() - workStartTime;
-        const simulatedMinutes = Math.floor((elapsedRealTime * simulationSpeed) / 60000);
-        setWorkTime(simulatedMinutes);
+        const simulatedSeconds = (elapsedRealTime * simulationSpeed) / 1000;
+        setWorkTime(simulatedSeconds);
+        
+        // Journée de travail terminée (8 minutes = 480 secondes)
+        if (simulatedSeconds >= 480) {
+          setIsPaused(true);
+          // Afficher un message ou une alerte
+        }
       }
-    }, 1000);
+    }, 50); // Mise à jour plus fréquente pour une animation fluide
     
     return () => clearInterval(interval);
   }, [isPaused, workStartTime, simulationSpeed]);
 
-  // Formater le temps de travail (format HH:MM)
+  // Formater le temps de travail (format MM:SS)
   const formattedWorkTime = useCallback(() => {
-    const hours = Math.floor(workTime / 60);
-    const minutes = workTime % 60;
+    const totalSeconds = Math.floor(workTime);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
     
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, [workTime]);
+
+  // Gérer les changements de vitesse de simulation
+  useEffect(() => {
+    if (simulationSpeed !== lastSimulationSpeed && !isPaused) {
+      // Cette logique est maintenant gérée directement dans handleSpeedChange
+      // pour éviter les effets de bord et les calculs redondants
+    }
+  }, [simulationSpeed, isPaused, lastSimulationSpeed]);
+
+  // Mettre à jour la largeur du verre en fonction de la capacité d'absorption
+  useEffect(() => {
+    if (!isMounted) return;
+    
+    // Calculer la largeur du verre en fonction de la capacité d'absorption
+    // Capacité 0% = largeur minimale (20%)
+    // Capacité 100% = largeur maximale (90%)
+    const newGlassWidth = Math.round(20 + (glassCapacity * 0.7));
+    console.log("Mise à jour de la largeur du verre:", newGlassWidth, "basée sur la capacité:", glassCapacity);
+    
+    // Mettre à jour la largeur du verre
+    setGlassWidth(newGlassWidth);
+    
+    // Calculer la largeur en pixels (entre 70px et 260px)
+    const newGlassWidthPx = Math.round(70 + (newGlassWidth / 100) * 190);
+    setGlassWidthPx(newGlassWidthPx);
+    
+  }, [glassCapacity, isMounted]);
 
   // Mettre à jour le niveau de remplissage du verre en fonction du débit et du taux d'absorption
   useEffect(() => {
@@ -552,61 +587,6 @@ export default function Dashboard() {
     
     return () => clearInterval(interval);
   }, [flowRate, lastUpdateTime, isPaused, glassWidth, absorptionRate, isStrawEnabled, simulationSpeed, environmentScore]);
-
-  // Mettre à jour le chronomètre de travail
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!isPaused) {
-        const elapsedRealTime = Date.now() - workStartTime;
-        const simulatedMinutes = Math.floor((elapsedRealTime * simulationSpeed) / 60000);
-        setWorkTime(simulatedMinutes);
-        
-        // Journée de travail terminée (8h)
-        if (simulatedMinutes >= 480) {
-          setIsPaused(true);
-          // Afficher un message ou une alerte
-        } else {
-          // Continuer la simulation
-        }
-      }
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, [isPaused, workStartTime, simulationSpeed]);
-
-  // Gérer les changements de vitesse de simulation
-  useEffect(() => {
-    if (simulationSpeed !== lastSimulationSpeed) {
-      if (!isPaused) {
-        // Ajuster le temps de démarrage pour maintenir la cohérence du temps simulé
-        const elapsedRealTime = Date.now() - workStartTime;
-        const simulatedTime = elapsedRealTime * lastSimulationSpeed;
-        setWorkStartTime(Date.now() - (simulatedTime / simulationSpeed));
-      }
-      
-      // Mettre à jour la dernière vitesse connue
-      setLastSimulationSpeed(simulationSpeed);
-    }
-  }, [simulationSpeed, isPaused, lastSimulationSpeed, workStartTime]);
-
-  // Mettre à jour la largeur du verre en fonction de la capacité d'absorption
-  useEffect(() => {
-    if (!isMounted) return;
-    
-    // Calculer la largeur du verre en fonction de la capacité d'absorption
-    // Capacité 0% = largeur minimale (20%)
-    // Capacité 100% = largeur maximale (90%)
-    const newGlassWidth = Math.round(20 + (glassCapacity * 0.7));
-    console.log("Mise à jour de la largeur du verre:", newGlassWidth, "basée sur la capacité:", glassCapacity);
-    
-    // Mettre à jour la largeur du verre
-    setGlassWidth(newGlassWidth);
-    
-    // Calculer la largeur en pixels (entre 70px et 260px)
-    const newGlassWidthPx = Math.round(70 + (newGlassWidth / 100) * 190);
-    setGlassWidthPx(newGlassWidthPx);
-    
-  }, [glassCapacity, isMounted]);
 
   return (
     <div className="w-full">
@@ -693,7 +673,7 @@ export default function Dashboard() {
                   <span className="text-sm text-gray-300">Temps de travail</span>
                 </div>
                 <span className="text-lg font-medium text-white">
-                  {Math.floor(workTime / 60)}h{workTime % 60 < 10 ? `0${workTime % 60}` : workTime % 60}
+                  {formattedWorkTime()}
                 </span>
               </div>
             </div>
