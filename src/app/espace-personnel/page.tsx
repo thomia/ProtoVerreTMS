@@ -1,5 +1,5 @@
 import { EspacePersonnelNavigation } from "@/components/espace-personnel/navigation"
-import { EspacePersonnelDashboard } from "@/components/espace-personnel/dashboard"
+import { EspacePersonnelDashboard } from "@/components/espace-personnel/espace-personnel-overview"
 
 export default function EspacePersonnelPage() {
   return (
