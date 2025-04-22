@@ -40,13 +40,13 @@ export default function GlassComponent({
   }, []);
 
   // Validation de sécurité pour les valeurs
-  const safeWidth = Math.max(0, Math.min(100, width));
-  const safeHeight = Math.max(0, Math.min(500, height));
-  const safeFillLevel = Math.max(0, Math.min(100, fillLevel));
-  const safeAbsorptionRate = Math.max(0, Math.min(100, absorptionRate));
+  const safeWidth = Math.round(Math.max(0, Math.min(100, width)));
+  const safeHeight = Math.round(Math.max(0, Math.min(500, height)));
+  const safeFillLevel = Math.round(Math.max(0, Math.min(100, fillLevel)));
+  const safeAbsorptionRate = Math.round(Math.max(0, Math.min(100, absorptionRate)));
 
   // Calculer la largeur réelle du verre en pixels (entre 70px et 260px pour accentuer les différences et augmenter de 1,3x)
-  const glassWidthPx = 70 + (safeWidth / 100) * 190;
+  const glassWidthPx = Math.round(70 + (safeWidth / 100) * 190);
   
   // Obtenir la couleur du niveau de remplissage
   const getFillColor = () => {

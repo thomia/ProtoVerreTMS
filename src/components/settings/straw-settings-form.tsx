@@ -38,6 +38,9 @@ export default function StrawSettingsForm() {
     quality: 7 // 1-10
   })
 
+  // État pour la capacité de récupération calculée
+  const [recoveryCapacity, setRecoveryCapacity] = useState(0)
+
   // Calculer la capacité de récupération
   const calculateRecoveryCapacity = () => {
     // Normalisation des pauses actives (0-100)
@@ -68,6 +71,12 @@ export default function StrawSettingsForm() {
       (sleepScore * 0.2)
     )
   }
+
+  // Mettre à jour la capacité de récupération lorsque les paramètres changent
+  useEffect(() => {
+    const capacity = calculateRecoveryCapacity();
+    setRecoveryCapacity(capacity);
+  }, [activeBreaks, stretching, relaxation, sleep]);
 
   // Description de la capacité de récupération
   const getRecoveryDescription = (value: number) => {

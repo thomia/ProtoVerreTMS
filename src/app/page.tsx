@@ -1,4 +1,4 @@
-import Dashboard from '@/components/dashboard/dashboard';
+import Dashboard from '@/components/dashboard/dashboard-new';
 import Link from 'next/link';
 import { UserCircle } from 'lucide-react';
 

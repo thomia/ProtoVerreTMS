@@ -165,8 +165,13 @@ export default function GlassSettingsForm() {
 
   // Sauvegarder la capacité calculée
   const saveCapacity = useCallback((capacity: number) => {
+    // Arrondir la capacité
+    const roundedCapacity = Math.round(capacity);
+    
     // Mettre à jour l'état
-    setAbsorptionCapacity(capacity);
+    setAbsorptionCapacity(roundedCapacity);
+    
+    console.log('Sauvegarde de la capacité:', roundedCapacity);
     
     // Sauvegarder les paramètres
     const settings = {
@@ -175,35 +180,35 @@ export default function GlassSettingsForm() {
       nutrition,
       sleepDuration,
       medicalHistory,
-      absorptionCapacity: capacity
+      absorptionCapacity: roundedCapacity
     };
-    
-    console.log('Sauvegarde de la capacité:', capacity);
     
     // Sauvegarder dans localStorage
     setLocalStorage('glassSettings', JSON.stringify(settings));
-    setLocalStorage('glassCapacity', capacity.toString());
+    setLocalStorage('glassCapacity', roundedCapacity.toString());
     
     // Émettre un événement pour notifier les autres composants
     try {
-      // Émission de l'événement personnalisé
+      // Création de l'événement personnalisé
       const event = new CustomEvent('glassCapacityUpdated', {
-        detail: { capacity },
+        detail: { capacity: roundedCapacity },
         bubbles: true,
         cancelable: true
       });
+      
+      // Émission de l'événement sur le document et la fenêtre
       document.dispatchEvent(event);
       window.dispatchEvent(event);
       
-      console.log('Événement émis:', event);
+      console.log('Événement glassCapacityUpdated émis avec capacité:', roundedCapacity);
     } catch (error) {
       console.error('Erreur lors de l\'émission de l\'événement:', error);
     }
     
     // Émettre un événement storage
-    emitStorageEvent();
+    emitStorageEvent('glassCapacity');
     
-    return capacity;
+    return roundedCapacity;
   }, [age, physicalActivity, nutrition, sleepDuration, medicalHistory]);
 
   // Calculer et sauvegarder la capacité quand nécessaire
@@ -228,14 +233,42 @@ export default function GlassSettingsForm() {
   // Gérer la soumission du formulaire (mémorisée)
   const handleSubmit = useCallback(() => {
     setFormSubmitted(true);
-    const capacity = calculateCapacity();
-    saveCapacity(capacity);
     
+    // Calculer la capacité d'absorption
+    const capacity = Math.round(calculateCapacity());
+    
+    // Mettre à jour l'état local
+    setAbsorptionCapacity(capacity);
+    
+    // Sauvegarder les paramètres complets
+    const settings = {
+      age,
+      physicalActivity,
+      nutrition,
+      sleepDuration,
+      medicalHistory,
+      absorptionCapacity: capacity
+    };
+    
+    // Sauvegarder dans localStorage
+    setLocalStorage('glassSettings', JSON.stringify(settings));
+    setLocalStorage('glassCapacity', capacity.toString());
+    
+    // Émettre un événement personnalisé pour notifier les autres composants
+    const event = new CustomEvent('glassCapacityUpdated', {
+      detail: { capacity }
+    });
+    window.dispatchEvent(event);
+    
+    // Émettre un événement storage pour synchroniser tous les composants
+    emitStorageEvent('glassCapacity');
+    
+    // Afficher le message de succès
     setIsSaved(true);
     setTimeout(() => {
       setIsSaved(false);
     }, 2000);
-  }, [calculateCapacity, saveCapacity]);
+  }, [age, physicalActivity, nutrition, sleepDuration, medicalHistory, calculateCapacity]);
 
   // Mettre à jour les facteurs individuels
   const updateIndividualFactor = useCallback((factorId: string, value: number) => {
