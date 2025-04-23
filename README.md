@@ -8,12 +8,13 @@ Ce projet est protégé par les lois sur la propriété intellectuelle et le dro
 
 ## Description
 
-ProtoVerre TMS est une application SaaS qui présente un tableau de bord interactif avec trois éléments principaux:
+ProtoVerre TMS est une application SaaS qui présente un tableau de bord interactif avec cinq éléments principaux qui ont un rôle dans la gestion des TMS et Accidents du travail.
 
-1. **Un verre** - Qui peut se remplir et se vider
-2. **Une paille** - Qui permet d'aspirer le contenu du verre
-3. **Un robinet** - Qui permet de remplir le verre
+1. **Un verre** - Qui peut se remplir ou se vider
+2. **Une paille** - Qui permet d'aspirer l'eau du verre
+3. **Un robinet** - Qui fait couler plus ou moins d'eau dans le verre
 4. **Une bulle** - Qui permet d'imager l'environnement de travail et influer sur le débit de remplissage du verre
+5. **Un orage** - Qui fait tomber de l'eau supplémentaire dans le verre
 
 Chaque élément est paramétrable et mène à une page dédiée où l'utilisateur peut configurer son comportement.
 
