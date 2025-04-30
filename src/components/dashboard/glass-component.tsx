@@ -9,6 +9,7 @@ export interface GlassComponentProps {
   height?: number; // Hauteur du verre en pixels (300px par défaut)
   fillLevel?: number; // Niveau de remplissage (0-100)
   absorptionRate?: number; // Taux d'absorption (0-100)
+  absorptionCapacity?: number; // Capacité d'absorption (0-100)
   hideColorLegend?: boolean; // Option pour masquer la légende des couleurs
 }
 
@@ -17,6 +18,7 @@ export default function GlassComponent({
   height = 300,
   fillLevel = 0, 
   absorptionRate = 0,
+  absorptionCapacity = 0,
   hideColorLegend = false
 }: GlassComponentProps) {
   // État côté client uniquement
@@ -44,6 +46,7 @@ export default function GlassComponent({
   const safeHeight = Math.round(Math.max(0, Math.min(500, height)));
   const safeFillLevel = Math.round(Math.max(0, Math.min(100, fillLevel)));
   const safeAbsorptionRate = Math.round(Math.max(0, Math.min(100, absorptionRate)));
+  const safeAbsorptionCapacity = Math.round(Math.max(0, Math.min(100, absorptionCapacity)));
 
   // Calculer la largeur réelle du verre en pixels (entre 70px et 260px pour accentuer les différences et augmenter de 1,3x)
   const glassWidthPx = Math.round(70 + (safeWidth / 100) * 190);
