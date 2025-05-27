@@ -680,16 +680,16 @@ export default function Dashboard() {
             
             {/* Sections de paramètres */}
             <div className="space-y-3">
-              <TapSectionV2 
-                flowRate={flowRate}
-                environmentImpact={Math.round(environmentScore * 0.15)}
-                onSettingsClick={() => handleOpenModal('tap')}
-              />
-              
               <GlassSectionV2 
                 capacity={glassCapacity}
                 fillLevel={fillLevel}
                 onSettingsClick={() => handleOpenModal('glass')}
+              />
+              
+              <TapSectionV2 
+                flowRate={flowRate}
+                environmentImpact={Math.round(environmentScore * 0.15)}
+                onSettingsClick={() => handleOpenModal('tap')}
               />
               
               <StormSectionV2 

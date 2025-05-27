@@ -1,10 +1,21 @@
 import Dashboard from '@/components/dashboard/dashboard-new';
 import Link from 'next/link';
-import { UserCircle } from 'lucide-react';
+import { UserCircle, BookOpen } from 'lucide-react';
+import { Button } from "@/components/ui/button"
 
 export default function Home() {
   return (
     <main className="flex min-h-screen w-full flex-col items-center justify-start p-0 bg-black">
+      {/* Bouton pour accéder au tutoriel */}
+      <div className="fixed top-4 right-4 z-50">
+        <Link href="/tutorial/glass">
+          <Button variant="outline" className="bg-slate-900/50 backdrop-blur-sm">
+            <BookOpen className="w-4 h-4 mr-2" />
+            Mode Tutoriel
+          </Button>
+        </Link>
+      </div>
+
       <div className="relative w-full bg-black">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500/2 via-transparent to-transparent" />
         <div className="relative w-full max-w-[2000px] mx-auto px-8 py-6">
