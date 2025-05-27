@@ -6,13 +6,17 @@ import Page1GlassExplanation from './page1-glass-explanation'
 import Page2GlassInteractive from './page2-glass-interactive'
 import Page3TapExplanation from './page3-tap-explanation'
 import Page4TapAndGlassInteractive from './page4-tap-and-glass-interactive'
+import Page5BubbleExplanation from './page5-bubble-explanation'
+import Page6TapGlassBubbleInteractive from './page6-tap-glass-bubble-interactive'
 
 // Définition des étapes du tutoriel
 export enum TutorialStep {
   Page1_GlassExplanation = 'page1-glass-explanation',
   Page2_GlassInteractive = 'page2-glass-interactive',
   Page3_TapExplanation = 'page3-tap-explanation',
-  Page4_TapAndGlassInteractive = 'page4-tap-and-glass-interactive'
+  Page4_TapAndGlassInteractive = 'page4-tap-and-glass-interactive',
+  Page5_BubbleExplanation = 'page5-bubble-explanation',
+  Page6_TapGlassBubbleInteractive = 'page6-tap-glass-bubble-interactive'
 }
 
 export default function TutorialNavigator() {
@@ -35,6 +39,12 @@ export default function TutorialNavigator() {
         setCurrentStep(TutorialStep.Page4_TapAndGlassInteractive)
         setHasSeenTapExplanation(true)
         break
+      case TutorialStep.Page4_TapAndGlassInteractive:
+        setCurrentStep(TutorialStep.Page5_BubbleExplanation)
+        break
+      case TutorialStep.Page5_BubbleExplanation:
+        setCurrentStep(TutorialStep.Page6_TapGlassBubbleInteractive)
+        break
       // Vous pouvez ajouter d'autres étapes ici si nécessaire
     }
   }, [currentStep])
@@ -50,6 +60,12 @@ export default function TutorialNavigator() {
         break
       case TutorialStep.Page4_TapAndGlassInteractive:
         setCurrentStep(TutorialStep.Page3_TapExplanation)
+        break
+      case TutorialStep.Page5_BubbleExplanation:
+        setCurrentStep(TutorialStep.Page4_TapAndGlassInteractive)
+        break
+      case TutorialStep.Page6_TapGlassBubbleInteractive:
+        setCurrentStep(TutorialStep.Page5_BubbleExplanation)
         break
       // Vous pouvez ajouter d'autres étapes ici si nécessaire
     }
@@ -147,6 +163,66 @@ export default function TutorialNavigator() {
             transition={{ duration: 0.5 }}
           >
             <Page4TapAndGlassInteractive />
+            <div className="flex justify-between mt-8">
+              <button
+                onClick={goToPreviousStep}
+                className="bg-slate-700 hover:bg-slate-600 text-white p-3 rounded-full transition-colors"
+                aria-label="Précédent"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={goToNextStep}
+                className="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full transition-colors"
+                aria-label="Suivant"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </motion.div>
+        )
+      case TutorialStep.Page5_BubbleExplanation:
+        return (
+          <div className="relative">
+            <Page5BubbleExplanation 
+              onComplete={() => {
+                // Vous pouvez ajouter un état ici si nécessaire
+              }} 
+            />
+            <div className="flex justify-between mt-8">
+              <button
+                onClick={goToPreviousStep}
+                className="bg-slate-700 hover:bg-slate-600 text-white p-3 rounded-full transition-colors"
+                aria-label="Précédent"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={goToNextStep}
+                className="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full transition-colors"
+                aria-label="Suivant"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )
+      case TutorialStep.Page6_TapGlassBubbleInteractive:
+        return (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Page6TapGlassBubbleInteractive />
             <div className="flex justify-between mt-8">
               <button
                 onClick={goToPreviousStep}

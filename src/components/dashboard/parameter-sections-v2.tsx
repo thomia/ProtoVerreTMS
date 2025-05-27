@@ -98,7 +98,7 @@ export function StrawSectionV2({
   return (
     <Section
       title="Paille"
-      description="Représente la récupération (étirements, échauffements, pauses, relaxation, sommeil)."
+      description="Représente la capacité de récupération (étirements, échauffements, pauses, sommeil)."
       value={absorptionRate}
       maxValue={80}
       icon={<RectangleHorizontal className="w-5 h-5 text-green-400 transform rotate-90 scale-y-[0.3]" />}
@@ -149,7 +149,7 @@ export function TapSectionV2({
   return (
     <Section
       title="Robinet"
-      description="Représente le flux de travail, la cadence et la charge de travail."
+      description="Représente les contraintes physiques et mentales imposées par le travail (poids, posture, charge mentale..)"
       value={flowRate}
       icon={<Droplet className="w-5 h-5 text-blue-400" />}
       color="bg-blue-400"
@@ -193,7 +193,7 @@ export function GlassSectionV2({
   return (
     <Section
       title="Verre"
-      description="Représente les contraintes imposées aux tissus (charge, fréquence, posture, état émotionnel)."
+      description="Représente les facteurs individuels qui déterminent la résistance du corps aux contraintes"
       value={capacity}
       icon={<GlassWater className="w-5 h-5 text-gray-300" />}
       color="bg-gray-300"
@@ -230,7 +230,7 @@ export function StormSectionV2({
   return (
     <Section
       title="Orage"
-      description="Représente les facteurs environnementaux (tempête, vent, pluie, etc.)."
+      description="Représente les aléas et imprévus pendant le travail (interruptions, changements, problèmes techniques)."
       value={intensity}
       icon={<Wind className="w-5 h-5 text-[#D4A017]" />}
       color="bg-[#D4A017]"
