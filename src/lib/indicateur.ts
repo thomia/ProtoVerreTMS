@@ -61,7 +61,9 @@ export function formatOverflowSeconds(seconds: number | null): string {
 export interface FilRougePoint {
   element: ElementId
   label: string
-  /** Temps avant débordement à ce stade, null si pas de débordement. */
+  /** `false` tant que cet élément (ou un précédent) n'a pas été renseigné. */
+  isRenseigne: boolean
+  /** Temps avant débordement à ce stade, null si non renseigné ou pas de débordement. */
   seconds: number | null
 }
 
@@ -70,18 +72,27 @@ export interface FilRougePoint {
  * s'ajoutent, dans l'ordre Robinet → Bulle → Orage → Paille (le Verre fixe la
  * taille du verre et s'applique dès le départ). Sert de support au récap
  * formateur pour repérer l'élément qui fait basculer le modèle.
+ *
+ * La série s'arrête au dernier élément renseigné : les stades suivants
+ * ressortent à `null` plutôt que d'être calculés avec un score par défaut,
+ * ce qui ferait croire que l'élément a été joué sans rien changer.
  */
 export function computeFilRougeSeries(scores: ParticipantScores): FilRougePoint[] {
   const order: ElementId[] = ['robinet', 'bulle', 'orage', 'paille']
   const acc: ParticipantScores = { verre: scores.verre }
   const points: FilRougePoint[] = []
+  let isRenseigne = true
 
   for (const element of order) {
-    acc[element] = scores[element]
+    const score = scores[element]
+    if (score === undefined) isRenseigne = false
+    else acc[element] = score
+
     points.push({
       element,
       label: ELEMENT_THEME[element].name,
-      seconds: computeOverflowSeconds(acc),
+      isRenseigne,
+      seconds: isRenseigne ? computeOverflowSeconds(acc) : null,
     })
   }
 
