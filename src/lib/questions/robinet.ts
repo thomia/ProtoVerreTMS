@@ -42,10 +42,10 @@ export const ROBINET_RANK_WEIGHTS = [3, 2.5, 2, 1.5, 1] as const
 export const DEFAULT_ASPECT_WEIGHT = 2
 
 /**
- * Curseurs reformulés « aperçu terrain » : le titre parle à la première
- * personne (ce que je vis dans la tâche) et le sous-titre rappelle le repère
- * ergonomique correspondant. `section` conserve le nom technique de l'aspect
- * (repris tel quel dans l'exercice de classement).
+ * Curseurs « aperçu terrain » : le titre décrit concrètement ce que le
+ * participant doit évaluer dans sa tâche, le sous-titre détaille ce qu'on
+ * observe ou mesure pour cet aspect. `section` conserve le nom technique de
+ * l'aspect (repris tel quel dans l'exercice de classement).
  */
 const questions: Question[] = [
   {
@@ -53,13 +53,13 @@ const questions: Question[] = [
     element: 'robinet',
     type: 'scale',
     section: 'Charge physique',
-    question: 'Ce que vous portez, poussez ou tirez',
+    question: 'Les charges que vous manipulez : porter, soulever, pousser, tirer, déplacer',
     subtitle:
-      'Comme le ferait un ergonome en visite : poids réel, prise en main, nombre de fois dans la tâche.',
-    description: '0 = rien à manipuler / 100 = charges lourdes, prise difficile, répétées',
+      'Ce qui compte : le poids réel de la charge, la façon de la saisir (poignées, volume, matière glissante), son équilibre, et le nombre de fois où vous la reprenez.',
+    description: '0 = aucune charge à manipuler / 100 = charges lourdes, difficiles à saisir, reprises très souvent',
     minValue: 0,
     maxValue: 100,
-    minLabel: 'Rien à manipuler',
+    minLabel: 'Aucune charge',
     maxLabel: 'Lourd et répété',
   },
   {
@@ -67,24 +67,24 @@ const questions: Question[] = [
     element: 'robinet',
     type: 'scale',
     section: 'Posture',
-    question: 'Ce que votre corps doit tenir comme position',
+    question: 'Les positions que votre corps doit tenir pour faire le travail',
     subtitle:
-      'Dos penché, bras levés, position accroupie… les 3 points qu\u2019un ergonome regarde en premier sur le terrain.',
-    description: '0 = position neutre / 100 = position extrême maintenue longtemps',
+      'On regarde l\u2019angle pris par chaque partie du corps — dos, épaules, bras, genoux. Au-delà de certaines plages angulaires la position devient contraignante, et le temps passé dedans aggrave tout.',
+    description: '0 = position confortable / 100 = angles contraignants tenus longtemps',
     minValue: 0,
     maxValue: 100,
-    minLabel: 'Position neutre',
-    maxLabel: 'Position extrême',
+    minLabel: 'Position confortable',
+    maxLabel: 'Position contraignante',
   },
   {
     id: 'robinet_frequence',
     element: 'robinet',
     type: 'scale',
     section: 'Fréquence et durée',
-    question: 'Le temps réel que vous passez dans l\u2019effort',
+    question: 'La fréquence et la durée des efforts notables',
     subtitle:
-      'Pas le temps total de la tâche, mais le temps où le corps est vraiment sollicité — ce qu\u2019on chronomètre sur le terrain.',
-    description: '0 = ponctuel / 100 = quasi continu',
+      'Chronomètre en main : combien de fois l\u2019effort revient dans un cycle de travail, combien de temps il dure à chaque fois, et ce qu\u2019il reste comme récupération entre deux.',
+    description: '0 = effort ponctuel / 100 = effort quasi continu, sans récupération',
     minValue: 0,
     maxValue: 100,
     minLabel: 'Ponctuel',
@@ -95,23 +95,23 @@ const questions: Question[] = [
     element: 'robinet',
     type: 'scale',
     section: 'Charge mentale',
-    question: 'Ce que votre tête doit gérer en même temps',
+    question: 'L\u2019effort mental que demande la tâche : attention, mémoire, décisions',
     subtitle:
-      'Attention, décisions à prendre, risque d\u2019erreur — le type de charge que mesure le NASA-TLX utilisé en ergonomie.',
-    description: '0 = automatique / 100 = jongler avec plusieurs choses en même temps',
+      'Ça se mesure au niveau de concentration exigé, au nombre d\u2019informations à suivre en même temps, à la pression temporelle (cadence, délai à tenir), aux interruptions et aux conséquences d\u2019une erreur.',
+    description: '0 = geste automatique / 100 = concentration permanente, erreurs lourdes de conséquences',
     minValue: 0,
     maxValue: 100,
-    minLabel: 'Automatique',
-    maxLabel: 'Jongler en permanence',
+    minLabel: 'Geste automatique',
+    maxLabel: 'Concentration permanente',
   },
   {
     id: 'robinet_rps',
     element: 'robinet',
     type: 'scale',
     section: 'Risques psychosociaux',
-    question: 'L\u2019ambiance dans laquelle vous faites cette tâche',
+    question: 'Le contexte humain et organisationnel dans lequel vous travaillez',
     subtitle:
-      'Pression du temps, soutien de l\u2019équipe, marge de manœuvre — les facteurs psychosociaux qu\u2019identifie l\u2019INRS.',
+      'Ce qui pèse ici : les objectifs et délais imposés, la marge de manœuvre laissée sur la façon de faire, le soutien des collègues et de l\u2019encadrement, la reconnaissance du travail.',
     description: '0 = climat serein / 100 = tensions fortes, isolement',
     minValue: 0,
     maxValue: 100,
